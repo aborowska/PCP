@@ -61,19 +61,8 @@ VaR_5_2 = y_2(0.05*M); %  -3.2886
 threshold = 0;
 kernel_init = @(ss) - C_posterior_iid(ss, y, threshold)/N;
 [mu_C,~,~,~,~,Sigma_C] = fminunc(kernel_init,1);
-Sigma_C = inv(N*Sigma_C);
-draw_C = rmvt(mu_C,Sigma_C,df,M+BurnIn);
-kernel = @(ss) C_posterior_iid(ss, y, threshold);
-lnk_C = kernel(draw_C);
-lnd_C = dmvgt_mex(draw_C, mu_C, Sigma_C, df, 1, GamMat, double(1));
-lnw_C = lnk_C - lnd_C;
-lnw_C = lnw_C - max(lnw_C);
-[ind, a] = fn_MH(lnw_C);
-draw_C = draw_C(ind,:);
-accept_C = a/(M+BurnIn);
-draw_C = draw_C(BurnIn+1:BurnIn+M);    
-hist(draw_C,20)    
 
+lnk_C
 
 
 %% simple AR(1)
