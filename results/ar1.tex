@@ -1,0 +1,46 @@
+{ \renewcommand{\arraystretch}{1.2} 
+\begin{table} 
+\center 
+\begin{tabular}{cc cccc} 
+Value & & True & Posterior & CP10\% & CP0 \\ \hline 
+\hline 
+\multicolumn{6}{c}{$T =100$}  \\ 
+\hline 
+$\mu$&& 0.3989 & -0.0916 & 0.2373 & 0.3579  \\ 
+&&   & (0.1525) & (0.2088) & (0.2268)  \\ 
+$\sigma$&& 2.0000 & 1.5483 & 1.7652 & 2.0280  \\ 
+&&   & (0.1111) & (0.1939) & (0.2345)  \\ 
+$\phi$&& 0.8000 & 0.7748 & 0.8586 & 0.8574  \\ 
+&&   & (0.0673) & (0.0706) & (0.0716)  \\ 
+VaR 1\% && -2.4351 & -2.0038 & -3.8343 & -4.4863  \\ 
+VaR 5\% && -1.0224 & -0.8941 & -2.6700 & -3.0133  \\ 
+\hline 
+\multicolumn{6}{c}{$T =1000$}  \\ 
+\hline 
+$\mu$&& 0.3989 & -0.0108 & 0.5275 & 0.6179  \\ 
+&&   & (0.0485) & (0.0745) & (0.0771)  \\ 
+$\sigma$&& 2.0000 & 1.5392 & 1.6990 & 1.8091  \\ 
+&&   & (0.0343) & (0.0543) & (0.0587)  \\ 
+$\phi$&& 0.8000 & 0.8051 & 0.9059 & 0.9109  \\ 
+&&   & (0.0190) & (0.0264) & (0.0260)  \\ 
+VaR 1\% && -2.2873 & -1.7197 & -3.3231 & -3.5600  \\ 
+VaR 5\% && -0.8686 & -0.6056 & -2.2455 & -2.3873  \\ 
+\hline 
+\multicolumn{6}{c}{$T =1000$}  \\ 
+\hline 
+$\mu$&& 0.3989 & -0.0108 & 0.5275 & 0.6179  \\ 
+&&   & (0.0485) & (0.0745) & (0.0771)  \\ 
+$\sigma$&& 2.0000 & 1.5392 & 1.6990 & 1.8091  \\ 
+&&   & (0.0343) & (0.0543) & (0.0587)  \\ 
+$\phi$&& 0.8000 & 0.8051 & 0.9059 & 0.9109  \\ 
+&&   & (0.0190) & (0.0264) & (0.0260)  \\ 
+VaR 1\% && -2.2873 & -1.7197 & -3.3231 & -3.5600  \\ 
+VaR 5\% && -0.8686 & -0.6056 & -2.2455 & -2.3873  \\ 
+\hline 
+\multicolumn{6}{l}{\footnotesize{CP10\%: Censored posterior, threshold 10\% sample quantile.}}  \\ 
+\multicolumn{6}{l}{\footnotesize{CP0: Censored posterior, threshold 0.}} 
+\end{tabular}
+ \caption{Simulation results for posterior without and with censoring (with different thresholds) for the ar1 mean zero split normal model. For the censored posterior the focus is on the left tail. } 
+\label{tab:ar1}  
+\end{table}
+}

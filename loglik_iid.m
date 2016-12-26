@@ -1,7 +1,16 @@
-function d = loglik_iid(sigma, y)
+function d = loglik_iid(theta, y)
     N = length(y);
-    M = size(sigma,1);
+    mu = theta(:,1);
+    sigma = theta(:,2);
+    M = size(theta,1);
+    
     d = -Inf*ones(M,1);
     r = sigma>0; 
-    d(r) = -0.5*(N*log(2*pi) + N*log(sigma(r).^2) + sum(y.^2)./sigma(r).^2);
+    
+    for ii = 1:M
+        if r(ii)
+            d(ii) = -0.5*(N*log(2*pi) + N*log(sigma(ii,1).^2) + sum((y-mu(ii,1)).^2)./sigma(ii,1).^2);        
+        end
+    end
+    d = d/N; 
 end

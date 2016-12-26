@@ -1,19 +1,21 @@
-function d = C_posterior_iid(sigma, y, threshold)
+function d = C_posterior_iid(theta, y, threshold)
     N = length(y);
-    M = size(sigma,1);
+    mu = theta(:,1);
+    sigma = theta(:,2);
+    M = size(theta,1);
     d = -Inf*ones(M,1);
     r = sigma>0; 
     
-    
     ind = (y<threshold);
     ind_N = sum(ind);
-    P = log(1-normcdf(threshold,0,sigma)); %P(y_t>=threshold|y_1,...,y_(t-1))
-
-%     y_tilde = y;
-%     y_tilde(ind) = threshold;
+    P = log(1-normcdf(threshold,mu,sigma)); %P(y_t>=threshold|y_1,...,y_(t-1))
     
-    d(r) = -0.5*(ind_N*log(2*pi) + ind_N*log(sigma(r).^2) + sum(y(ind).^2)./sigma(r).^2);
-    d(r) = d(r) + (N-ind_N)*P(r);
+    for ii = 1:M
+        if r(ii)
+            d(ii) = -0.5*(ind_N*log(2*pi) + ind_N*log(sigma(ii,1).^2) + sum((y(ind)-mu(ii,1)).^2)./sigma(ii,1).^2);        
+            d(ii) = d(ii) + (N-ind_N)*P(ii);
+        end
+    end
     
     % Misspecified model: N(0,sigma)
     prior = -log(sigma);

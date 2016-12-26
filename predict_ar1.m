@@ -1,0 +1,1 @@
+function y = predict_ar1(theta,M)
