@@ -148,7 +148,7 @@ VaR_5_post_C0 = y_post_C0(p_bar*M);
 
 param_true = [c,sigma2,rho];
 if save_on
-    save(['results/',model,'_',num2str(N),'.mat'],'y','draw','draw_C','draw_C0','param_true',...
+    save(['results/',model,'_',num2str(sigma1),'_',num2str(sigma2),'_',num2str(N),'.mat'],'y','draw','draw_C','draw_C0','param_true',...
     'accept','accept_C','accept_C0','VaR_1','VaR_1_post','VaR_1_post_C','VaR_1_post_C0',...
     'VaR_5','VaR_5_post','VaR_5_post_C','VaR_5_post_C0')
 end
@@ -198,7 +198,7 @@ if plot_on
     set(leg,'Interpreter','latex','FontSize',11,'position',[0.85 0.42 0.14 0.2])
 
      if save_on
-        name = ['figures/',model,'_',num2str(N),'.eps'];
+        name = ['figures/',model,'_',num2str(sigma1),'_',num2str(sigma2),'_',num2str(N),'.eps'];
         set(gcf,'PaperPositionMode','auto');
         print_fail = 1;
         while print_fail 

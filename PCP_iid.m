@@ -4,18 +4,19 @@ close all
 % s = RandStream('mt19937ar','Seed',1);
 % RandStream.setGlobalStream(s); 
 
-model = 'iid_eq';
+model = 'iid';
 parameters = {'$\\mu$','$\\sigma$'};
 
 
 sigma1 = 1; %1;!!!!s
-sigma2 = 1;
+sigma2 = 2;
 c = (sigma2 - sigma1)/(sqrt(2*pi));%1/sqrt(2*pi); %0.3989
 
-T = 1000; %time series length
+T = 100; %time series length
 p_bar1 = 0.01;
 p_bar = 0.05;
 M = 10000; % number of draws 
+BurnIn = 1000;
 
 x_gam = (0:0.00001:50)'+0.00001;
 GamMat = gamma(x_gam);
@@ -29,7 +30,7 @@ else
 end
 
 plot_on = true;
-save_on = true;
+save_on = false;
 
 %% split normal, mode 0
 % if plot_on
@@ -53,8 +54,8 @@ median(y) %0.3716
 mean(y)  % -0.0134
 
 % true VaRs
-q1 = norminv(p_bar1); % -2.33
-q5 = norminv(p_bar); % -1.65
+q1 = norminv(p_bar1,c,sigma2); % -2.33
+q5 = norminv(p_bar,c,sigma2); % -1.65
 
 eps_sort = randn(M,1);
 ind = (eps_sort>0);
@@ -71,14 +72,12 @@ threshold = y_sort(2*p_bar*M);
 %% Uncensored Posterior
 % Misspecified model: normal with unknown mu and sigma
 % Metropolis-Hastings for the parameters
-M = 10000; % number of draws for preliminary and IS computations
-BurnIn = 1000;
 
 % Uncensored likelihood
 kernel_init = @(xx) -loglik_iid(xx,y);
 [mu,~,~,~,~,Sigma] = fminunc(kernel_init,[0,1]);
 % mu = [-0.0134, 1.5385]
-Sigma = inv(N*Sigma);
+Sigma = inv(T*Sigma);
 df = 5;
 draw = rmvt(mu,Sigma,df,M+BurnIn);
 kernel = @(ss) posterior_iid(ss,y);
@@ -113,9 +112,9 @@ VaR_5_post = y_post(p_bar*M); % -2.5662
 % Misspecified model: N(mu,sigma)
 
 % 1. Threshold = 10% perscentile of the data sample
-kernel_init = @(xx) - C_posterior_iid(xx, y, threshold)/N;
+kernel_init = @(xx) - C_posterior_iid(xx, y, threshold)/T;
 [mu_C,~,~,~,~,Sigma_C] = fminunc(kernel_init,mu);
-Sigma_C = inv(N*Sigma_C);
+Sigma_C = inv(T*Sigma_C);
 draw_C = rmvt(mu_C,Sigma_C,df,M+BurnIn);
 kernel = @(ss) C_posterior_iid(ss, y, threshold);
 lnk_C = kernel(draw_C);
@@ -133,22 +132,22 @@ y_post_C = sort(y_post_C);
 VaR_1_post_C = y_post_C(p_bar1*M); 
 VaR_5_post_C = y_post_C(p_bar*M); 
 
-if plot_on
-    subplot(1,2,1)
-    fn_hist(draw_C(:,1))    
-    xlabel('\mu')
-    subplot(1,2,2)
-    fn_hist(draw_C(:,2))    
-    xlabel('\sigma')
-    std(draw_C)  % 0.0847    0.0551 <-- threshold 0.1 precentile of the data sample
-end
+% if plot_on
+%     subplot(1,2,1)
+%     fn_hist(draw_C(:,1))    
+%     xlabel('\mu')
+%     subplot(1,2,2)
+%     fn_hist(draw_C(:,2))    
+%     xlabel('\sigma')
+%     std(draw_C)  % 0.0847    0.0551 <-- threshold 0.1 precentile of the data sample
+% end
 
 
 % 2. Threshold = 0             
 threshold = 0;
-kernel_init = @(xx) - C_posterior_iid(xx, y, threshold)/N;
+kernel_init = @(xx) - C_posterior_iid(xx, y, threshold)/T;
 [mu_C0,~,~,~,~,Sigma_C0] = fminunc(kernel_init,mu);
-Sigma_C0 = inv(N*Sigma_C0);
+Sigma_C0 = inv(T*Sigma_C0);
 draw_C0 = rmvt(mu_C0,Sigma_C0,df,M+BurnIn);
 kernel = @(ss) C_posterior_iid(ss, y, threshold);
 lnk_C0 = kernel(draw_C0);
@@ -159,7 +158,7 @@ lnw_C0 = lnw_C0 - max(lnw_C0);
 draw_C0 = draw_C0(ind,:);
 accept_C0 = a/(M+BurnIn);
 draw_C0 = draw_C0(BurnIn+1:BurnIn+M,:);
-std(draw_C0) % 0.0273    0.0245 <-- threshold 0
+mean(draw_C0) % 0.0273    0.0245 <-- threshold 0
 
 
 y_post_C0 = draw_C0(:,1) + draw_C0(:,2).*randn(M,1);
@@ -170,28 +169,26 @@ VaR_5_post_C0 = y_post_C0(p_bar*M);
 
 if plot_on
     subplot(1,2,1)
-    fn_hist(draw_C0(:,1))    
-    xlabel('\mu')
-    subplot(1,2,2)
-    fn_hist(draw_C0(:,2))    
-    xlabel('\sigma')
-    std(draw_C0)  % 0.0847    0.0551 <-- threshold 0.1 precentile of the data sample
-end
-
-if plot_on
-    subplot(1,2,1)
+    hold on
     fn_hist([draw(:,1),draw_C(:,1),draw_C0(:,1)])    
+    YL = get(gca,'YLim');
+    line([c c], YL,'Color','r','LineWidth',3); 
+    hold off
     xlabel('\mu')
+    
     subplot(1,2,2)
+    hold on
     fn_hist([draw(:,2),draw_C(:,2),draw_C0(:,2)])    
+    YL = get(gca,'YLim');    
+    line([sigma2 sigma2], YL,'Color','r','LineWidth',3); 
+    hold off
     xlabel('\sigma')
-    std(draw_C)  % 0.0847    0.0551 <-- threshold 0.1 precentile of the data sample
 end
 
 %% save and plot
 param_true = [c,sigma2];
 if save_on
-    save(['results/',model,'_',num2str(N),'.mat'],'y','draw','draw_C','draw_C0','param_true',...
+    save(['results/',model,'_',num2str(sigma1),'_',num2str(sigma2),'_',num2str(T),'.mat'],'y','draw','draw_C','draw_C0','param_true',...
     'accept','accept_C','accept_C0','VaR_1','VaR_1_post','VaR_1_post_C','VaR_1_post_C0',...
     'VaR_5','VaR_5_post','VaR_5_post_C','VaR_5_post_C0')
 end
@@ -229,7 +226,7 @@ if plot_on
     set(leg,'Interpreter','latex','FontSize',11,'position',[0.78 0.42 0.18 0.2])
 
     if save_on
-        name = ['figures/',model,'_',num2str(N),'.eps'];
+        name = ['figures/',model,'_',num2str(sigma1),'_',num2str(sigma2),'_',num2str(T),'.eps'];
         set(gcf,'PaperPositionMode','auto');
         print_fail = 1;
         while print_fail 

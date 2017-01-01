@@ -1,16 +1,15 @@
 clear all
 close all
 
-% s = RandStream('mt19937ar','Seed',1);
-% RandStream.setGlobalStream(s); 
+s = RandStream('mt19937ar','Seed',1);
+RandStream.setGlobalStream(s); 
 
-model = 'iid';
-parameters = {'$\\mu$','$\\sigma$'};
+model = 'ar1';
+parameters = {'$\\mu$','$\\sigma$','$\\phi$'};
 
-
-sigma1 = 1; %1;!!!!s
+sigma1 = 1;
 sigma2 = 2;
-c = (sigma2 - sigma1)/(sqrt(2*pi));%1/sqrt(2*pi); %0.3989
+c = 1/sqrt(2*pi); %0.3989
 
 S = 100; % number of MC replications
 
@@ -24,11 +23,10 @@ VaR_5_post = zeros(S,1);
 VaR_5_post_C = zeros(S,1);
 VaR_5_post_C0 = zeros(S,1);
 
-T = 100; %time series length
+T = 10000; %time series length
 p_bar1 = 0.01;
 p_bar = 0.05;
 M = 10000; % number of draws 
-BurnIn = 1000;
 
 x_gam = (0:0.00001:50)'+0.00001;
 GamMat = gamma(x_gam);
@@ -41,49 +39,49 @@ else
     fn_hist = @(xx) histogram(xx,20);
 end
 
-plot_on = true;
+plot_on = false;
 save_on = true;
 
 for s = 1:S
-    %% iid simulation, mean 0
+    %% simple AR(1)
     eps = randn(T,1);
     ind = (eps>0);
     eps(ind) = c + sigma1.*eps(ind);
     eps(~ind) = c + sigma2.*eps(~ind);
-    % eps1 = c + sigma1.*eps(eps>0);
-    % eps2 = c + sigma2.*eps(eps<0);
-    % eps = [eps1;eps2];
-    y = eps; % -mean(eps);
-    median(y) %0.3716
-    mean(y)  % -0.0134
+
+    rho = 0.8;
+    y = zeros(T,1);
+
+    y(1,1) = eps(1,1);
+    for ii = 2:T
+        y(ii,1) = rho*y(ii-1,1) + eps(ii,1);
+    end
 
     % true VaRs
-    q1 = norminv(p_bar1,c,sigma2); % -2.33
-    q5 = norminv(p_bar,c,sigma2); % -1.65
-
     eps_sort = randn(M,1);
     ind = (eps_sort>0);
     eps_sort(ind) = c + sigma1.*eps_sort(ind);
     eps_sort(~ind) = c + sigma2.*eps_sort(~ind);
 
-    % MC VaRs undet the true model
-    y_sort = sort(eps_sort);
-    VaR_1(s,1) = y_sort(p_bar1*M); % -2.30 
-    VaR_5(s,1) = y_sort(p_bar*M); % -1.61 
+    y_sort = rho*y(T,1) + eps_sort;
+    y_sort = sort(y_sort);
+    VaR_1(s,1) = y_sort(p_bar1*M);
+    VaR_5(s,1) = y_sort(p_bar*M); 
     threshold = y_sort(2*p_bar*M);
 
     %% Uncensored Posterior
-    % Misspecified model: normal with unknown mu and sigma
+    % Misspecified model: AR1 normal with unknown mu and sigma
     % Metropolis-Hastings for the parameters
+    BurnIn = 1000;
 
     % Uncensored likelihood
-    kernel_init = @(xx) -loglik_iid(xx,y);
-    [mu,~,~,~,~,Sigma] = fminunc(kernel_init,[0,1]);
-    % mu = [-0.0134, 1.5385]
+    kernel_init = @(xx) -loglik_ar1(xx,y);
+    [mu,~,~,~,~,Sigma] = fminunc(kernel_init,[0,1,0.9]);
+    % mu = [0.0119  1.5209 0.7936]
     Sigma = inv(T*Sigma);
     df = 5;
     draw = rmvt(mu,Sigma,df,M+BurnIn);
-    kernel = @(ss) posterior_iid(ss,y);
+    kernel = @(xx) posterior_ar1(xx,y);
     lnk = kernel(draw);
 
     lnd = dmvgt_mex(draw, mu, Sigma, df, 1, GamMat, double(1));
@@ -94,20 +92,17 @@ for s = 1:S
     accept = a/(M+BurnIn);
     draw = draw(BurnIn+1:BurnIn+M,:);    
 
-    y_post = draw(:,1) + draw(:,2).*randn(M,1);
+    y_post = draw(:,1) + draw(:,3).*y(T,1) + draw(:,2).*randn(M,1);
     y_post = sort(y_post);
-    VaR_1_post(s,1) = y_post(p_bar1*M); % -2.5662
-    VaR_5_post(s,1) = y_post(p_bar*M); % -2.5662
-
-    %% Censored posterior: take values below the threshold
-    % Misspecified model: N(mu,sigma)
+    VaR_1_post(s,1) = y_post(p_bar1*M); 
+    VaR_5_post(s,1) = y_post(p_bar*M); 
 
     % 1. Threshold = 10% perscentile of the data sample
-    kernel_init = @(xx) - C_posterior_iid(xx, y, threshold)/T;
+    kernel_init = @(xx) - C_posterior_ar1(xx, y, threshold)/T;
     [mu_C,~,~,~,~,Sigma_C] = fminunc(kernel_init,mu);
     Sigma_C = inv(T*Sigma_C);
     draw_C = rmvt(mu_C,Sigma_C,df,M+BurnIn);
-    kernel = @(ss) C_posterior_iid(ss, y, threshold);
+    kernel = @(ss) C_posterior_ar1(ss, y, threshold);
     lnk_C = kernel(draw_C);
     lnd_C = dmvgt_mex(draw_C, mu_C, Sigma_C, df, 1, GamMat, double(1));
     lnw_C = lnk_C - lnd_C;
@@ -117,18 +112,20 @@ for s = 1:S
     accept_C = a/(M+BurnIn);
     draw_C = draw_C(BurnIn+1:BurnIn+M,:);
 
+
     y_post_C = draw_C(:,1) + draw_C(:,2).*randn(M,1);
     y_post_C = sort(y_post_C);
     VaR_1_post_C(s,1) = y_post_C(p_bar1*M); 
     VaR_5_post_C(s,1) = y_post_C(p_bar*M); 
 
+
     % 2. Threshold = 0             
     threshold = 0;
-    kernel_init = @(xx) - C_posterior_iid(xx, y, threshold)/T;
+    kernel_init = @(xx) - C_posterior_ar1(xx, y, threshold)/T;
     [mu_C0,~,~,~,~,Sigma_C0] = fminunc(kernel_init,mu);
     Sigma_C0 = inv(T*Sigma_C0);
     draw_C0 = rmvt(mu_C0,Sigma_C0,df,M+BurnIn);
-    kernel = @(ss) C_posterior_iid(ss, y, threshold);
+    kernel = @(ss) C_posterior_ar1(ss, y, threshold);
     lnk_C0 = kernel(draw_C0);
     lnd_C0 = dmvgt_mex(draw_C0, mu_C0, Sigma_C0, df, 1, GamMat, double(1));
     lnw_C0 = lnk_C0 - lnd_C0;
@@ -137,12 +134,15 @@ for s = 1:S
     draw_C0 = draw_C0(ind,:);
     accept_C0 = a/(M+BurnIn);
     draw_C0 = draw_C0(BurnIn+1:BurnIn+M,:);
+    std(draw_C0) % 0.0273    0.0245 <-- threshold 0
+
 
     y_post_C0 = draw_C0(:,1) + draw_C0(:,2).*randn(M,1);
     y_post_C0 = sort(y_post_C0);
     VaR_1_post_C0(s,1) = y_post_C0(p_bar1*M); 
     VaR_5_post_C0(s,1) = y_post_C0(p_bar*M); 
 end
+
 
 MSE_1 = sum((VaR_1 - q1).^2)/S;
 MSE_1_post = sum((VaR_1_post - q1).^2)/S;
