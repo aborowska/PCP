@@ -4,10 +4,11 @@ function d = C_posterior_iid(theta, y, threshold)
     sigma = theta(:,2);
     M = size(theta,1);
     d = -Inf*ones(M,1);
-    r = sigma>0; 
+    r = sigma>0; % prior satisfied
     
-    ind = (y<threshold);
+    ind = (y<threshold); % observations of interest
     ind_N = sum(ind);
+    % for the % "censored observations":
     P = log(1-normcdf(threshold,mu,sigma)); %P(y_t>=threshold|y_1,...,y_(t-1))
     
     for ii = 1:M

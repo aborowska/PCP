@@ -7,8 +7,7 @@ close all
 model = 'iid';
 parameters = {'$\\mu$','$\\sigma$'};
 
-
-sigma1 = 1; %1;!!!!s
+sigma1 = 1; 
 sigma2 = 2;
 c = (sigma2 - sigma1)/(sqrt(2*pi));%1/sqrt(2*pi); %0.3989
 
@@ -24,9 +23,15 @@ VaR_5_post = zeros(S,1);
 VaR_5_post_C = zeros(S,1);
 VaR_5_post_C0 = zeros(S,1);
 
-T = 100; %time series length
+T = 10000; %time series length
+
 p_bar1 = 0.01;
-p_bar = 0.05;
+p_bar = 0.05;    
+
+% true VaRs
+q1 = norminv(p_bar1,c,sigma2);
+q5 = norminv(p_bar,c,sigma2); 
+
 M = 10000; % number of draws 
 BurnIn = 1000;
 
@@ -44,7 +49,11 @@ end
 plot_on = true;
 save_on = true;
 
-for s = 1:S
+for s = 11:S
+    if (mod(s,10)==0)
+        fprintf([model, 'simualtion no. %i\n'],s)
+    end
+    
     %% iid simulation, mean 0
     eps = randn(T,1);
     ind = (eps>0);
@@ -54,22 +63,16 @@ for s = 1:S
     % eps2 = c + sigma2.*eps(eps<0);
     % eps = [eps1;eps2];
     y = eps; % -mean(eps);
-    median(y) %0.3716
-    mean(y)  % -0.0134
-
-    % true VaRs
-    q1 = norminv(p_bar1,c,sigma2); % -2.33
-    q5 = norminv(p_bar,c,sigma2); % -1.65
-
+    
     eps_sort = randn(M,1);
     ind = (eps_sort>0);
     eps_sort(ind) = c + sigma1.*eps_sort(ind);
     eps_sort(~ind) = c + sigma2.*eps_sort(~ind);
 
-    % MC VaRs undet the true model
+    % MC VaRs under the true model
     y_sort = sort(eps_sort);
-    VaR_1(s,1) = y_sort(p_bar1*M); % -2.30 
-    VaR_5(s,1) = y_sort(p_bar*M); % -1.61 
+    VaR_1(s,1) = y_sort(p_bar1*M); 
+    VaR_5(s,1) = y_sort(p_bar*M);  
     threshold = y_sort(2*p_bar*M);
 
     %% Uncensored Posterior
@@ -79,7 +82,6 @@ for s = 1:S
     % Uncensored likelihood
     kernel_init = @(xx) -loglik_iid(xx,y);
     [mu,~,~,~,~,Sigma] = fminunc(kernel_init,[0,1]);
-    % mu = [-0.0134, 1.5385]
     Sigma = inv(T*Sigma);
     df = 5;
     draw = rmvt(mu,Sigma,df,M+BurnIn);
@@ -96,8 +98,8 @@ for s = 1:S
 
     y_post = draw(:,1) + draw(:,2).*randn(M,1);
     y_post = sort(y_post);
-    VaR_1_post(s,1) = y_post(p_bar1*M); % -2.5662
-    VaR_5_post(s,1) = y_post(p_bar*M); % -2.5662
+    VaR_1_post(s,1) = y_post(p_bar1*M); 
+    VaR_5_post(s,1) = y_post(p_bar*M);
 
     %% Censored posterior: take values below the threshold
     % Misspecified model: N(mu,sigma)
@@ -154,11 +156,14 @@ MSE_5_post = sum((VaR_5_post - q5).^2)/S;
 MSE_5_post_C = sum((VaR_5_post_C - q5).^2)/S;
 MSE_5_post_C0 = sum((VaR_5_post_C0 - q5).^2)/S;
 
-
+param_true = [c,sigma2];
 if save_on
-    save(['results/',model,'_',num2str(sigma1),'_',num2str(sigma2),'_T',num2str(T),'_MC.mat'],'y','draw','draw_C','draw_C0','param_true',...
+    save(['results/',model,'_',num2str(sigma1),'_',num2str(sigma2),'_T',num2str(T),'_MC.mat'],'y','param_true','q1','q5',...,
+    'draw','draw_C','draw_C0',...
     'accept','accept_C','accept_C0','VaR_1','VaR_1_post','VaR_1_post_C','VaR_1_post_C0',...
     'VaR_5','VaR_5_post','VaR_5_post_C','VaR_5_post_C0',...
     'MSE_1','MSE_1_post','MSE_1_post_C','MSE_1_post_C0',...
     'MSE_5','MSE_5_post','MSE_5_post_C','MSE_5_post_C0')
 end
+
+print_table_cp_mc(model,parameters,sigma1,sigma2)

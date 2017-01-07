@@ -1,0 +1,51 @@
+{ \renewcommand{\arraystretch}{1.2} 
+\begin{table} 
+\center 
+\begin{tabular}{cc cccc} 
+Value & & True/MC$^*$ & Posterior & CP10\% & CP0 \\ \hline 
+\hline 
+\multicolumn{6}{c}{$T =100$}  \\ 
+\hline 
+AR && -- & 0.8585 & 0.4671 & 0.7843  \\  
+$\mu$&& 0.0000 & 0.0926 & 1.5715 & 0.1727  \\ 
+&&   & (0.1014) & (1.5261) & (0.1529)  \\ 
+$\sigma$&& 1.0000 & 1.0226 & 1.8779 & 1.1289  \\ 
+&&   & (0.0741) & (0.9051) & (0.1418)  \\ 
+VaR 1\% && -2.0976 & -2.1245 & -2.2322 & -2.1519  \\ 
+  && [0.5426] & [0.5763] & [0.6812] & [0.6041]  \\ 
+VaR 5\% && -1.4804 & -1.4899 & -1.4668 & -1.4951  \\ 
+ && [0.2709] & [0.2922] & [0.3123] & [0.2986]  \\ 
+\hline 
+\multicolumn{6}{c}{$T =1000$}  \\ 
+\hline 
+AR && -- & 0.8727 & 0.8143 & 0.8627  \\  
+$\mu$&& 0.0000 & 0.0071 & 0.0196 & 0.0230  \\ 
+&&   & (0.0304) & (0.1473) & (0.0387)  \\ 
+$\sigma$&& 1.0000 & 0.9604 & 0.9446 & 0.9725  \\ 
+&&   & (0.0215) & (0.0921) & (0.0349)  \\ 
+VaR 1\% && -2.0927 & -2.0998 & -2.1020 & -2.1074  \\ 
+  && [0.5423] & [0.5464] & [0.5500] & [0.5476]  \\ 
+VaR 5\% && -1.4804 & -1.4816 & -1.4823 & -1.4858  \\ 
+ && [0.2709] & [0.2725] & [0.2734] & [0.2735]  \\ 
+\hline 
+\multicolumn{6}{c}{$T =10000$}  \\ 
+\hline 
+AR && -- & 0.8723 & 0.8667 & 0.8655  \\  
+$\mu$&& 0.0000 & 0.0031 & 0.0300 & -0.0049  \\ 
+&&   & (0.0100) & (0.0433) & (0.0123)  \\ 
+$\sigma$&& 1.0000 & 0.9960 & 1.0053 & 0.9865  \\ 
+&&   & (0.0071) & (0.0281) & (0.0111)  \\ 
+VaR 1\% && -2.1032 & -2.0965 & -2.0876 & -2.0972  \\ 
+  && [0.5428] & [0.5427] & [0.5432] & [0.5428]  \\ 
+VaR 5\% && -1.4822 & -1.4802 & -1.4767 & -1.4815  \\ 
+ && [0.2710] & [0.2712] & [0.2713] & [0.2713]  \\ 
+\hline 
+\multicolumn{6}{l}{\footnotesize{$^*$ True value for parameters, MC mean value for VaRs.}}  \\ 
+\multicolumn{6}{l}{\footnotesize{AR: acceptance rate for the independent MH.}}  \\ 
+\multicolumn{6}{l}{\footnotesize{CP10\%: Censored posterior, threshold 10\% sample quantile.}}  \\ 
+\multicolumn{6}{l}{\footnotesize{CP0: Censored posterior, threshold 0.}} 
+\end{tabular}
+ \caption{Simulation results for posterior without and with censoring (with different thresholds) for the iid zero mean split normal model with $\sigma_{1} = 1$ and $\sigma_{2} = 1$. For the censored posterior the focus is on the left tail. Standard errors in parantheses, MSEs in brackets.} 
+\label{tab:iid}  
+\end{table}
+}

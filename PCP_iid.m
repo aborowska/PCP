@@ -8,11 +8,11 @@ model = 'iid';
 parameters = {'$\\mu$','$\\sigma$'};
 
 
-sigma1 = 1; %1;!!!!s
+sigma1 = 1; 
 sigma2 = 2;
 c = (sigma2 - sigma1)/(sqrt(2*pi));%1/sqrt(2*pi); %0.3989
 
-T = 100; %time series length
+T = 100; % time series length
 p_bar1 = 0.01;
 p_bar = 0.05;
 M = 10000; % number of draws 
@@ -54,8 +54,8 @@ median(y) %0.3716
 mean(y)  % -0.0134
 
 % true VaRs
-q1 = norminv(p_bar1,c,sigma2); % -2.33
-q5 = norminv(p_bar,c,sigma2); % -1.65
+q1 = norminv(p_bar1,c,sigma2);
+q5 = norminv(p_bar,c,sigma2); 
 
 eps_sort = randn(M,1);
 ind = (eps_sort>0);
@@ -63,8 +63,8 @@ eps_sort(ind) = c + sigma1.*eps_sort(ind);
 eps_sort(~ind) = c + sigma2.*eps_sort(~ind);
 
 y_sort = sort(eps_sort);
-VaR_1 = y_sort(p_bar1*M); % -2.30 
-VaR_5 = y_sort(p_bar*M); % -1.61 
+VaR_1 = y_sort(p_bar1*M); 
+VaR_5 = y_sort(p_bar*M);
 threshold = y_sort(2*p_bar*M);
 
 
@@ -76,7 +76,6 @@ threshold = y_sort(2*p_bar*M);
 % Uncensored likelihood
 kernel_init = @(xx) -loglik_iid(xx,y);
 [mu,~,~,~,~,Sigma] = fminunc(kernel_init,[0,1]);
-% mu = [-0.0134, 1.5385]
 Sigma = inv(T*Sigma);
 df = 5;
 draw = rmvt(mu,Sigma,df,M+BurnIn);
@@ -98,14 +97,12 @@ if plot_on
     subplot(1,2,2)
     fn_hist(draw(:,2))    
     xlabel('\sigma')
-    mean(draw) % 
-    std(draw) %  0.0155    0.0110
 end
 
 y_post = draw(:,1) + draw(:,2).*randn(M,1);
 y_post = sort(y_post);
-VaR_1_post = y_post(p_bar1*M); % -2.5662
-VaR_5_post = y_post(p_bar*M); % -2.5662
+VaR_1_post = y_post(p_bar1*M); 
+VaR_5_post = y_post(p_bar*M); 
 
 
 %% Censored posterior: take values below the threshold
@@ -126,7 +123,6 @@ draw_C = draw_C(ind,:);
 accept_C = a/(M+BurnIn);
 draw_C = draw_C(BurnIn+1:BurnIn+M,:);
 
-
 y_post_C = draw_C(:,1) + draw_C(:,2).*randn(M,1);
 y_post_C = sort(y_post_C);
 VaR_1_post_C = y_post_C(p_bar1*M); 
@@ -139,7 +135,6 @@ VaR_5_post_C = y_post_C(p_bar*M);
 %     subplot(1,2,2)
 %     fn_hist(draw_C(:,2))    
 %     xlabel('\sigma')
-%     std(draw_C)  % 0.0847    0.0551 <-- threshold 0.1 precentile of the data sample
 % end
 
 
@@ -158,14 +153,11 @@ lnw_C0 = lnw_C0 - max(lnw_C0);
 draw_C0 = draw_C0(ind,:);
 accept_C0 = a/(M+BurnIn);
 draw_C0 = draw_C0(BurnIn+1:BurnIn+M,:);
-mean(draw_C0) % 0.0273    0.0245 <-- threshold 0
-
 
 y_post_C0 = draw_C0(:,1) + draw_C0(:,2).*randn(M,1);
 y_post_C0 = sort(y_post_C0);
 VaR_1_post_C0 = y_post_C0(p_bar1*M); 
 VaR_5_post_C0 = y_post_C0(p_bar*M); 
-
 
 if plot_on
     subplot(1,2,1)

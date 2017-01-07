@@ -9,9 +9,9 @@ parameters = {'$\\mu$','$\\sigma$','$\\phi$'};
 
 sigma1 = 1;
 sigma2 = 2;
-c = 1/sqrt(2*pi); %0.3989
+c = (sigma2 - sigma1)/sqrt(2*pi);
 
-S = 100; % number of MC replications
+S = 1; % number of MC replications
 
 VaR_1 = zeros(S,1);
 VaR_1_post = zeros(S,1);
@@ -23,7 +23,17 @@ VaR_5_post = zeros(S,1);
 VaR_5_post_C = zeros(S,1);
 VaR_5_post_C0 = zeros(S,1);
 
-T = 10000; %time series length
+MSE_1 = 0;
+MSE_1_post = 0;
+MSE_1_post_C = 0;
+MSE_1_post_C0 = 0;
+
+MSE_5 = 0;
+MSE_5_post = 0;
+MSE_5_post_C = 0;
+MSE_5_post_C0 = 0;
+
+T = 1000; %time series length
 p_bar1 = 0.01;
 p_bar = 0.05;
 M = 10000; % number of draws 
@@ -57,7 +67,7 @@ for s = 1:S
         y(ii,1) = rho*y(ii-1,1) + eps(ii,1);
     end
 
-    % true VaRs
+    % MC VaRs under the true model
     eps_sort = randn(M,1);
     ind = (eps_sort>0);
     eps_sort(ind) = c + sigma1.*eps_sort(ind);
@@ -77,7 +87,6 @@ for s = 1:S
     % Uncensored likelihood
     kernel_init = @(xx) -loglik_ar1(xx,y);
     [mu,~,~,~,~,Sigma] = fminunc(kernel_init,[0,1,0.9]);
-    % mu = [0.0119  1.5209 0.7936]
     Sigma = inv(T*Sigma);
     df = 5;
     draw = rmvt(mu,Sigma,df,M+BurnIn);
@@ -112,12 +121,10 @@ for s = 1:S
     accept_C = a/(M+BurnIn);
     draw_C = draw_C(BurnIn+1:BurnIn+M,:);
 
-
-    y_post_C = draw_C(:,1) + draw_C(:,2).*randn(M,1);
+    y_post_C = draw_C(:,1) + draw_C(:,3).*y(T,1) + draw_C(:,2).*randn(M,1);
     y_post_C = sort(y_post_C);
     VaR_1_post_C(s,1) = y_post_C(p_bar1*M); 
     VaR_5_post_C(s,1) = y_post_C(p_bar*M); 
-
 
     % 2. Threshold = 0             
     threshold = 0;
@@ -134,27 +141,43 @@ for s = 1:S
     draw_C0 = draw_C0(ind,:);
     accept_C0 = a/(M+BurnIn);
     draw_C0 = draw_C0(BurnIn+1:BurnIn+M,:);
-    std(draw_C0) % 0.0273    0.0245 <-- threshold 0
-
-
+  
     y_post_C0 = draw_C0(:,1) + draw_C0(:,2).*randn(M,1);
     y_post_C0 = sort(y_post_C0);
     VaR_1_post_C0(s,1) = y_post_C0(p_bar1*M); 
     VaR_5_post_C0(s,1) = y_post_C0(p_bar*M); 
+
+% true VaRs
+if (c+rho*y(T,1)) > 0
+    q1 = norminv(p_bar1,c+rho*y(T,1),sigma1);
+    q5 = norminv(p_bar,c+rho*y(T,1),sigma1); 
+else
+    q1 = norminv(p_bar1,c+rho*y(T,1),sigma2);
+    q5 = norminv(p_bar,c+rho*y(T,1),sigma2); 
 end
 
+MSE_1 = MSE_1 + (VaR_1 - q1).^2;
+MSE_1_post = MSE_1_post + (VaR_1_post - q1).^2;
+MSE_1_post_C = MSE_1_post_C + (VaR_1_post_C - q1).^2;
+MSE_1_post_C0 = MSE_1_post_C0 + (VaR_1_post_C0 - q1).^2;
 
-MSE_1 = sum((VaR_1 - q1).^2)/S;
-MSE_1_post = sum((VaR_1_post - q1).^2)/S;
-MSE_1_post_C = sum((VaR_1_post_C - q1).^2)/S;
-MSE_1_post_C0 = sum((VaR_1_post_C0 - q1).^2)/S;
+MSE_5 = MSE_5 + (VaR_5 - q5).^2;
+MSE_5_post = MSE_5_post + (VaR_5_post - q5).^2;
+MSE_5_post_C = MSE_5_post_C + (VaR_5_post_C - q5).^2;
+MSE_5_post_C0 = MSE_5_post_C0 + (VaR_5_post_C0 - q5).^2;
+end
 
-MSE_5 = sum((VaR_5 - q5).^2)/S;
-MSE_5_post = sum((VaR_5_post - q5).^2)/S;
-MSE_5_post_C = sum((VaR_5_post_C - q5).^2)/S;
-MSE_5_post_C0 = sum((VaR_5_post_C0 - q5).^2)/S;
+MSE_1 = MSE_1/S;
+MSE_1_post = MSE_1_post/S;
+MSE_1_post_C = MSE_1_post_C/S;
+MSE_1_post_C0 = MSE_1_post_C0/S;
 
+MSE_5 = MSE_5/S;
+MSE_5_post = MSE_5_post/S;
+MSE_5_post_C = MSE_5_post_C/S;
+MSE_5_post_C0 = MSE_5_post_C0/S;
 
+param_true = [c,sigma1,sigma2,rho];
 if save_on
     save(['results/',model,'_',num2str(sigma1),'_',num2str(sigma2),'_T',num2str(T),'_MC.mat'],'y','draw','draw_C','draw_C0','param_true',...
     'accept','accept_C','accept_C0','VaR_1','VaR_1_post','VaR_1_post_C','VaR_1_post_C0',...
