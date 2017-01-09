@@ -1,5 +1,5 @@
 function print_table_cp_mc(model,parameters,sigma1,sigma2)
-    fname = ['results/',model,'_',num2str(sigma1),'_',num2str(sigma2),'_mc.tex'];
+    fname = ['results/',model,'/',model,'_',num2str(sigma1),'_',num2str(sigma2),'_mc.tex'];
     FID = fopen(fname, 'w+');
     fprintf(FID, '{ \\renewcommand{\\arraystretch}{1.2} \n');
 
@@ -10,7 +10,7 @@ function print_table_cp_mc(model,parameters,sigma1,sigma2)
     fprintf(FID, 'Value & & True/MC$^*$ & Posterior & CP10\\%% & CP0 \\\\ \\hline \n'); 
     
     for T = [100,1000,10000]
-        load(['results/',model,'_',num2str(sigma1),'_',num2str(sigma2),'_T',num2str(T),'_MC.mat'])
+        load(['results/',model,'/',model,'_',num2str(sigma1),'_',num2str(sigma2),'_T',num2str(T),'_MC.mat'])
         fprintf(FID, '\\hline \n');
         fprintf(FID, ['\\multicolumn{6}{c}{$T =',num2str(T),'$}  \\\\ \n']);
         fprintf(FID, '\\hline \n');

@@ -7,12 +7,11 @@ close all
 model = 'iid';
 parameters = {'$\\mu$','$\\sigma$'};
 
-
 sigma1 = 1; 
 sigma2 = 2;
-c = (sigma2 - sigma1)/(sqrt(2*pi));%1/sqrt(2*pi); %0.3989
+c = (sigma2 - sigma1)/(sqrt(2*pi));
 
-T = 100; % time series length
+T = 1000; % time series length
 p_bar1 = 0.01;
 p_bar = 0.05;
 M = 10000; % number of draws 
@@ -67,8 +66,6 @@ VaR_1 = y_sort(p_bar1*M);
 VaR_5 = y_sort(p_bar*M);
 threshold = y_sort(2*p_bar*M);
 
-
-
 %% Uncensored Posterior
 % Misspecified model: normal with unknown mu and sigma
 % Metropolis-Hastings for the parameters
@@ -90,20 +87,19 @@ draw = draw(ind,:);
 accept = a/(M+BurnIn);
 draw = draw(BurnIn+1:BurnIn+M,:);    
 
-if plot_on
-    subplot(1,2,1)
-    fn_hist(draw(:,1))    
-    xlabel('\mu')
-    subplot(1,2,2)
-    fn_hist(draw(:,2))    
-    xlabel('\sigma')
-end
+% if plot_on
+%     subplot(1,2,1)
+%     fn_hist(draw(:,1))    
+%     xlabel('\mu')
+%     subplot(1,2,2)
+%     fn_hist(draw(:,2))    
+%     xlabel('\sigma')
+% end
 
 y_post = draw(:,1) + draw(:,2).*randn(M,1);
 y_post = sort(y_post);
 VaR_1_post = y_post(p_bar1*M); 
 VaR_5_post = y_post(p_bar*M); 
-
 
 %% Censored posterior: take values below the threshold
 % Misspecified model: N(mu,sigma)
@@ -159,29 +155,31 @@ y_post_C0 = sort(y_post_C0);
 VaR_1_post_C0 = y_post_C0(p_bar1*M); 
 VaR_5_post_C0 = y_post_C0(p_bar*M); 
 
-if plot_on
-    subplot(1,2,1)
-    hold on
-    fn_hist([draw(:,1),draw_C(:,1),draw_C0(:,1)])    
-    YL = get(gca,'YLim');
-    line([c c], YL,'Color','r','LineWidth',3); 
-    hold off
-    xlabel('\mu')
-    
-    subplot(1,2,2)
-    hold on
-    fn_hist([draw(:,2),draw_C(:,2),draw_C0(:,2)])    
-    YL = get(gca,'YLim');    
-    line([sigma2 sigma2], YL,'Color','r','LineWidth',3); 
-    hold off
-    xlabel('\sigma')
-end
+% if plot_on
+%     subplot(1,2,1)
+%     hold on
+%     fn_hist([draw(:,1),draw_C(:,1),draw_C0(:,1)])    
+%     YL = get(gca,'YLim');
+%     line([c c], YL,'Color','r','LineWidth',3); 
+%     hold off
+%     xlabel('\mu')
+%     
+%     subplot(1,2,2)
+%     hold on
+%     fn_hist([draw(:,2),draw_C(:,2),draw_C0(:,2)])    
+%     YL = get(gca,'YLim');    
+%     line([sigma2 sigma2], YL,'Color','r','LineWidth',3); 
+%     hold off
+%     xlabel('\sigma')
+% end
 
 %% save and plot
 param_true = [c,sigma2];
 if save_on
-    save(['results/',model,'_',num2str(sigma1),'_',num2str(sigma2),'_',num2str(T),'.mat'],'y','draw','draw_C','draw_C0','param_true',...
-    'accept','accept_C','accept_C0','VaR_1','VaR_1_post','VaR_1_post_C','VaR_1_post_C0',...
+    save(['results/',model,'_',num2str(sigma1),'_',num2str(sigma2),'_',num2str(T),'.mat'],...
+    'y','draw','draw_C','draw_C0','param_true',...
+    'accept','accept_C','accept_C0',...
+    'VaR_1','VaR_1_post','VaR_1_post_C','VaR_1_post_C0',...
     'VaR_5','VaR_5_post','VaR_5_post_C','VaR_5_post_C0')
 end
 
@@ -191,9 +189,13 @@ if plot_on
     ax1 = axes('Position',[0.06 0.15 0.32 0.8],'Visible','on');
     axes(ax1)
     hold on
-    fn_hist(draw(:,1))
-    fn_hist(draw_C(:,1))
-    fn_hist(draw_C0(:,1))
+    if strcmp(v_new,'(R2014a)')
+        hist([draw(:,1), draw_C(:,1),draw_C0(:,1)],20)
+    else
+        fn_hist(draw(:,1))
+        fn_hist(draw_C(:,1))
+        fn_hist(draw_C0(:,1))
+    end
     YL = get(gca,'YLim');
     line([c c], YL,'Color','r','LineWidth',3); 
     hold off
@@ -203,22 +205,24 @@ if plot_on
     ax2 = axes('Position',[0.44 0.15 0.32 0.8],'Visible','on');
     axes(ax2)
     hold on
-    fn_hist(draw(:,2))    
-    fn_hist(draw_C(:,2))  
-    fn_hist(draw_C0(:,2))    
-    
-%     hist([draw(:,2), draw_C(:,2),draw_C0(:,2)]) 
+    if strcmp(v_new,'(R2014a)')
+        hist([draw(:,2), draw_C(:,2),draw_C0(:,2)],20)
+    else
+        fn_hist(draw(:,2))
+        fn_hist(draw_C(:,2))
+        fn_hist(draw_C0(:,2))
+    end
     
     YL = get(gca,'YLim');
     line([sigma2 sigma2], YL,'Color','r','LineWidth',3); 
     hold off
     plotTickLatex2D('FontSize',12);
     xlabel('\sigma','FontSize',12)
-    leg = legend('Uncensored','Thr. = 10\% (-2.21)','Thr. = 0','True');%,)
+    leg = legend('Uncensored','Thr. = 10\%','Thr. = 0','True');%,)
     set(leg,'Interpreter','latex','FontSize',11,'position',[0.78 0.42 0.18 0.2])
 
     if save_on
-        name = ['figures/',model,'_',num2str(sigma1),'_',num2str(sigma2),'_',num2str(T),'.eps'];
+        name = ['figures/',model,'/',model,'_',num2str(sigma1),'_',num2str(sigma2),'_',num2str(T),'.eps'];
         set(gcf,'PaperPositionMode','auto');
         print_fail = 1;
         while print_fail 

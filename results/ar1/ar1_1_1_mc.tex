@@ -1,0 +1,57 @@
+{ \renewcommand{\arraystretch}{1.2} 
+\begin{table} 
+\center 
+\begin{tabular}{cc cccc} 
+Value & & True/MC$^*$ & Posterior & CP10\% & CP0 \\ \hline 
+\hline 
+\multicolumn{6}{c}{$T =100$}  \\ 
+\hline 
+AR && -- & 0.9999 & 0.4311 & 0.7070  \\  
+$\mu$&& 0.0000 & 0.0198 & 0.6910 & 0.0122  \\ 
+&&   & (0.1280) & (0.4464) & (0.1168)  \\ 
+$\sigma$&& 1.0000 & 0.9984 & 1.2224 & 0.9337  \\ 
+&&   & (0.0927) & (0.2812) & (0.1028)  \\ 
+$\phi$&& 0.8000 & 0.7273 & 0.9127 & 0.8259  \\ 
+&&   & (0.0888) & (0.0598) & (0.0680)  \\ 
+VaR 1\% && -2.4677 & -2.4620 & -2.5426 & -2.5009  \\ 
+  && [0.0013] & [0.0418] & [0.1361] & [0.0527]  \\ 
+VaR 5\% && -1.7798 & -1.7598 & -1.6798 & -1.7775  \\ 
+ && [0.0004] & [0.0330] & [0.0696] & [0.0331]  \\ 
+\hline 
+\multicolumn{6}{c}{$T =1000$}  \\ 
+\hline 
+AR && -- & 0.9999 & 0.7405 & 0.8143  \\  
+$\mu$&& 0.0000 & -0.0298 & 0.1440 & -0.0099  \\ 
+&&   & (0.0390) & (0.1874) & (0.0451)  \\ 
+$\sigma$&& 1.0000 & 0.9704 & 1.0390 & 0.9664  \\ 
+&&   & (0.0277) & (0.0770) & (0.0309)  \\ 
+$\phi$&& 0.8000 & 0.8169 & 0.8743 & 0.8378  \\ 
+&&   & (0.0231) & (0.0592) & (0.0272)  \\ 
+VaR 1\% && -2.2554 & -2.2559 & -2.2564 & -2.2641  \\ 
+  && [0.0015] & [0.0051] & [0.0184] & [0.0083]  \\ 
+VaR 5\% && -1.5722 & -1.5720 & -1.5426 & -1.5700  \\ 
+ && [0.0006] & [0.0038] & [0.0177] & [0.0053]  \\ 
+\hline 
+\multicolumn{6}{c}{$T =10000$}  \\ 
+\hline 
+AR && -- & 0.8298 & 0.8181 & 0.8243  \\  
+$\mu$&& 0.0000 & -0.0069 & 0.0606 & 0.0011  \\ 
+&&   & (0.0100) & (0.0643) & (0.0146)  \\ 
+$\sigma$&& 1.0000 & 0.9911 & 1.0082 & 0.9916  \\ 
+&&   & (0.0070) & (0.0249) & (0.0103)  \\ 
+$\phi$&& 0.8000 & 0.8075 & 0.8401 & 0.8170  \\ 
+&&   & (0.0059) & (0.0218) & (0.0090)  \\ 
+VaR 1\% && -2.2316 & -2.2295 & -2.2379 & -2.3343  \\ 
+  && [0.0017] & [0.0022] & [0.0034] &  XXX  \\ 
+VaR 5\% && -1.5438 & -1.5454 & -1.5404 & -1.6440  \\ 
+ && [0.0006] & [0.0008] & [0.0025] &  XXX  \\ 
+\hline 
+\multicolumn{6}{l}{\footnotesize{$^*$ True value for parameters, MC mean value for VaRs.}}  \\ 
+\multicolumn{6}{l}{\footnotesize{AR: acceptance rate for the independent MH.}}  \\ 
+\multicolumn{6}{l}{\footnotesize{CP10\%: Censored posterior, threshold 10\% sample quantile.}}  \\ 
+\multicolumn{6}{l}{\footnotesize{CP0: Censored posterior, threshold 0.}} 
+\end{tabular}
+ \caption{Simulation results for posterior without and with censoring (with different thresholds) for the ar1 zero mean split normal model with $\sigma_{1} = 1$ and $\sigma_{2} = 1$. For the censored posterior the focus is on the left tail. Standard errors in parantheses, MSEs in brackets.} 
+\label{tab:ar1}  
+\end{table}
+}

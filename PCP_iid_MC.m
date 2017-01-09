@@ -8,7 +8,7 @@ model = 'iid';
 parameters = {'$\\mu$','$\\sigma$'};
 
 sigma1 = 1; 
-sigma2 = 2;
+sigma2 = 1;
 c = (sigma2 - sigma1)/(sqrt(2*pi));%1/sqrt(2*pi); %0.3989
 
 S = 100; % number of MC replications
@@ -23,7 +23,7 @@ VaR_5_post = zeros(S,1);
 VaR_5_post_C = zeros(S,1);
 VaR_5_post_C0 = zeros(S,1);
 
-T = 10000; %time series length
+T = 100; %time series length
 
 p_bar1 = 0.01;
 p_bar = 0.05;    
@@ -49,9 +49,15 @@ end
 plot_on = true;
 save_on = true;
 
-for s = 11:S
+options = optimset('Display','off');
+% w = warning('query','last');
+% id = w.identifier;
+id = 'optim:fminunc:SwitchingMethod';
+warning('off',id);
+
+for s = 1:S
     if (mod(s,10)==0)
-        fprintf([model, 'simualtion no. %i\n'],s)
+        fprintf(['\n',model, ' simualtion no. %i\n'],s)
     end
     
     %% iid simulation, mean 0
@@ -81,7 +87,7 @@ for s = 11:S
 
     % Uncensored likelihood
     kernel_init = @(xx) -loglik_iid(xx,y);
-    [mu,~,~,~,~,Sigma] = fminunc(kernel_init,[0,1]);
+    [mu,~,~,~,~,Sigma] = fminunc(kernel_init,[0,1],options);
     Sigma = inv(T*Sigma);
     df = 5;
     draw = rmvt(mu,Sigma,df,M+BurnIn);
@@ -106,7 +112,7 @@ for s = 11:S
 
     % 1. Threshold = 10% perscentile of the data sample
     kernel_init = @(xx) - C_posterior_iid(xx, y, threshold)/T;
-    [mu_C,~,~,~,~,Sigma_C] = fminunc(kernel_init,mu);
+    [mu_C,~,~,~,~,Sigma_C] = fminunc(kernel_init,mu,options);
     Sigma_C = inv(T*Sigma_C);
     draw_C = rmvt(mu_C,Sigma_C,df,M+BurnIn);
     kernel = @(ss) C_posterior_iid(ss, y, threshold);
@@ -127,7 +133,7 @@ for s = 11:S
     % 2. Threshold = 0             
     threshold = 0;
     kernel_init = @(xx) - C_posterior_iid(xx, y, threshold)/T;
-    [mu_C0,~,~,~,~,Sigma_C0] = fminunc(kernel_init,mu);
+    [mu_C0,~,~,~,~,Sigma_C0] = fminunc(kernel_init,mu,options);
     Sigma_C0 = inv(T*Sigma_C0);
     draw_C0 = rmvt(mu_C0,Sigma_C0,df,M+BurnIn);
     kernel = @(ss) C_posterior_iid(ss, y, threshold);
@@ -158,7 +164,7 @@ MSE_5_post_C0 = sum((VaR_5_post_C0 - q5).^2)/S;
 
 param_true = [c,sigma2];
 if save_on
-    save(['results/',model,'_',num2str(sigma1),'_',num2str(sigma2),'_T',num2str(T),'_MC.mat'],'y','param_true','q1','q5',...,
+    save(['results/',model,'/',model,'_',num2str(sigma1),'_',num2str(sigma2),'_T',num2str(T),'_MC.mat'],'y','param_true','q1','q5',...,
     'draw','draw_C','draw_C0',...
     'accept','accept_C','accept_C0','VaR_1','VaR_1_post','VaR_1_post_C','VaR_1_post_C0',...
     'VaR_5','VaR_5_post','VaR_5_post_C','VaR_5_post_C0',...

@@ -1,8 +1,8 @@
 clear all
 close all
 
-s = RandStream('mt19937ar','Seed',1);
-RandStream.setGlobalStream(s); 
+% s = RandStream('mt19937ar','Seed',1);
+% RandStream.setGlobalStream(s); 
 
 model = 'ar1';
 parameters = {'$\\mu$','$\\sigma$','$\\phi$'};
@@ -11,7 +11,7 @@ sigma1 = 1;
 sigma2 = 1;
 c = (sigma2 - sigma1)/sqrt(2*pi);
 
-T = 1000; % time series length
+T = 100; % time series length
 p_bar1 = 0.01;
 p_bar = 0.05;
 M = 10000; % number of draws 
@@ -27,8 +27,8 @@ else
     fn_hist = @(xx) histogram(xx,20);
 end
 
-plot_on = true;
-save_on = true;
+plot_on = false;
+save_on = false;
 
 %% simple AR(1)
 eps = randn(T,1);
@@ -99,11 +99,11 @@ VaR_1_post = y_post(p_bar1*M);
 VaR_5_post = y_post(p_bar*M); 
 
 % 1. Threshold = 10% perscentile of the data sample
-profile on
+% profile on
 kernel_init = @(xx) - C_posterior_ar1(xx, y, threshold)/T;
 [mu_C,~,~,~,~,Sigma_C] = fminunc(kernel_init,mu);
-profile off
-profile viewer
+% profile off
+% profile viewer
 Sigma_C = inv(T*Sigma_C);
 draw_C = rmvt(mu_C,Sigma_C,df,M+BurnIn);
 kernel = @(ss) C_posterior_ar1(ss, y, threshold);
@@ -115,7 +115,6 @@ lnw_C = lnw_C - max(lnw_C);
 draw_C = draw_C(ind,:);
 accept_C = a/(M+BurnIn);
 draw_C = draw_C(BurnIn+1:BurnIn+M,:);
-
 
 if plot_on
     subplot(1,3,1)
@@ -151,7 +150,6 @@ draw_C0 = draw_C0(ind,:);
 accept_C0 = a/(M+BurnIn);
 draw_C0 = draw_C0(BurnIn+1:BurnIn+M,:);
 
-
 if plot_on
     subplot(1,3,1)
     fn_hist([draw(:,1),draw_C(:,1),draw_C0(:,1)])    
@@ -172,15 +170,22 @@ VaR_5_post_C0 = y_post_C0(p_bar*M);
 
 param_true = [c,sigma1,sigma2,rho];
 if save_on
-    save(['results/',model,'_',num2str(sigma1),'_',num2str(sigma2),'_',num2str(T),'.mat'],'y','draw','draw_C','draw_C0','param_true',...
-    'accept','accept_C','accept_C0','VaR_1','VaR_1_post','VaR_1_post_C','VaR_1_post_C0',...
-    'VaR_5','VaR_5_post','VaR_5_post_C','VaR_5_post_C0')
+    save(['results/',model,'/',model,'_',num2str(sigma1),'_',num2str(sigma2),'_',num2str(T),'.mat'],...
+    'y','draw','draw_C','draw_C0','param_true',...
+    'accept','accept_C','accept_C0',...
+    'VaR_1','VaR_1_post','VaR_1_post_C','VaR_1_post_C0',...
+    'VaR_5','VaR_5_post','VaR_5_post_C','VaR_5_post_C0');
 end
 
 if plot_on
     ff = figure(10);
-    set(gcf,'units','normalized','outerposition',[0.1 0.1 0.6 0.4]);
-    ax1 = axes('Position',[0.04 0.15 0.24 0.8],'Visible','on');
+    if strcmp(v_new,'(R2014a)')
+        set(gcf,'units','normalized','outerposition',[0.1 0.1 0.7 0.55]);
+        ax1 = axes('Position',[0.05 0.15 0.23 0.8],'Visible','on');
+    else
+        set(gcf,'units','normalized','outerposition',[0.1 0.1 0.6 0.4]);
+        ax1 = axes('Position',[0.04 0.15 0.24 0.8],'Visible','on');        
+    end
     axes(ax1)
     hold on
     if strcmp(v_new,'(R2014a)')
@@ -189,6 +194,7 @@ if plot_on
         fn_hist(draw(:,1))    
         fn_hist(draw_C(:,1)) 
         fn_hist(draw_C0(:,1)) 
+%         hist([draw(:,1), draw_C(:,1),draw_C0(:,1)],20)
     end
     YL = get(gca,'YLim');
     line([c c], YL,'Color','r','LineWidth',3); 
@@ -196,7 +202,11 @@ if plot_on
     plotTickLatex2D('FontSize',12);
     xlabel('\mu','FontSize',12)
 
-    ax2 = axes('Position',[0.32 0.15 0.24 0.8],'Visible','on');
+    if strcmp(v_new,'(R2014a)')
+        ax2 = axes('Position',[0.33 0.15 0.23 0.8],'Visible','on');
+    else    
+        ax2 = axes('Position',[0.32 0.15 0.24 0.8],'Visible','on');
+    end
     axes(ax2)
     hold on
     if strcmp(v_new,'(R2014a)')
@@ -211,8 +221,12 @@ if plot_on
     hold off
     plotTickLatex2D('FontSize',12);
     xlabel('\sigma','FontSize',12)
-    
-    ax3 = axes('Position',[0.61 0.15 0.24 0.8],'Visible','on');
+
+    if strcmp(v_new,'(R2014a)')   
+        ax3 = axes('Position',[0.61 0.15 0.23 0.8],'Visible','on');
+    else
+        ax3 = axes('Position',[0.61 0.15 0.24 0.8],'Visible','on');
+    end
     axes(ax3)
     hold on
     if strcmp(v_new,'(R2014a)')   
@@ -228,11 +242,15 @@ if plot_on
     plotTickLatex2D('FontSize',12);
     xlabel('\rho','FontSize',12)
     
-    leg = legend('Uncensored','Thr. = 10\% (-2.21)','Thr. = 0','True');%,)
-    set(leg,'Interpreter','latex','FontSize',11,'position',[0.85 0.42 0.14 0.2])
-
-     if save_on
-        name = ['figures/',model,'_',num2str(sigma1),'_',num2str(sigma2),'_',num2str(T),'.eps'];
+    leg = legend('Uncens.','Thr. = 10\%','Thr. = 0','True');%,)
+    if strcmp(v_new,'(R2014a)')   
+        set(leg,'Interpreter','latex','FontSize',10,'position',[0.85 0.42 0.14 0.2])
+    else
+        set(leg,'Interpreter','latex','FontSize',11,'position',[0.85 0.42 0.14 0.2])
+    end
+    
+    if save_on
+        name = ['figures/',model,'/',model,'_',num2str(sigma1),'_',num2str(sigma2),'_',num2str(T),'.eps'];
         set(gcf,'PaperPositionMode','auto');
         print_fail = 1;
         while print_fail 
