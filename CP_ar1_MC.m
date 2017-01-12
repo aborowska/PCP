@@ -1,6 +1,8 @@
 clear all
 close all
 
+addpath(genpath('include/'));
+
 s = RandStream('mt19937ar','Seed',1);
 RandStream.setGlobalStream(s); 
 
