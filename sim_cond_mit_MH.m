@@ -1,13 +1,17 @@
-function draw = sim_cond_mit(mit, draw, partition, GamMat)
+function [draw_partial, accept ]= sim_cond_mit_MH(mit, draw, partition, M, kernel, GamMat)
 % mit: a structure for a mix of Student's t distributions
 % draw: a draw from the joint candidate, ordered in such a way that first
 % colums are for the conditional subset, after which the marginal draws are
 % stored
 % partition: index where the marginal subset starts
+% M: number of draws fromthe conditional distribution (for each marginal
+% draw)
 
     [N,d] = size(draw);
     d1 = d - partition + 1;
     d2 = partition - 1;
+    draw_partial = kron(draw,ones(M,1));
+    accept = zeros(N,1);
     
     ind = 1:d^2; 
     ind = reshape(ind,d,d);
@@ -27,6 +31,7 @@ function draw = sim_cond_mit(mit, draw, partition, GamMat)
     mit_marg = mit;
     mit_marg.mu = mit_marg.mu(:,partition:end);
     mit_marg.Sigma = mit_marg.Sigma(:,ind_marg);    
+     
 % initial conditional mixture
     mit_cond = mit;
     mit_cond.mu = mit_cond.mu(:,1:partition-1);  
@@ -68,8 +73,9 @@ function draw = sim_cond_mit(mit, draw, partition, GamMat)
         ind_h = (true_memb == h);
         n_h = sum(ind_h);
         if (n_h>0)
-            draw_h = randn(n_h,d2);
-            W = mit_cond.df(h)./chi2rnd(mit_cond.df(h),n_h,1);
+            a_h = zeros(n_h,1);
+            draw_h = randn(n_h*M,d2);
+            W = mit_cond.df(h)./chi2rnd(mit_cond.df(h),n_h*M,1);
             W = sqrt(W);
 
             Sigma_h12 = mit.Sigma(h,:);
@@ -79,29 +85,55 @@ function draw = sim_cond_mit(mit, draw, partition, GamMat)
 
             mu_h_temp = bsxfun(@minus, draw_marg(ind_h,:), mit_marg.mu(h,:));                
             mu_h = bsxfun(@plus, mu_h_temp*Sigma_h11*Sigma_h12',mit_cond.mu(h,:));
-
+  
+            lnd_marg =  dmvgt_mex(draw_marg(ind_h,:), mit_marg.mu(h,:), mit_marg.Sigma(h,:), mit_marg.df(h), 1, GamMat, double(1));
+   
             Sigma_h22 = mit.Sigma(h,:);
             Sigma_h22 = reshape(Sigma_h22(ind_cond),d2,d2);
 
             Sigma_h = (Sigma_h22 - Sigma_h12*Sigma_h11*Sigma_h12')/mit_cond.df(h); % common factor matrix
+            
             for jj = 1:n_h
+                ind_jj = (1:M)' + (jj-1)*M;
+                
+                % Construct the conditional candidate given theta_1^i
+    %        Sigma_h is different for each draw
+
     %        draw_h = mvtrnd(Sigma_h,df_h,n_h);
     %        draw_h = rmvt(mu_h,Sigma_h,df_h,n_h);
 
-    %        Sigma_h is different for each draw
     %        Sigma_h = Sigma_h*(mit.df(h) + mu_h_temp'*Sigma_h11*mu_h_temp); % different scalar factor
-                    Sigma_hjj = Sigma_h*(mit.df(h) + mu_h_temp(jj,:)*Sigma_h11*mu_h_temp(jj,:)');
-                    C = chol(Sigma_hjj);
-                    draw_h(jj,:) = draw_h(jj,:)*C;
-                    draw_h(jj,:) = W(jj,1)*draw_h(jj,:);                
+                Sigma_hjj = Sigma_h*(mit.df(h) + mu_h_temp(jj,:)*Sigma_h11*mu_h_temp(jj,:)');
+                C = chol(Sigma_hjj);
+
+                draw_hjj = draw_h(ind_jj,:)*C;
+                draw_hjj = bsxfun(@times,draw_hjj,W(ind_jj,1));  
+                % shift by the common mode
+                draw_hjj = bsxfun(@plus,draw_hjj,mu_h(jj,1));  
+
+                
+                % Run the MH algorithm with common marginal draw
+                lnk_h = kernel([draw_hjj, repmat(draw_marg(jj,:),M,1)]);
+                % Conditional logdensity 
+                lnd_h = dmvgt_mex(draw_hjj, mu_h(jj,:), Sigma_hjj, mit_cond.df(h), 1, GamMat, double(1));
+                % Marginal logdensity
+                lnd_h = lnd_h + lnd_marg(jj,1);
+                lnw_h = lnk_h - lnd_h;
+                lnw_h = lnw_h - max(lnw_h);
+                [ind_MH, a_h(jj,1)] = fn_MH(lnw_h);
+                draw_h(ind_jj,:) = draw_hjj(ind_MH,:);              
             end
     %             draw_h = draw_h + repmat(mu_h,n_h,1);
-            draw_h = draw_h + mu_h;
-            draw(ind_h,1:d2) = draw_h;
+%             draw_h = draw_h + mu_h;
+            accept(ind_h,1) = a_h;
+            ind_h = logical(kron(ind_h,ones(M,1)));
+            draw_partial(ind_h,1:d2) = draw_h;
         end
     end
-
-% drawing from multivariate Student's t:
+    accept = accept/M;
+    
+%% Cheat-sheet: drawing from multivariate Student's t:
+% Sigma - a scale matrix, m x m 
 % C = chol(Sigma);
 % X = randn(N,m);
 % X = X*C;

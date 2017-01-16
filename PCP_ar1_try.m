@@ -16,7 +16,9 @@ c = (sigma2 - sigma1)/sqrt(2*pi);
 T = 1000; % time series length
 p_bar1 = 0.01;
 p_bar = 0.05;
+% Metropolis-Hastings for the parameters
 M = 10000; % number of draws 
+BurnIn = 1000;
 
 x_gam = (0:0.00001:50)'+0.00001;
 GamMat = gamma(x_gam);
@@ -62,8 +64,6 @@ VaR_5 = y_sort(p_bar*M);
 
 %% Uncensored Posterior
 % Misspecified model: AR1 normal with unknown mu and sigma
-% Metropolis-Hastings for the parameters
-BurnIn = 1000;
 
 % Uncensored likelihood
 kernel_init = @(xx) -loglik_ar1(xx,y);
@@ -79,8 +79,10 @@ lnw = lnk - lnd;
 lnw = lnw - max(lnw);
 [ind, a] = fn_MH(lnw);
 draw = draw(ind,:);
+lnw = lnw(ind);
 accept = a/(M+BurnIn);
 draw = draw(BurnIn+1:BurnIn+M,:);    
+lnw = lnw(BurnIn+1:BurnIn+M,:);    
  
 y_post = draw(:,1) + draw(:,3).*y(T,1) + draw(:,2).*randn(M,1);
 y_post = sort(y_post);
@@ -89,21 +91,101 @@ VaR_5_post = y_post(p_bar*M);
 
 %% PARTIAL CENSORING: keep rho uncensored, then censor mu i sigma
 
-draw_mix = draw;
+ 
 partition = 3;
 % conditional candidate 
 % joint cnadidate for the joint censored posterior
 %     kernel = @(a) posterior_arch(a, data, S, true);
 %     [mit1, summary1] = MitISEM_new(kernel_init, kernel, mu_init, cont, GamMat);
-kernel_init = @(xx) - C_posterior_ar1(xx, y, threshold);
-kernel = @(xx) C_posterior_ar1(xx, y, threshold);
+% kernel_init = @(xx) - C_posterior_ar1(xx, y, threshold);
+% kernel = @(xx) C_posterior_ar1(xx, y, threshold);
+kernel_init = @(xx) - C_posterior_ar1_mex(xx, y, threshold);
+kernel = @(xx) C_posterior_ar1_mex(xx, y, threshold);
 mu_init = [0, 1, 0.5];
 cont = MitISEM_Control;
 [mit, CV] = MitISEM_new(kernel_init, kernel, mu_init, cont, GamMat);
 
-cont.mit.iter_max = 0;
-[mit1, CV1] = MitISEM_new(kernel_init, kernel, mu_init, cont, GamMat);
+param_true = [c,sigma1,sigma2,rho];
+if save_on
+    save(['results/',model,'/',model,'_',num2str(sigma1),'_',num2str(sigma2),'_',num2str(T),'_PCP.mat'],...
+    'y','draw','accept','param_true',...
+    'mit','CV','cont',...
+    'VaR_1','VaR_1_post',...
+    'VaR_5','VaR_5_post');
+end
 
+load(['results/',model,'/',model,'_',num2str(sigma1),'_',num2str(sigma2),'_',num2str(T),'_PCP.mat'])
+
+% cont.mit.iter_max = 0;
+% [mit1, CV1] = MitISEM_new(kernel_init, kernel, mu_init, cont, GamMat);
+
+
+% profile on
+draw_partial = sim_cond_mit(mit, draw, partition, GamMat);
+% profile off
+% profile viewer
+% % % TO DO
+% % % for each rho run MH!!!
+
+%% Highest weights rhps
+draw_org = draw;
+[~,ind_max] = sort(lnw);
+draw_max = draw(ind_max,:);
+II = 100;
+draw_max = draw_max(M-II+1:M,:);
+
+[draw_partial, accept_partial] = sim_cond_mit_MH(mit, draw_max, partition, M, kernel, GamMat);
+%% Short version
+draw_short = draw(1:10,:);
+[draw_partial2, accept_partial2] = sim_cond_mit_MH(mit, draw_short, partition, 10*M, kernel, GamMat);
+%% True rho
+[draw_partial3, accept_partial3] = sim_cond_mit_MH(mit, [0,0,0.8], partition, M, kernel, GamMat);
+
+
+
+y_post_partial = draw_partial(:,1) + draw_partial(:,3).*y(T,1) + draw_partial(:,2).*randn(100*M,1);
+y_post_partial = sort(y_post_partial);
+VaR_1_post_partial = y_post_partial(p_bar1*100*M); 
+VaR_5_post_partial = y_post_partial(p_bar*100*M); 
+
+if plot_on
+    subplot(1,3,1)
+    hold on
+    fn_hist(draw(:,1))
+    fn_hist(draw_partial(:,1)) 
+    YL = get(gca,'YLim');
+    line([c c], YL,'Color','r','LineWidth',3); 
+    hold off
+    xlabel('\mu')
+    
+    subplot(1,3,2)
+    hold on
+    fn_hist(draw(:,2))
+    fn_hist(draw_partial(:,2)) 
+    YL = get(gca,'YLim');
+    line([sigma2 sigma2], YL,'Color','r','LineWidth',3); 
+    hold off   
+    xlabel('\sigma')
+    
+    subplot(1,3,3)    
+    hold on
+    fn_hist(draw(:,3))
+    fn_hist(draw_partial(:,3)) 
+    YL = get(gca,'YLim');
+    line([rho rho], YL,'Color','r','LineWidth',3);     
+    hold off 
+    xlabel('\rho') 
+end
+
+kernel = @(xx) C_posterior_ar1(xx, y, threshold);
+lnk_partial= kernel(draw_partial);
+lnd_partial = dmvgt_mex(draw_partial, mu_C, Sigma_C, df, 1, GamMat, double(1));
+lnw_partial = lnk_partial - lnd_partial;
+lnw_partial = lnw_partial - max(lnw_partial);
+[ind, a] = fn_MH(lnw_partial);
+draw_partial = draw_partial(ind,:);
+accept_partial = a/lenght(draw_partial);
+% draw_partial = draw_partial(BurnIn+1:BurnIn+M,:);
 
 
 % 1. Threshold = 10% perscentile of the data sample
@@ -128,34 +210,7 @@ y_post_C = draw_C(:,1) + draw_C(:,3).*y(T,1) + draw_C(:,2).*randn(M,1);
 y_post_C = sort(y_post_C);
 VaR_1_post_C = y_post_C(p_bar1*M); 
 VaR_5_post_C = y_post_C(p_bar*M); 
-
-% 2. Threshold = 0             
-threshold0 = 0;
-kernel_init = @(xx) - C_posterior_ar1(xx, y, threshold0)/T;
-[mu_C0,~,~,~,~,Sigma_C0] = fminunc(kernel_init,mu_C);
-Sigma_C0 = inv(T*Sigma_C0);
-draw_C0 = rmvt(mu_C0,Sigma_C0,df,M+BurnIn);
-kernel = @(ss) C_posterior_ar1(ss, y, threshold0);
-lnk_C0 = kernel(draw_C0);
-lnd_C0 = dmvgt_mex(draw_C0, mu_C0, Sigma_C0, df, 1, GamMat, double(1));
-lnw_C0 = lnk_C0 - lnd_C0;
-lnw_C0 = lnw_C0 - max(lnw_C0);
-[ind, a] = fn_MH(lnw_C0);
-draw_C0 = draw_C0(ind,:);
-accept_C0 = a/(M+BurnIn);
-draw_C0 = draw_C0(BurnIn+1:BurnIn+M,:);
  
-y_post_C0 = draw_C0(:,1) + draw_C0(:,3).*y(T,1) + draw_C0(:,2).*randn(M,1);
-y_post_C0 = sort(y_post_C0);
-VaR_1_post_C0 = y_post_C0(p_bar1*M); 
-VaR_5_post_C0 = y_post_C0(p_bar*M); 
 
-param_true = [c,sigma1,sigma2,rho];
-if save_on
-    save(['results/',model,'/',model,'_',num2str(sigma1),'_',num2str(sigma2),'_',num2str(T),'.mat'],...
-    'y','draw','draw_C','draw_C0','param_true',...
-    'accept','accept_C','accept_C0',...
-    'VaR_1','VaR_1_post','VaR_1_post_C','VaR_1_post_C0',...
-    'VaR_5','VaR_5_post','VaR_5_post_C','VaR_5_post_C0');
-end
+
  
