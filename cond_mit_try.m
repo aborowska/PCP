@@ -1,14 +1,7 @@
 clear all
 close all
-
-% Joint mixture parameters
-Sigma_11 = inv(0.003);
-Sigma_12 = [0.012,0.004];
-Sigma_22 = [0.1, 0.04; 0.04, 0.03];
-
-mu_1 = 0.8;
-mu_2 = [0.3, 2];
-df_1 = 5;
+addpath(genpath('include/'));
+load('results\ar1\ar1_1_2_1000_PCP.mat','y','mit1')
 
 % draw = [0, 0 ,0.85];
 d1 = 1;
@@ -16,7 +9,17 @@ d2 = 2;
 draw1 = 0.8; % TRUE marginal draw
 % draw1 = 0.85; % marginal draw 
 
-% Conditional parameters
+%% Joint mixture parameters
+Sigma = reshape(mit1.Sigma(1,:),d1+d2,d1+d2);
+Sigma_11 = inv(Sigma(3,3));     % inv(0.003);
+Sigma_12 = Sigma(3,1:2);        % [0.012,0.004];
+Sigma_22 = Sigma(1:2,1:2);      % [0.1, 0.04; 0.04, 0.03];
+
+mu_1 = mit1.mu(1,3);            % 0.8;
+mu_2 = mit1.mu(1,1:2);          % [0.3, 2];
+df_1 = mit1.df(1,1);            % 5;
+
+%% Conditional parameters
 df_2 = df_1 + d1;
 mu_temp = (draw1 - mu_1);
 mu_2_cond = mu_2 + mu_temp*Sigma_11*Sigma_12;
@@ -42,23 +45,23 @@ draw = bsxfun(@times,draw,W);
 draw = bsxfun(@plus,draw,mu_2_cond);
        
 % Logkernel evaluation
-load('results\ar1\ar1_1_2_1000_PCP.mat','y')
 T = length(y);
 p_bar = 0.05;
 threshold = sort(y);
 threshold = threshold(2*p_bar*T);
             
 % kernel = @(xx) C_posterior_ar1(xx, y, threshold);
-kernel_mex = @(xx) C_posterior_ar1_mex(xx, y, threshold);
+kernel = @(xx) C_posterior_ar1_mex(xx, y, threshold);
 
 draw_aug = [draw, ones(M+BurnIn,1)*draw1];
 % tic
 % lnk = kernel(draw_aug);
 % toc
 % tic
-lnk = kernel_mex(draw_aug);
+lnk = kernel(draw_aug);
 % toc
-% For 200 draws
+
+%% For 200 draws
 % Laptop -->   515.5555
 % Elapsed time is 114.429607 seconds.
 % Elapsed time is 0.221954 seconds.
@@ -70,7 +73,7 @@ lnk = kernel_mex(draw_aug);
 % Elapsed time is 14.827212 seconds.
 % Elapsed time is 1.567201 seconds.
 
-% Logcandidate evaluation
+%% Logcandidate evaluation
 x_gam = (0:0.00001:50)'+0.00001;
 GamMat = gamma(x_gam);
 
@@ -96,6 +99,10 @@ accept = a/(M+BurnIn);
 
 draw_aug = draw_aug(ind,:);
 draw_aug = draw_aug(BurnIn+1:BurnIn+M,:);
+
+subplot(2,1,1)
+hist(draw_aug(:,1))
+subplot(2,1,2)
 hist(draw_aug(:,2))
 
 %% MEX debug

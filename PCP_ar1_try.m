@@ -3,8 +3,8 @@ close all
 
 addpath(genpath('include/'));
 
-% s = RandStream('mt19937ar','Seed',1);
-% RandStream.setGlobalStream(s); 
+s = RandStream('mt19937ar','Seed',1);
+RandStream.setGlobalStream(s); 
 
 model = 'ar1';
 parameters = {'$\\mu$','$\\sigma$','$\\phi$'};
@@ -71,8 +71,16 @@ kernel_init = @(xx) -loglik_ar1(xx,y);
 Sigma = inv(T*Sigma);
 df = 5;
 draw = rmvt(mu,Sigma,df,M+BurnIn);
-kernel = @(xx) posterior_ar1(xx,y);
+% kernel = @(xx) posterior_ar1(xx,y);
+kernel = @(xx) posterior_ar1_mex(xx,y);
+% tic
+% lnk = kernel(draw);
+% toc
+% tic
 lnk = kernel(draw);
+% toc
+% Elapsed time is 1.178022 seconds.
+% Elapsed time is 0.124007 seconds.
 
 lnd = dmvgt_mex(draw, mu, Sigma, df, 1, GamMat, double(1));
 lnw = lnk - lnd;
@@ -95,14 +103,13 @@ VaR_5_post = y_post(p_bar*M);
 partition = 3;
 % conditional candidate 
 % joint cnadidate for the joint censored posterior
-%     kernel = @(a) posterior_arch(a, data, S, true);
-%     [mit1, summary1] = MitISEM_new(kernel_init, kernel, mu_init, cont, GamMat);
 % kernel_init = @(xx) - C_posterior_ar1(xx, y, threshold);
 % kernel = @(xx) C_posterior_ar1(xx, y, threshold);
 kernel_init = @(xx) - C_posterior_ar1_mex(xx, y, threshold);
 kernel = @(xx) C_posterior_ar1_mex(xx, y, threshold);
 mu_init = [0, 1, 0.5];
 cont = MitISEM_Control;
+cont.mit.iter_max = 10;
 [mit, CV] = MitISEM_new(kernel_init, kernel, mu_init, cont, GamMat);
 
 param_true = [c,sigma1,sigma2,rho];
@@ -110,22 +117,189 @@ if save_on
     save(['results/',model,'/',model,'_',num2str(sigma1),'_',num2str(sigma2),'_',num2str(T),'_PCP.mat'],...
     'y','draw','accept','param_true',...
     'mit','CV','cont',...
-    'VaR_1','VaR_1_post',...
-    'VaR_5','VaR_5_post');
+    'VaR_1','VaR_1_post','VaR_5','VaR_5_post');
 end
 
-load(['results/',model,'/',model,'_',num2str(sigma1),'_',num2str(sigma2),'_',num2str(T),'_PCP.mat'])
+% load(['results/',model,'/',model,'_',num2str(sigma1),'_',num2str(sigma2),'_',num2str(T),'_PCP.mat'])
+cont1 = cont;
+cont1.mit.iter_max = 0;
+[mit1, CV1] = MitISEM_new(kernel_init, kernel, mu_init, cont1, GamMat);
 
-% cont.mit.iter_max = 0;
-% [mit1, CV1] = MitISEM_new(kernel_init, kernel, mu_init, cont, GamMat);
+if save_on
+    save(['results/',model,'/',model,'_',num2str(sigma1),'_',num2str(sigma2),'_',num2str(T),'_PCP.mat'],...
+    'mit1','CV1','cont1','-append')
+end
+
+[draw_partial_true, accept_partial_true] = sim_cond_mit_MH(mit, [0,0,0.8], partition, M, BurnIn, kernel, GamMat);
+[draw_partial_true1, accept_partial_true1] = sim_cond_mit_MH(mit1, [0,0,0.8], partition, M, BurnIn, kernel, GamMat);
 
 
-% profile on
-draw_partial = sim_cond_mit(mit, draw, partition, GamMat);
-% profile off
-% profile viewer
-% % % TO DO
-% % % for each rho run MH!!!
+if plot_on
+    ff = figure(10);
+    set(gcf,'units','normalized','outerposition',[0.1 0.1 0.4 0.4]);
+    ax1 = axes('Position',[0.06 0.15 0.32 0.8],'Visible','on');
+    axes(ax1)
+    hold on
+    if strcmp(v_new,'(R2014a)')
+        hist([draw(:,1), draw_partial_true(:,1),draw_partial_true1(:,1)],20)
+    else
+        fn_hist(draw(:,1))
+        fn_hist(draw_partial_true(:,1))
+        fn_hist(draw_partial_true1(:,1))
+    end
+    YL = get(gca,'YLim');
+    line([c c], YL,'Color','r','LineWidth',3); 
+    hold off
+    plotTickLatex2D('FontSize',12);
+    xlabel('\mu','FontSize',12)
+
+    ax2 = axes('Position',[0.44 0.15 0.32 0.8],'Visible','on');
+    axes(ax2)
+    hold on
+    if strcmp(v_new,'(R2014a)')
+        hist([draw(:,2), draw_partial_true(:,2),draw_partial_true1(:,2)],20)
+    else
+        fn_hist(draw(:,2))
+        fn_hist(draw_partial_true(:,2))
+        fn_hist(draw_partial_true1(:,2))
+    end
+    
+    YL = get(gca,'YLim');
+    line([sigma2 sigma2], YL,'Color','r','LineWidth',3); 
+    hold off
+    plotTickLatex2D('FontSize',12);
+    xlabel('\sigma','FontSize',12)
+    leg = legend('Uncensored','Partial true, 2 comp.','Partial true, 1 comp.','True');%,)
+    set(leg,'Interpreter','latex','FontSize',11,'position',[0.78 0.42 0.18 0.2])
+
+    if save_on
+        name = ['figures/',model,'/',model,'_',num2str(sigma1),'_',num2str(sigma2),'_',num2str(T),'_PCP_true.eps'];
+        set(gcf,'PaperPositionMode','auto');
+        print_fail = 1;
+        while print_fail 
+            try                 
+                print(ff,name,'-depsc','-r0')
+                print_fail = 0;
+            catch
+                print_fail = 1;
+            end
+        end
+    end
+end
+
+
+if save_on
+    save(['results/',model,'/',model,'_',num2str(sigma1),'_',num2str(sigma2),'_',num2str(T),'_PCP.mat'],...
+    'draw_partial_true','draw_partial_true1','accept_partial_true','accept_partial_true1','-append')
+end
+
+%% Short version
+II = 100;
+draw_org = draw;
+M_org = M;
+
+draw_short = draw(1:II,:);
+M_short = M/II;
+
+draw = draw_short;
+M = M/II;
+[draw_partial_short, accept_partial_short] = sim_cond_mit_MH(mit, draw_short, partition, M_short, BurnIn, kernel, GamMat);
+% draw_partial_short = draw_partial;
+% accept_partial_short = accept;
+
+if save_on
+    save(['results/',model,'/',model,'_',num2str(sigma1),'_',num2str(sigma2),'_',num2str(T),'_PCP.mat'],...
+    'draw_partial_short','accept_partial_short','-append')
+end
+
+
+if plot_on
+    ff = figure(10);
+    if strcmp(v_new,'(R2014a)')
+        set(gcf,'units','normalized','outerposition',[0.1 0.1 0.7 0.55]);
+        ax1 = axes('Position',[0.05 0.15 0.23 0.8],'Visible','on');
+    else
+        set(gcf,'units','normalized','outerposition',[0.1 0.1 0.6 0.4]);
+        ax1 = axes('Position',[0.04 0.15 0.24 0.8],'Visible','on');        
+    end
+    axes(ax1)
+    hold on
+    if strcmp(v_new,'(R2014a)')
+        fn_hist([draw(:,1), draw_partial_true(:,1),draw_partial_short(:,1)])
+    else
+        fn_hist(draw(:,1))    
+        fn_hist(draw_partial_true(:,1)) 
+        fn_hist(draw_partial_short(:,1)) 
+%         hist([draw(:,1), draw_C(:,1),draw_C0(:,1)],20)
+    end
+    YL = get(gca,'YLim');
+    line([c c], YL,'Color','r','LineWidth',3); 
+    hold off
+    plotTickLatex2D('FontSize',12);
+    xlabel('\mu','FontSize',12)
+
+    if strcmp(v_new,'(R2014a)')
+        ax2 = axes('Position',[0.33 0.15 0.23 0.8],'Visible','on');
+    else    
+        ax2 = axes('Position',[0.32 0.15 0.24 0.8],'Visible','on');
+    end
+    axes(ax2)
+    hold on
+    if strcmp(v_new,'(R2014a)')
+        fn_hist([draw(:,2), draw_partial_true(:,2),draw_partial_short(:,2)])     
+    else
+        fn_hist(draw(:,2))    
+        fn_hist(draw_partial_true(:,2))  
+        fn_hist(draw_partial_short(:,2))    
+    end
+    YL = get(gca,'YLim');
+    line([sigma2 sigma2], YL,'Color','r','LineWidth',3); 
+    hold off
+    plotTickLatex2D('FontSize',12);
+    xlabel('\sigma','FontSize',12)
+
+    if strcmp(v_new,'(R2014a)')   
+        ax3 = axes('Position',[0.61 0.15 0.23 0.8],'Visible','on');
+    else
+        ax3 = axes('Position',[0.61 0.15 0.24 0.8],'Visible','on');
+    end
+    axes(ax3)
+    hold on
+    if strcmp(v_new,'(R2014a)')   
+        fn_hist([draw(:,3),[],draw_partial_short(:,3)])
+    else        
+        fn_hist(draw(:,3))    
+%         fn_hist(draw_partial_true(:,3))  
+        fn_hist(draw_partial_short(:,3))    
+    end
+    YL = get(gca,'YLim');
+    line([rho rho], YL,'Color','r','LineWidth',3); 
+    hold off
+    plotTickLatex2D('FontSize',12);
+    xlabel('\rho','FontSize',12)
+    
+    leg = legend('Uncensored','Partial true, 2 comp.','Partial 100 rhos.','True');%,)
+    if strcmp(v_new,'(R2014a)')   
+        set(leg,'Interpreter','latex','FontSize',10,'position',[0.85 0.42 0.14 0.2])
+    else
+        set(leg,'Interpreter','latex','FontSize',11,'position',[0.85 0.42 0.14 0.2])
+    end
+    
+    if save_on
+        name = ['figures/',model,'/',model,'_',num2str(sigma1),'_',num2str(sigma2),'_',num2str(T),'_PCP_short.eps'];
+        set(gcf,'PaperPositionMode','auto');
+        print_fail = 1;
+        while print_fail 
+            try                 
+                print(ff,name,'-depsc','-r0')
+                print_fail = 0;
+            catch
+                print_fail = 1;
+            end
+        end
+    end
+end
+
 
 %% Highest weights rhps
 draw_org = draw;
@@ -134,12 +308,11 @@ draw_max = draw(ind_max,:);
 II = 100;
 draw_max = draw_max(M-II+1:M,:);
 
-[draw_partial, accept_partial] = sim_cond_mit_MH(mit, draw_max, partition, M, kernel, GamMat);
+[draw_partial, accept_partial] = sim_cond_mit_MH(mit, draw_max, partition, M, BurnIn, kernel, GamMat);
 %% Short version
 draw_short = draw(1:10,:);
-[draw_partial2, accept_partial2] = sim_cond_mit_MH(mit, draw_short, partition, 10*M, kernel, GamMat);
-%% True rho
-[draw_partial3, accept_partial3] = sim_cond_mit_MH(mit, [0,0,0.8], partition, M, kernel, GamMat);
+[draw_partial2, accept_partial2] = sim_cond_mit_MH(mit, draw_short, partition, 10*M, BurnIn, kernel, GamMat);
+ 
 
 
 

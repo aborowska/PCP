@@ -109,32 +109,22 @@ void C_posterior_ar1_mex(double *y, mwSignedIndex N, mwSignedIndex T,
      
      prior_ar1(theta, N, r1, r2);
 
-    /* Initialise */  
-//     mexPrintf("thershold = %6.4f\n",threshold[0]);  
-    
+    /* Initialise */     
     sum_cond = 0.0; // number of "uncensored" observations
     for (j=0; j<T; j++)
     {
         cond[j] = 0;
         if (y[j] < threshold[0])
         {
-//             mexPrintf("below thres at t = %d : y[%d] = %6.4f, thes = %6.4f\n",j+1,j+1,y[j],threshold[0]);
             cond[j] = 1;
             sum_cond = sum_cond + 1.0;
         }                
-    }
-//     mexPrintf("sum_cond = %6.4f \n",sum_cond);
-    
+    }    
     
     for (i=0; i<N; i++)
     {
-        a1[i] = theta[i]/(1.0-theta[i+2*N]);
-//         mexPrintf("a1 = %6.4f\n",a1[i]);
-        
+        a1[i] = theta[i]/(1.0-theta[i+2*N]);        
         P1[i] = (theta[i+N]*theta[i+N])/(1.0 - theta[i+2*N]*theta[i+2*N]);
-//         mexPrintf("P1 = %6.4f\n",P1[i]);  
-
-//         mexPrintf("r2 = %6.4f\n",r2[i]);
     }    
          
     /* PDF */
@@ -146,26 +136,30 @@ void C_posterior_ar1_mex(double *y, mwSignedIndex N, mwSignedIndex T,
             // the first observation: from the stationary distribution
             if (cond[0]==1) //pdf
             {
+                // stationary distribution for the first observation
                 mu = y[0] - a1[i];
                 mu = mu*mu;
                 sigma = mu/P1[i];
                 sigma = sigma + log(P1[i]); 
                 sigma = sigma + log2PI;                                
-                d[i] = d[i] - 0.5*sigma;
+                d[i] = d[i] - 0.5*sigma; 
+                // Gaussian constants for all the remaining uncensored observations
                 sigma = theta[i+N]*theta[i+N];
                 sigma = log(sigma);
                 sigma = sigma + log2PI;
-                d[i] = d[i] - 0.5*(sum_cond-1)*sigma; // Gaussian constant for all the remaining uncensored observations
+                d[i] = d[i] - 0.5*(sum_cond-1)*sigma; 
             }
             else //cdf
             {
+                // stationary distribution for the first observation
                 sigma = sqrt(P1[i]);
                 normcdf_my_mex(threshold, &a1[i], &sigma, 1, &cdf);
                 d[i] = d[i] + log(1.0-cdf);
+                // Gaussian constant for all the uncensored observations    
                 sigma = theta[i+N]*theta[i+N];
                 sigma = log(sigma);
                 sigma = sigma + log2PI;                
-                d[i] = d[i] - 0.5*sum_cond*sigma; // Gaussian constant for all the uncensored observations          
+                d[i] = d[i] - 0.5*sum_cond*sigma;      
             }
             
             for (j=1; j<T; j++)

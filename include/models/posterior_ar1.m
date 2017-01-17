@@ -1,5 +1,5 @@
-function [d, N] = posterior_ar1(theta, y)
-    N = length(y);  
+function [d, T] = posterior_ar1(theta, y)
+    T = length(y);  
     M = size(theta,1);    
 
     mu = theta(:,1);
@@ -13,11 +13,11 @@ function [d, N] = posterior_ar1(theta, y)
     r = (sigma>0) & (abs(rho)<1); % prior satisfied
     
     d(r) = log(P1(r)) + ((y(1,1) - a1(r)).^2)./P1(r); % sationary distribution for the first observation
-    d(r) = d(r) + N*log(2*pi) + (N-1)*log(sigma(r).^2); % Gaussian constants
+    d(r) = d(r) + T*log(2*pi) + (T-1)*log(sigma(r).^2); % Gaussian constants
     
     for ii = 1:M
         if r(ii)
-            for jj = 2:N
+            for jj = 2:T
                 d(ii) = d(ii) + ((y(jj,1) - mu(ii,1) - rho(ii,1).*y(jj-1,1)).^2)./(sigma(ii,1).^2);                      
             end
         end
