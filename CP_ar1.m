@@ -244,7 +244,7 @@ if plot_on
     plotTickLatex2D('FontSize',12);
     xlabel('\rho','FontSize',12)
     
-    leg = legend('Uncens.','Thr. = 10\%','Thr. = 0','True');%,)
+    leg = legend('Uncens.','Thr. = 10\%','Thr. = 0','True');
     if strcmp(v_new,'(R2014a)')   
         set(leg,'Interpreter','latex','FontSize',10,'position',[0.85 0.42 0.14 0.2])
     else
