@@ -14,16 +14,16 @@ function [theta, lnk, ind_red, x, lng_y, lnw_x,  eps_bar, eps_sim, C_T, lnp_T, R
     theta = rmvgt2(N, mu, Sigma, df, p); % Sampling from the mixture of t
 
     % lnk - N vector of log-kernel evaluations at draws
-    fprintf('\nKernel computation \n')
+%     fprintf('\nKernel computation \n')
 
-    if (nargin == 4) % not Extended version (an observation driven model)
+    if (nargin == 4) % Standard version (observation driven model)
         lnk = kernel(theta);
-    else % Extedned version (a parametric model)
+    else % Extedned version (parameter driven model)
         [lnk, x, lng_y, lnw_x, eps_bar, eps_sim, C_T, lnp_T, RND] =  kernel(theta);
     end
 
     ind_red = 0;
-    if resampl_on % Perform resampling to consturct the required mixture      
+    if resampl_on % Perform resampling to construct the required mixture      
         while any(lnk == -Inf)
             ind_red = ind_red + 1;
             ind = find(lnk == -Inf);

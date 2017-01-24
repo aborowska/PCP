@@ -59,41 +59,44 @@ void normcdf_my_mex(double *x,  double *mu, double *Sigma, mwSignedIndex N,
 
 /* ********************************************************************* */
 
-void prior_ar1(double *theta, mwSignedIndex N,
+void prior_garch11(double *theta, mwSignedIndex N,
         mwSignedIndex *r1, double *r2)
 {
     mwSignedIndex i;
-    double beta =  4.632823911110911; // constant for the prior: -log(beta(20,1.5)
-    double rho;
     
     for (i=0; i<N; i++)
     {
         r1[i] = 1;
-        if (theta[i+N] <= 0) // sigma>0
+        if (theta[i+N] <= 0) // omega>0
         {
             r1[i] = 0;
         }   
-        if ((theta[i+2*N] <= -1 ) || (theta[i+2*N] >= 1)) // -1<rho<1 
+        if ((theta[i+2*N] <= 0 ) || (theta[i+2*N] >= 1)) // 0<alpha<1 
         {
             r1[i] = 0;
         }
-      
+        if ((theta[i+3*N] <= 0 ) || (theta[i+3*N] >= 1)) // 0<beta<1 
+        {
+            r1[i] = 0;
+        }
+        if (theta[i+2*N] + theta[i+3*N] >= 1) // alpha+beta<1 
+        {
+            r1[i] = 0;
+        }        
         if (r1[i] == 1)
         {
-            r2[i] = -log(theta[i+N]);           // sigma ~ 1/sigma
-            rho = (theta[i+2*N]+1.0)/2.0;       // (phi+1)/2 ~ betapdf((phi+1)/2, 20, 1.5);                   
-            r2[i] = r2[i] + beta + (20-1)*log(rho) + (1.5-1)*log(1-rho);  
+            r2[i] = log(0.5);             // unif on alpha+beta<1 
         }
     }
 }
 
 /* ********************************************************************* */
 
-void C_posterior_ar1_mex(double *y, mwSignedIndex N, mwSignedIndex T,
-        double *threshold, double *theta, double *d)
+void C_posterior_garch11_mex(double *theta, double *y, double *threshold, double *y_S,
+        mwSignedIndex N, mwSignedIndex T, double *d, double *h)
 {
     mwSignedIndex *r1, *cond;
-    double *r2, *a1, *P1, mu, sigma; 
+    double *r2, mu, sigma; /* *h */ 
     double sum_cond, cdf;
     mwSignedIndex i, j;
         
@@ -103,10 +106,9 @@ void C_posterior_ar1_mex(double *y, mwSignedIndex N, mwSignedIndex T,
     /* cond = 1 for "uncensored" observations */
     cond = mxMalloc((T)*sizeof(mwSignedIndex));
     /* Stationary distibution for the first observation */
-    a1 = mxMalloc((N)*sizeof(double));              
-    P1 = mxMalloc((N)*sizeof(double));              
+//     h = mxMalloc((N)*sizeof(double));              
      
-    prior_ar1(theta, N, r1, r2);
+    prior_garch11(theta, N, r1, r2);
 
     /* Initialise */     
     sum_cond = 0.0; // number of "uncensored" observations
@@ -120,12 +122,21 @@ void C_posterior_ar1_mex(double *y, mwSignedIndex N, mwSignedIndex T,
         }                
     }    
     
-    for (i=0; i<N; i++)
+    if (y_S[0] > 0.0)
     {
-        a1[i] = theta[i]/(1.0-theta[i+2*N]);        
-        P1[i] = (theta[i+N]*theta[i+N])/(1.0 - theta[i+2*N]*theta[i+2*N]);
-    }    
-         
+        for (i=0; i<N; i++)
+        { 
+            h[i] = y_S[0]; 
+        }    
+    }
+    else
+    {
+        for (i=0; i<N; i++)
+        {           
+            h[i] = theta[i+N]/(1.0-theta[i+2*N]-theta[i+3*N]);                          
+        }         
+    }
+    
     /* PDF */
     for (i=0; i<N; i++) 
     {           
@@ -133,47 +144,42 @@ void C_posterior_ar1_mex(double *y, mwSignedIndex N, mwSignedIndex T,
         {
             d[i] = r2[i]; // prior
             // the first observation: from the stationary distribution
+            mu = y[0] - theta[i];
             if (cond[0]==1) //pdf
             {
                 // stationary distribution for the first observation
-                mu = y[0] - a1[i];
                 mu = mu*mu;
-                sigma = mu/P1[i];
-                sigma = sigma + log(P1[i]); 
+                sigma = mu/h[i];
+                sigma = sigma + log(h[i]); 
                 sigma = sigma + log2PI;                                
                 d[i] = d[i] - 0.5*sigma; 
-                // Gaussian constants for all the remaining uncensored observations
-                sigma = theta[i+N]*theta[i+N];
-                sigma = log(sigma);
-                sigma = sigma + log2PI;
-                d[i] = d[i] - 0.5*(sum_cond-1)*sigma; 
             }
             else //cdf
             {
                 // stationary distribution for the first observation
-                sigma = sqrt(P1[i]);
-                normcdf_my_mex(threshold, &a1[i], &sigma, 1, &cdf);
-                d[i] = d[i] + log(1.0-cdf);
-                // Gaussian constant for all the uncensored observations    
-                sigma = theta[i+N]*theta[i+N];
-                sigma = log(sigma);
-                sigma = sigma + log2PI;                
-                d[i] = d[i] - 0.5*sum_cond*sigma;      
+                sigma = sqrt(h[i]);
+                normcdf_my_mex(threshold, &mu, &sigma, 1, &cdf);
+                d[i] = d[i] + log(1.0-cdf);    
             }
             
             for (j=1; j<T; j++)
             {   
+                mu = y[j-1] - theta[i];
+                h[i] = theta[i+N] + theta[i+2*N]*(mu*mu) + theta[i+3*N]*h[i];
+                mu = y[j] - theta[i];
+
                 if (cond[j]==1) //pdf
                 {
-                    mu = y[j] - theta[i] - theta[i+2*N]*y[j-1];
                     mu = mu*mu;
-                    mu = mu/(theta[i+N]*theta[i+N]);
-                    d[i] = d[i] - 0.5*mu;
+                    sigma = mu/h[i];
+                    sigma = sigma + log(h[i]); 
+                    sigma = sigma + log2PI;                                
+                    d[i] = d[i] - 0.5*sigma; 
                 }
                 else //cdf
                 {
-                    mu = theta[i] + theta[i+2*N]*y[j-1];
-                    normcdf_my_mex(threshold, &mu, &theta[i+N], 1, &cdf);
+                    sigma = sqrt(h[i]);
+                    normcdf_my_mex(threshold, &mu, &sigma, 1, &cdf);
                     d[i] = d[i] + log(1-cdf);                    
                 }                
             }         
@@ -188,8 +194,7 @@ void C_posterior_ar1_mex(double *y, mwSignedIndex N, mwSignedIndex T,
     mxFree(r1); 
     mxFree(r2); 
     mxFree(cond); 
-    mxFree(a1); 
-    mxFree(P1); 
+//     mxFree(h); 
 }
 
 /* ********************************************************************* */
@@ -199,13 +204,14 @@ void mexFunction( int nlhs, mxArray *plhs[],
                   int nrhs, const mxArray *prhs[])
 {
     int N, T, *T_out;                              /* size of matrix */
-    double *theta, *y, *threshold;                 /* input*/
-    double *d;                                     /* output */
+    double *theta, *y, *threshold, *y_S;            /* input*/
+    double *d, *h;                                 /* output */
 
     /* Getting the inputs */
     theta = mxGetPr(prhs[0]);
     y = mxGetPr(prhs[1]);
     threshold = mxGetPr(prhs[2]);
+    y_S  = mxGetPr(prhs[3]);
     
     N = mxGetM(prhs[0]); /* no of parameter draws */
     T = mxGetM(prhs[1]); /* no. of observations */
@@ -213,12 +219,14 @@ void mexFunction( int nlhs, mxArray *plhs[],
     /* create the output matrix */
     plhs[0] = mxCreateDoubleMatrix(N,1,mxREAL); 
     plhs[1] = mxCreateNumericMatrix(1, 1, mxINT32_CLASS, mxREAL);
+    plhs[2] = mxCreateDoubleMatrix(N,1,mxREAL); 
 
     /* get a pointer to the real data in the output matrix */
     d = mxGetPr(plhs[0]);
     T_out = mxGetPr(plhs[1]);
+    h = mxGetPr(plhs[2]);
   
     /* call the function */
-    C_posterior_ar1_mex(y, N, T, threshold, theta, d); 
+    C_posterior_garch11_mex(theta, y, threshold, y_S, N, T, d, h); 
     T_out[0] = T;
 }

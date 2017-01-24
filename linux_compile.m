@@ -1,0 +1,1 @@
+mex -v -largeArrayDims -ldl CFLAGS="\$CFLAGS -std=c99" myfun.c -lmwblas -lmwlapack

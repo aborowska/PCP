@@ -1,5 +1,5 @@
 function d = loglik_ar1(theta, y)
-    N = length(y);
+    T = length(y);
     M = size(theta,1);
 
     mu = theta(:,1);
@@ -15,12 +15,12 @@ function d = loglik_ar1(theta, y)
     for ii = 1:M
         if r(ii)
             d(ii) = ((y(1,1) - a1(ii,1)).^2)./P1(ii,1);
-            for jj = 2:N
+            for jj = 2:T
                 d(ii) = d(ii) + ((y(jj,1) - mu(ii,1) - rho(ii,1).*y(jj-1,1)).^2)./sigma(ii,1).^2;                      
             end
-            d(ii) = -0.5*(d(ii) + N*log(2*pi) + N*log(sigma(ii,1).^2));
+            d(ii) = -0.5*(d(ii) + T*log(2*pi) + T*log(sigma(ii,1).^2));
         end
     end
     
-    d = d/N; 
+    d = d/T; 
 end

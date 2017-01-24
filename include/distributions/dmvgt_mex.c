@@ -1,3 +1,8 @@
+#if !defined(_WIN32)
+#define dgetrs dgetrs_
+#define dgetrf dgetrf_
+#endif
+
 #include "mex.h"
 #include "math.h"
 #include "matrix.h"
@@ -24,9 +29,6 @@ void dmvt_mex(double *x, double *mu, double *Sigma, double *df,
     xmu = mxMalloc((d)*sizeof(double));    
     IPIV = mxMalloc((d)*sizeof(mwSignedIndex)); 
        
-//     mexPrintf("**** IN ****\n");
-
-    
     /* compute the constants */
     c0 = df[0] + d;
     
@@ -42,7 +44,6 @@ void dmvt_mex(double *x, double *mu, double *Sigma, double *df,
     
     if (df[0] <= 100)
     {
-//         ind = floor(df[0]*50000) - 1; /* useround insteadas follows: */
         df5 = df[0]*50000;
         if ((df5 - floor(df5)) < (floor(df5+1) - df5))
         {
@@ -52,7 +53,6 @@ void dmvt_mex(double *x, double *mu, double *Sigma, double *df,
         {
             ind = floor(df5 + 1);
         }
-//     	mexPrintf("ind df = %i\n",ind);       
         ind = ind -  1;
         c2 = GamMat[ind];
     }
@@ -64,7 +64,7 @@ void dmvt_mex(double *x, double *mu, double *Sigma, double *df,
     /* Cholesky decomposition of Sigma */
     /* & changes a value into a pointer*/ 
     dgetrf(&d, &d, Sigma, &d, IPIV, &info); 
-    
+
     /* determinant of Sigma from LU factorisation*/
     sqrt_det_Sigma = 1;
     for (i=0; i<d; i++)
@@ -72,16 +72,13 @@ void dmvt_mex(double *x, double *mu, double *Sigma, double *df,
         sqrt_det_Sigma = sqrt_det_Sigma*Sigma[i+d*i];
     }
     sqrt_det_Sigma = pow(fabs(sqrt_det_Sigma),0.5);
-//     mexPrintf("sqrt_det_Sigma = %6.4f\n",sqrt_det_Sigma);
 
     c = df[0]*PI;
     c = pow(c,0.5*d);
-//     mexPrintf("c = %6.4f\n",c);    
     c2 = c2*c;
     c2 = c2*sqrt_det_Sigma;
     c = c1/c2;
     e = -0.5*c0;    
-//     mexPrintf("e = %6.4f\n",e);
 
     for (j=0; j<N; j++)
     {
@@ -97,18 +94,11 @@ void dmvt_mex(double *x, double *mu, double *Sigma, double *df,
         for (i=0; i<d; i++)
         {
             tmp = tmp + xmu[i]*(x[j+N*i] - mu[i]); /* xmu = inv(Sigma)*(x-mu)' */
-//             mexPrintf("tmp[%i] = %6.4f\n",i,tmp);
         } 
         tmp = 1 + tmp/df[0];
-//         mexPrintf("tmp = %16.14f\n",tmp);        
         etmp = pow(tmp,e);
-//         mexPrintf("etmp = %16.14f\n",etmp);
         dens[j] = exp(log(c) + log(etmp));
-//         mexPrintf("dens[%i] = %16.14f\n",j,dens[j]);
-
     }
-
-//     mexPrintf("**** OUT ****\n");
 
     mxFree(IPIV); 
     mxFree(xmu);
@@ -138,21 +128,14 @@ void dmvgt_mex(double *x, double *mu, double *Sigma, double *df, double *p,
     
      for (i=0; i<H; i++)
      {
-//           mexPrintf("\n*** h = %i ***\n",i+1);
-
-          df_h[0] = df[i];
-//           mexPrintf("df_h = %4.2f\n", df_h[0]);
-
+         df_h[0] = df[i];
          for (j=0; j<(d*d); j++)
          {
              if (j<d)
              {
                  mu_h[j] = mu[i+H*j];
-//                  mexPrintf("mu_h[%i] = %6.4f\n",j,mu_h[j]);
              }
              Sigma_h[j] = Sigma[i+H*j];
-//              mexPrintf("Sigma_h[%i] = %6.4f\n",j,Sigma_h[j]);
-
          }
          
          dmvt_mex(x, mu_h, Sigma_h, df_h, GamMat, d, G, N, dens_h);  /* density on the i-th component*/
@@ -160,18 +143,11 @@ void dmvgt_mex(double *x, double *mu, double *Sigma, double *df, double *p,
          
          for (j=0; j<N; j++)
          {
-//              mexPrintf("dens_h[%i] = %16.14f\n",j,dens_h[j]);
-//              mexPrintf("p[%i] = %16.14f\n",i,p[i]);
              dens[j] = dens[j] + exp(log(p[i]) + log(dens_h[j]));
-//              mexPrintf("dens[%i] = %16.14f\n",j,dens[j]);
-
          }
      }
-
-//     mexPrintf("L = %4.2f\n", L[0]);    
     if (L[0]==1)
     {
-//         mexPrintf("YO!\n");
         for (i=0; i<N; i++)
         {
             dens[i] = log(dens[i]);
@@ -188,7 +164,7 @@ void mexFunction( int nlhs, mxArray *plhs[],
 {
     double *L; /*log or not*/
     mwSignedIndex G, d, N, H;                          /* size of matrix */
-    double *x, *mu, *Sigma, *GamMat, *df, *p;           /* input*/
+    double *x, *mu, *Sigma, *GamMat, *df, *p;          /* input*/
     double *dens;                                      /* output */
     
     /* Getting the inputs */

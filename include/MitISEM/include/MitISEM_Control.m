@@ -26,4 +26,6 @@ function cont =  MitISEM_Control
 
     cont.resmpl_on = false;
     cont.mit.iter_max = 2;
+    
+    cont.disp = false;
 end

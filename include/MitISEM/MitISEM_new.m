@@ -13,7 +13,7 @@ function [mit_new, CV] = MitISEM_new(kernel_init, kernel, mu_init, cont, GamMat)
     % get/define initial mit density shape scale and degrees of freedom
     % aka: naive proposal density
     if isa(kernel_init, 'function_handle')
-        [mu, Sigma] = fn_initopt(kernel_init, mu_init);
+        [mu, Sigma] = fn_initopt(kernel_init, mu_init, cont);
 
         try
             r = fn_testSigma(Sigma);
@@ -24,9 +24,13 @@ function [mit_new, CV] = MitISEM_new(kernel_init, kernel, mu_init, cont, GamMat)
         if (r == 1)
             Sigma = ones(d,d) + 2*diag(ones(d,1));
             Sigma = reshape(Sigma,1,d^2);
-            display('Initial optimzation FAILED.')        
+            if cont.disp
+                display('Initial optimzation FAILED.')    
+            end
         else
-            display('Initial optimzation OK.')
+            if cont.disp
+                display('Initial optimzation OK.')
+            end
         end
         mit_init.mu = mu;
         mit_init.Sigma = Sigma;
@@ -41,8 +45,13 @@ function [mit_new, CV] = MitISEM_new(kernel_init, kernel, mu_init, cont, GamMat)
     [theta, lnk, ~] = fn_rmvgt_robust(N, mit_init, kernel, resampl_on);
 %     display(ind_red);
     lnd = dmvgt(theta, mit_init, true, GamMat);
-    w = fn_ISwgts(lnk, lnd, norm);
-    [CV, ~] = fn_CVstop(w, CV_old, CV_tol)
+    w = fn_ISwgts(lnk, lnd, norm);  
+    [CV, ~] = fn_CVstop(w, CV_old, CV_tol);
+    if cont.disp
+        fprintf('CV = ')        
+        fprintf('%6.4f ',CV)
+        fprintf('\n')
+    end
     
 %% Step 1: Adaptation - apply ISEM to the initial = adapted naive
 %     % update scale and location using IS-EM
@@ -96,7 +105,12 @@ function [mit_new, CV] = MitISEM_new(kernel_init, kernel, mu_init, cont, GamMat)
     lnd = dmvgt(theta, mit_adapt, true, GamMat);
     w = fn_ISwgts(lnk, lnd, norm);
     [CV_new, ~] = fn_CVstop(w, CV_old, CV_tol);
-    CV = [CV, CV_new]
+    CV = [CV, CV_new];
+    if cont.disp
+        fprintf('CV = ')                
+        fprintf('%6.4f ',CV)
+        fprintf('\n')
+    end    
     
 %% Step 2: APPLY ISEM
     % optimize mixture using IS weighted EM and get draws from the new mit
@@ -113,7 +127,12 @@ function [mit_new, CV] = MitISEM_new(kernel_init, kernel, mu_init, cont, GamMat)
 	
 	% stopping criteria
     [CV_new, ~] = fn_CVstop(w, CV_old, CV_tol);
-    CV = [CV, CV_new]    
+    CV = [CV, CV_new];
+    if cont.disp
+        fprintf('CV = ')               
+        fprintf('%6.4f ',CV)
+        fprintf('\n')
+    end    
     
     H = length(mit_new.p);  % number of components
 
@@ -125,7 +144,9 @@ function [mit_new, CV] = MitISEM_new(kernel_init, kernel, mu_init, cont, GamMat)
     while ((iter < cont.mit.iter_max) && (hstop == false))
         iter = iter + 1;
         H = H + 1;
-        fprintf('H = %d\n',H);
+        if cont.disp
+            fprintf('H = %d\n',H);
+        end
         % select the largest weights and corresponding draws
         ind_w = fn_select(w, cont.mit.ISpc);
         theta_nc = theta(ind_w,:);
@@ -159,7 +180,7 @@ function [mit_new, CV] = MitISEM_new(kernel_init, kernel, mu_init, cont, GamMat)
 
         % DRAW FROM UPDATED
         % get new draws from mit and evaluate new IS weights
-        [theta, lnk, ind_red] = fn_rmvgt_robust(N, mit_new, kernel, resampl_on);
+        [theta, lnk, ~] = fn_rmvgt_robust(N, mit_new, kernel, resampl_on);
 %         display(ind_red);   
 
         lnd = dmvgt(theta, mit_new, true, GamMat);
@@ -169,7 +190,12 @@ function [mit_new, CV] = MitISEM_new(kernel_init, kernel, mu_init, cont, GamMat)
         CV_old = CV(size(CV,2));
         
         [CV_new, hstop_new] = fn_CVstop(w, CV_old, CV_tol);
-        CV = [CV, CV_new]
+        CV = [CV, CV_new];
+        if cont.disp
+            fprintf('CV = ')               
+            fprintf('%6.4f ',CV)
+            fprintf('\n')
+        end        
 %         if (H > 1)
             hstop = hstop_new;
 %         end       

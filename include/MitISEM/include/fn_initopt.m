@@ -1,15 +1,20 @@
-function [mu, Sigma, val] = fn_initopt(kernel, mu0, fn_delta) % , options)
+function [mu, Sigma, val] = fn_initopt(kernel, mu0, cont) % , options)
     d = length(mu0);
-%     options = optimset('TolX', 0.0001, 'Display', 'iter', 'Maxiter', 5000, 'MaxFunEvals', 5000, 'LargeScale', 'off', 'HessUpdate', 'bfgs');
 
-    [mu,val,~,~,~,hessian] = fminunc(kernel, mu0); % ,options);
+    if ~cont.disp
+        options = optimset('Display','off');
+        id = 'optim:fminunc:SwitchingMethod';
+        warning('off',id);
+    else
+        options = optimset();
 %     options = optimset('Display','iter');
+%     options = optimset('TolX', 0.0001, 'Display', 'iter', 'Maxiter', 5000, 'MaxFunEvals', 5000, 'LargeScale', 'off', 'HessUpdate', 'bfgs');
+    end
+    [mu,val,~,~,~,hessian] = fminunc(kernel, mu0 ,options);
 %     x = fminsearch(kernel_init,mu_init, options);
 %     x = fminsearch(kernel_init,mu_hl), options);
 %     [x,~,~,~,~,hessian] = fminunc(kernel,mu0,options)
-    if nargin > 2
-        hessian = fn_delta(mu, hessian);
-    end
+
     try
         [~, T] = kernel(mu0);
         Sigma = inv(T*hessian);

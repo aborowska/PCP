@@ -41,7 +41,7 @@ eps(ind) = c + sigma1.*eps(ind);
 eps(~ind) = c + sigma2.*eps(~ind);
 
 rho = 0.8;
-param_true = [c,sigma1,sigma2,rho];
+param_true = [c,sigma2,rho];
 y = zeros(T,1);
 
 y(1,1) = eps(1,1);
@@ -60,28 +60,31 @@ y_sort = sort(y_sort);
 VaR_1 = y_sort(p_bar1*M); 
 VaR_5 = y_sort(p_bar*M); 
 
-
+%% Misspecified model: AR1 normal with unknown mu and sigma
 %% Uncensored Posterior
-% Misspecified model: AR1 normal with unknown mu and sigma
 
-% Uncensored likelihood
-kernel_init = @(xx) -loglik_ar1(xx,y);
-[mu,~,~,~,~,Sigma] = fminunc(kernel_init,[0,1,0.9]);
-Sigma = inv(T*Sigma);
-df = 5;
-draw = rmvt(mu,Sigma,df,M+BurnIn);
+% kernel_init = @(xx) -loglik_ar1(xx,y);
+% [mu,~,~,~,~,Sigma] = fminunc(kernel_init,[0,1,0.9]);
+% Sigma = inv(T*Sigma);
+% df = 5;
+% draw = rmvt(mu,Sigma,df,M+BurnIn);
+
+mu_init = [0,1,0.9];
+kernel_init = @(xx) -posterior_ar1_mex(xx,y)/T;
 % kernel = @(xx) posterior_ar1(xx,y);
 kernel = @(xx) posterior_ar1_mex(xx,y);
 % tic
 % lnk = kernel(draw);
-% toc
+% toc    
+[mit, CV] = MitISEM_new(kernel_init, kernel, mu_init, cont, GamMat);
 % tic
-lnk = kernel(draw);
+[draw, lnk] = fn_rmvgt_robust(M+BurnIn, mit, kernel, false);
 % toc
 % Elapsed time is 1.178022 seconds.
 % Elapsed time is 0.124007 seconds.
 
-lnd = dmvgt_mex(draw, mu, Sigma, df, 1, GamMat, double(1));
+% lnd = dmvgt_mex(draw, mu, Sigma, df, 1, GamMat, double(1));
+lnd = dmvgt(draw, mit, true, GamMat);   
 lnw = lnk - lnd;
 lnw = lnw - max(lnw);
 [ind, a] = fn_MH(lnw);
@@ -111,28 +114,28 @@ kernel = @(xx) C_posterior_ar1_mex(xx, y, threshold);
 mu_init = [0, 1, 0.5];
 cont = MitISEM_Control;
 cont.mit.iter_max = 10;
-[mit, CV] = MitISEM_new(kernel_init, kernel, mu_init, cont, GamMat);
+[mit_C, CV_C] = MitISEM_new(kernel_init, kernel, mu_init, cont, GamMat);
 
 if save_on
     save(['results/',model,'/',model,'_',num2str(sigma1),'_',num2str(sigma2),'_',num2str(T),'_PCP.mat'],...
     'y','draw','accept','param_true',...
-    'mit','CV','cont',...
+    'mit','CV','mit_C','CV_C','cont',...
     'VaR_1','VaR_1_post','VaR_5','VaR_5_post');
 end
 
 % load(['results/',model,'/',model,'_',num2str(sigma1),'_',num2str(sigma2),'_',num2str(T),'_PCP.mat'])
 cont1 = cont;
 cont1.mit.iter_max = 0;
-[mit1, CV1] = MitISEM_new(kernel_init, kernel, mu_init, cont1, GamMat);
+[mit_C1, CV_C1] = MitISEM_new(kernel_init, kernel, mu_init, cont1, GamMat);
 
 if save_on
     save(['results/',model,'/',model,'_',num2str(sigma1),'_',num2str(sigma2),'_',num2str(T),'_PCP.mat'],...
-    'mit1','CV1','cont1','-append')
+    'mit_C1','CV_C1','cont1','-append')
 end
 
 %% True rho
-[draw_partial_true, accept_partial_true] = sim_cond_mit_MH(mit, [0,0,0.8], partition, M, BurnIn, kernel, GamMat);
-[draw_partial_true1, accept_partial_true1] = sim_cond_mit_MH(mit1, [0,0,0.8], partition, M, BurnIn, kernel, GamMat);
+[draw_partial_true, accept_partial_true] = sim_cond_mit_MH(mit_C, [0,0,0.8], partition, M, BurnIn, kernel, GamMat);
+[draw_partial_true1, accept_partial_true1] = sim_cond_mit_MH(mit_C1, [0,0,0.8], partition, M, BurnIn, kernel, GamMat);
 
 % Plot partial true with 1 and 2 comp mixtures
 if plot_on
@@ -197,13 +200,13 @@ end
 II = 100;
 % draw_org = draw;
 % M_org = M;
-
-draw_short = draw(1:II,:);
+% draw_short = draw(1:II,:);
+draw_short = draw((1:II:M)',:); % thinning - to get hight quality rhos
 M_short = M/II;
 
 % draw = draw_short;
 % M = M/II;
-[draw_partial_short, accept_partial_short] = sim_cond_mit_MH(mit, draw_short, partition, M_short, BurnIn, kernel, GamMat);
+[draw_partial_short, accept_partial_short] = sim_cond_mit_MH(mit_C, draw_short, partition, M_short, BurnIn, kernel, GamMat);
 % draw_partial_short = draw_partial;
 % accept_partial_short = accept;
 
@@ -305,7 +308,7 @@ end
 draw_max = draw(ind_max,:);
 draw_max = draw_max(M-II+1:M,:);
 
-[draw_partial_max, accept_partial_max] = sim_cond_mit_MH(mit, draw_max, partition, M_short, BurnIn, kernel, GamMat);
+[draw_partial_max, accept_partial_max] = sim_cond_mit_MH(mit_C, draw_max, partition, M_short, BurnIn, kernel, GamMat);
 
 % Plot partial short and max
 if plot_on
@@ -405,20 +408,20 @@ threshold0 = 0;
 % kernel = @(xx) C_posterior_ar1(xx, y, threshold0);
 kernel_init = @(xx) - C_posterior_ar1_mex(xx, y, threshold0);
 kernel = @(xx) C_posterior_ar1_mex(xx, y, threshold0);
-[mit0, CV0] = MitISEM_new(kernel_init, kernel, mu_init, cont, GamMat);
+[mit_C0, CV_C0] = MitISEM_new(kernel_init, kernel, mu_init, cont, GamMat);
 
 % True rho
-[draw_partial0_true, accept_partial0_true] = sim_cond_mit_MH(mit0, [0,0,0.8], partition, M, BurnIn, kernel, GamMat);
+[draw_partial0_true, accept_partial0_true] = sim_cond_mit_MH(mit_C0, [0,0,0.8], partition, M, BurnIn, kernel, GamMat);
  
 % Short version
-[draw_partial0_short, accept_partial0_short] = sim_cond_mit_MH(mit0, draw_short, partition, M_short, BurnIn, kernel, GamMat);
+[draw_partial0_short, accept_partial0_short] = sim_cond_mit_MH(mit_C0, draw_short, partition, M_short, BurnIn, kernel, GamMat);
 
 % Highest weights rhos
-[draw_partial0_max, accept_partial0_max] = sim_cond_mit_MH(mit0, draw_max, partition, M_short, BurnIn, kernel, GamMat);
+[draw_partial0_max, accept_partial0_max] = sim_cond_mit_MH(mit_C0, draw_max, partition, M_short, BurnIn, kernel, GamMat);
 
  if save_on
     save(['results/',model,'/',model,'_',num2str(sigma1),'_',num2str(sigma2),'_',num2str(T),'_PCP.mat'],...
-    'mit0','CV0',...
+    'mit_C0','CV_C0',...
     'draw_partial0_true','accept_partial0_true',...
     'draw_partial0_short','accept_partial0_short',...
     'draw_partial0_max','accept_partial0_max',...
