@@ -12,21 +12,18 @@ function d = posterior_garch11(theta, y, y_S)
     ind = 1:T-1;
     
     d = -Inf*ones(M,1);
-        
-    for ii = 1:M
-%         if mod(ii,1000) == 0
-%             fprintf('posterior ii = %d\n',ii);
-%         end
-        
-        if (prior(ii,1))
+    
+    for ii = 1:M       
+        if prior(ii,1)
             h = zeros(T,1);
             if nargin == 3
                 h(1,1) = y_S;
             else
-                h(1,1) = omega(ii,1)/(1-alpha(ii,1)-beta(ii,1));
+%                 h(1,1) = omega(ii,1)/(1-alpha(ii,1)-beta(ii,1));
+                h(1,1) = omega(ii,1);
             end
 %             d(ii,1) = ((y(1,1)-mu(ii,1)).^2)/h(1,1);
-            h(2:T) = omega(ii,1) + alpha(ii,1)*(y(ind,1)-mu(ii,1)).^2;
+            h(2:T) = omega(ii,1)*(1-alpha(ii,1)-beta(ii,1)) + alpha(ii,1)*(y(ind,1)-mu(ii,1)).^2;
             for jj = 2:T
 %                 h(jj,1) = omega(ii,1) + alpha(ii,1)*(y(jj-1,1)-mu(ii,1)).^2 ...
 %                     + beta(ii,1)*h(jj-1,1);
@@ -34,9 +31,10 @@ function d = posterior_garch11(theta, y, y_S)
 %                 d(ii,1) = d(ii,1) +  ((y(jj,1)-mu(ii,1)).^2)/h(jj,1);
             end  
             d(ii,1) = sum(((y-mu(ii,1)).^2)./h);
-            d(ii,1) = -0.5*(d(ii,1) + T*log(2*pi) + sum(log(h)));
+            d(ii,1) = -0.5*(d(ii,1) + T*log(2*pi) + sum(log(h)));            
         end
     end
+    d = d + prior(:,2);
 end
 
 function R = prior_garch(M, omega, alpha, beta)
@@ -53,7 +51,7 @@ function R = prior_garch(M, omega, alpha, beta)
     r1 = (c1 & c2 & c3);
 
     r2 = -Inf*ones(M,1);
-    r2(r1==true) = log(0.5);
+    r2(r1==true) = log(2);
     
     R = [r1, r2];
 end

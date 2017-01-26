@@ -10,7 +10,7 @@ function d = C_posterior_garch11(theta, y, threshold, y_S)
     if (nargin == 4)
         h1 = y_S*ones(M,1);
     else
-        h1 = omega./(1-alpha-beta);
+        h1 = omega;
     end    
     
     d = -Inf*ones(M,1);
@@ -22,17 +22,17 @@ function d = C_posterior_garch11(theta, y, threshold, y_S)
             if ind(1,1) 
                 d(ii,1) = - 0.5*(log(2*pi) + log(h1(ii,1)) + ((y(1,1) - mu(ii,1)).^2)./h1(ii,1));
             else
-                d(ii,1) = log(1-normcdf_my_mex(threshold,y(1,1)-mu(ii,1),sqrt(h1(ii,1))));
+                d(ii,1) = log(1-normcdf_my_mex(threshold,mu(ii,1),sqrt(h1(ii,1))));
             end    
         
             h = zeros(T,1);
             h(1,1) = h1(ii,1);
             for jj = 2:T
-                h(jj,1) = omega(ii,1) + alpha(ii,1)*(y(jj-1,1)-mu(ii,1)).^2  + beta(ii,1)*h(jj-1,1);
+                h(jj,1) = omega(ii,1)*(1-alpha(ii,1)-beta(ii,1)) + alpha(ii,1)*(y(jj-1,1)-mu(ii,1)).^2  + beta(ii,1)*h(jj-1,1);
                 if ind(jj,1)
                     d(ii,1) = d(ii,1) - 0.5*(log(2*pi) + log(h(jj,1)) + ((y(jj,1)-mu(ii,1)).^2)/h(jj,1));
                 else  % P(y_t>=threshold|y_1,...,y_(t-1)) = 1 - P(y_t<threshold|y_1,...,y_(t-1))
-                    d(ii,1) = d(ii,1) + log(1-normcdf_my_mex(threshold, y(jj,1) - mu(ii,1), sqrt(h(jj,1))));                    
+                    d(ii,1) = d(ii,1) + log(1-normcdf_my_mex(threshold,mu(ii,1), sqrt(h(jj,1))));                    
                 end
             end  
         end
@@ -54,7 +54,7 @@ function R = prior_garch(M, omega, alpha, beta)
     r1 = (c1 & c2 & c3);
 
     r2 = -Inf*ones(M,1);
-    r2(r1==true) = log(0.5);
+    r2(r1==true) = log(2);
     
     R = [r1, r2];
 end

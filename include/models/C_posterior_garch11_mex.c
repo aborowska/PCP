@@ -85,7 +85,7 @@ void prior_garch11(double *theta, mwSignedIndex N,
         }        
         if (r1[i] == 1)
         {
-            r2[i] = log(0.5);             // unif on alpha+beta<1 
+            r2[i] = log(2);             // unif on alpha+beta<1 
         }
     }
 }
@@ -133,7 +133,7 @@ void C_posterior_garch11_mex(double *theta, double *y, double *threshold, double
     {
         for (i=0; i<N; i++)
         {           
-            h[i] = theta[i+N]/(1.0-theta[i+2*N]-theta[i+3*N]);                          
+            h[i] = theta[i+N];                          
         }         
     }
     
@@ -144,10 +144,10 @@ void C_posterior_garch11_mex(double *theta, double *y, double *threshold, double
         {
             d[i] = r2[i]; // prior
             // the first observation: from the stationary distribution
-            mu = y[0] - theta[i];
             if (cond[0]==1) //pdf
             {
                 // stationary distribution for the first observation
+                mu = y[0] - theta[i];
                 mu = mu*mu;
                 sigma = mu/h[i];
                 sigma = sigma + log(h[i]); 
@@ -157,6 +157,7 @@ void C_posterior_garch11_mex(double *theta, double *y, double *threshold, double
             else //cdf
             {
                 // stationary distribution for the first observation
+                mu = theta[i];
                 sigma = sqrt(h[i]);
                 normcdf_my_mex(threshold, &mu, &sigma, 1, &cdf);
                 d[i] = d[i] + log(1.0-cdf);    
@@ -165,11 +166,11 @@ void C_posterior_garch11_mex(double *theta, double *y, double *threshold, double
             for (j=1; j<T; j++)
             {   
                 mu = y[j-1] - theta[i];
-                h[i] = theta[i+N] + theta[i+2*N]*(mu*mu) + theta[i+3*N]*h[i];
-                mu = y[j] - theta[i];
+                h[i] = theta[i+N]*(1.0-theta[i+2*N]-theta[i+3*N]) + theta[i+2*N]*(mu*mu) + theta[i+3*N]*h[i];
 
                 if (cond[j]==1) //pdf
                 {
+                    mu = y[j] - theta[i];
                     mu = mu*mu;
                     sigma = mu/h[i];
                     sigma = sigma + log(h[i]); 
@@ -178,6 +179,7 @@ void C_posterior_garch11_mex(double *theta, double *y, double *threshold, double
                 }
                 else //cdf
                 {
+                    mu = theta[i];                
                     sigma = sqrt(h[i]);
                     normcdf_my_mex(threshold, &mu, &sigma, 1, &cdf);
                     d[i] = d[i] + log(1-cdf);                    

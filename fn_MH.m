@@ -9,7 +9,7 @@ function [ind, a] = fn_MH(lnw)
     ind(1,:) = 1;
 
     ind_old = 1;
-%     fprintf('\nMH running...')
+    fprintf('\nMH running...')
 
 %     h = waitbar(0,'MH in progress...');
     % iterate over the chain
@@ -27,5 +27,5 @@ function [ind, a] = fn_MH(lnw)
 %          waitbar(ii/N)
     end
 %     close(h) 
-%     fprintf(' done! \n')
+    fprintf(' done! \n')
 end
