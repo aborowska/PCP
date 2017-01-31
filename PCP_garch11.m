@@ -7,7 +7,7 @@ s = RandStream('mt19937ar','Seed',1);
 RandStream.setGlobalStream(s); 
 
 model = 'garch11';
-parameters = {'$\\mu$','$\\sigma$','$\\phi$'};
+parameters = {'$\\mu$','$\\omega$','$\\alpha$','$\\beta$'};
 
 sigma1 = 1;
 sigma2 = 2;
@@ -61,9 +61,7 @@ eps(~ind) = c + sigma2.*eps(~ind);
 eps = eps/sqrt(kappa);  
 
 omega = 1;
-% omega = 0.1;
 alpha = 0.1;
-
 beta = 0.8;
 mu_true = [0, omega, alpha, beta];
 
@@ -317,7 +315,7 @@ end
 
 
 %% PARTIALLY CENSORED
-partition = 3; % <<<<<<<<<<<<<<<<<<<<<<<<<<<< ????????????
+partition = 3; 
 
 II = 100;
 % draw_org = draw;

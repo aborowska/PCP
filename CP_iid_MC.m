@@ -7,6 +7,7 @@ addpath(genpath('include/'));
 % RandStream.setGlobalStream(s); 
 
 model = 'iid';
+fprintf('Model: %s.\n',model)
 parameters = {'$\\mu$','$\\sigma$'};
 
 sigma1 = 1; 

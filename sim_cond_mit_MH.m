@@ -1,4 +1,4 @@
-function [draw_partial, accept ]= sim_cond_mit_MH(mit, draw, partition, M, BurnIn, kernel, GamMat)
+function [draw_partial, accept] = sim_cond_mit_MH(mit, draw, partition, M, BurnIn, kernel, GamMat) %, thinning)
 % mit: a structure for a mix of Student's t distributions
 % draw: a draw from the joint candidate, ordered in such a way that first
 % colums are for the conditional subset, after which the marginal draws are
@@ -7,6 +7,9 @@ function [draw_partial, accept ]= sim_cond_mit_MH(mit, draw, partition, M, BurnI
 % M: number of draws fromthe conditional distribution (for each marginal
 % draw)
  
+%     if (nargin = 7)
+%         thinning = 1;
+%     end
     [N,d] = size(draw);
     d1 = d - partition + 1;
     d2 = partition - 1;
@@ -105,7 +108,7 @@ function [draw_partial, accept ]= sim_cond_mit_MH(mit, draw, partition, M, BurnI
                 lnd_h = lnd_h + lnd_marg(jj,1);
                 lnw_h = lnk_h - lnd_h;
                 lnw_h = lnw_h - max(lnw_h);
-                [ind_MH, a_h(jj,1)] = fn_MH(lnw_h);
+                [ind_MH, a_h(jj,1)] = fn_MH(lnw_h); % <<<<< MH Algorithm
                 draw_h(ind_jj,:) = draw_hjj(ind_MH,:);              
             end
             accept(ind_h,1) = a_h;  

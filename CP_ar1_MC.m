@@ -7,6 +7,7 @@ s = RandStream('mt19937ar','Seed',1);
 RandStream.setGlobalStream(s); 
 
 model = 'ar1';
+fprintf('Model: %s.\n',model)
 parameters = {'$\\mu$','$\\sigma$','$\\phi$'};
 
 sigma1 = 1;
