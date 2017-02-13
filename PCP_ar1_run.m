@@ -28,6 +28,7 @@ function results = PCP_ar1_run(c, sigma1, sigma2, rho, p_bar1, p_bar, T, H, M, B
 
     %% Misspecified model: AR1 normal with unknown mu and sigma
     %% UNCENSORED posterior
+    fprintf('*** Uncensored Posterior ***\n');
     kernel_init = @(xx) -posterior_ar1_mex(xx,y(1:T))/T;
     kernel = @(xx) posterior_ar1_mex(xx,y(1:T));  
     try
@@ -61,6 +62,7 @@ function results = PCP_ar1_run(c, sigma1, sigma2, rho, p_bar1, p_bar, T, H, M, B
     threshold = sort(y(1:T));
     threshold = threshold(2*p_bar*T);
     %% CENSORED
+    fprintf('*** Censored Posterior, threshold 10%% ***\n');
     kernel_init = @(xx) - C_posterior_ar1_mex(xx, y(1:T), threshold)/T;    
     kernel = @(xx) C_posterior_ar1_mex(xx, y(1:T), threshold);
     try
@@ -90,12 +92,13 @@ function results = PCP_ar1_run(c, sigma1, sigma2, rho, p_bar1, p_bar, T, H, M, B
     VaR_5_post_C  = y_post_C(p_bar*M,:); 
     
     %% PARTIAL CENSORING: keep rho uncensored, then censor mu and sigma
+    fprintf('*** Partially Censored Posterior, threshold 10%% ***\n');
     % mit_C: joint candidate for the joint censored posterior
     % Short version
     draw_short = draw((1:II:M)',:); % thinning - to get hight quality rhos 
-    M_short = M/II;
-
-    [draw_PC, a_PC] = sim_cond_mit_MH(mit_C, draw_short, partition, M_short, BurnIn, kernel, GamMat);
+%     M_short = M/II;
+%     [draw_PC, a_PC] = sim_cond_mit_MH(mit_C, draw_short, partition, M_short, BurnIn, kernel, GamMat);
+    [draw_PC, a_PC] = sim_cond_mit_MH_outloop(mit_C, draw_short, partition, II, BurnIn, kernel, GamMat, cont.disp);
     accept_PC = mean(a_PC);
     mean_draw_PC = mean(draw_PC);
     std_draw_PC = std(draw_PC);
@@ -110,6 +113,7 @@ function results = PCP_ar1_run(c, sigma1, sigma2, rho, p_bar1, p_bar, T, H, M, B
     %% Threshold = 0
     threshold0 = 0;
     %% CENSORED
+    fprintf('*** Censored Posterior, threshold 0 ***\n');    
     kernel_init = @(xx) - C_posterior_ar1_mex(xx, y(1:T), threshold0)/T; 
     kernel = @(xx) C_posterior_ar1_mex(xx, y(1:T), threshold0);
     try
@@ -139,9 +143,11 @@ function results = PCP_ar1_run(c, sigma1, sigma2, rho, p_bar1, p_bar, T, H, M, B
     VaR_5_post_C0 = y_post_C0(p_bar*M,:); 
 
     %% PARTIAL CENSORING: keep rho uncensored, then censor mu and sigma
+    fprintf('*** Partially Censored Posterior, threshold 0 ***\n');
     % mit_C0: joint candidate for the joint censored posterior
     % Short version
-    [draw_PC0, a_PC0] = sim_cond_mit_MH(mit_C0, draw_short, partition, M_short, BurnIn, kernel, GamMat);
+%     [draw_PC0, a_PC0] = sim_cond_mit_MH(mit_C0, draw_short, partition, M_short, BurnIn, kernel, GamMat);
+    [draw_PC0, a_PC0] = sim_cond_mit_MH_outloop(mit_C0, draw_short, partition, II, BurnIn, kernel, GamMat, cont.disp);
     accept_PC0 = mean(a_PC0);
     mean_draw_PC0 = mean(draw_PC0);
     std_draw_PC0 = std(draw_PC0);    

@@ -35,6 +35,7 @@ function results = PCP_garch11_run(c, sigma1, sigma2, kappa, omega, alpha, beta,
 
     %% Misspecified model: GARCH(1,1) normal 
     %% Uncensored Posterior
+    fprintf('*** Uncensored Posterior ***\n');
     y_S = var(y(1:T));
     mu_init(1,1) = mean(y(1:T));
     mu_init(1,2) = y_S;
@@ -74,8 +75,7 @@ function results = PCP_garch11_run(c, sigma1, sigma2, kappa, omega, alpha, beta,
     threshold = sort(y(1:T));
     threshold = threshold(2*p_bar*T);
     %% CENSORED
-    % kernel_init = @(xx) - C_posterior_garch11(xx, y, threshold, y_S)/T;    
-    % kernel = @(xx) C_posterior_garch11(xx, y, threshold, y_S);
+    fprintf('*** Censored Posterior, threshold 10%% ***\n');
     kernel_init = @(xx) - C_posterior_garch11_mex(xx, y(1:T,1), threshold, y_S)/T;    
     kernel = @(xx) C_posterior_garch11_mex(xx, y(1:T,1), threshold, y_S);
 
@@ -126,24 +126,34 @@ function results = PCP_garch11_run(c, sigma1, sigma2, kappa, omega, alpha, beta,
     std_draw_C = std(draw_C);
     
     %% PARTIALLY CENSORED: keep alpha and beta uncensored, then censor mu and sigma
+    fprintf('*** Partially Censored Posterior, threshold 10%% ***\n');
     % mit_C: joint candidate for the joint censored posterior    
     draw_short = draw((1:II:M)',:); % thinning - to get hight quality rhos
-    M_short = M/II;
-    [draw_PC, a_PC] = sim_cond_mit_MH(mit_C, draw_short, partition, M_short, BurnIn, kernel, GamMat);
-    accept_PC = mean(a_PC);
+%     M_short = M/II;
+%     [draw_PC, a_PC] = sim_cond_mit_MH(mit_C, draw_short, partition, M_short, BurnIn, kernel, GamMat);
+%     [draw_PC, a_PC] = sim_cond_mit_MH(mit_C, draw_short, partition, II, BurnIn, kernel, GamMat);
+    [draw_PC, a_PC, lnw_PC] = sim_cond_mit_MH_outloop(mit_C, draw_short, partition, II, BurnIn, kernel, GamMat, cont.disp);
+    accept_PC = mean(a_PC); 
+%     lnk_PC = kernel(draw_PC);
+%     ind_fin = isfinite(lnk_PC)
+    ind_fin = isfinite(lnw_PC);
+    M_fin = sum(ind_fin);
+    draw_PC = draw_PC(ind_fin,:) ;  
+    
     mean_draw_PC = mean(draw_PC);
     std_draw_PC = std(draw_PC);
     
     h_post_PC = volatility_garch11(draw_PC,y,y_S,H);
-    y_post_PC = bsxfun(@times,randn(M,H),sqrt(h_post_PC(T+1:T+H,1))');
+    y_post_PC = bsxfun(@times,randn(M_fin,H),sqrt(h_post_PC(T+1:T+H,1))');
     y_post_PC = bsxfun(@plus,y_post_PC,draw_PC(:,1));
     y_post_PC = sort(y_post_PC);
-    VaR_1_post_PC = y_post_PC(p_bar1*M,:); 
-    VaR_5_post_PC = y_post_PC(p_bar*M,:); 
+    VaR_1_post_PC = y_post_PC(round(p_bar1*M_fin),:); 
+    VaR_5_post_PC = y_post_PC(round(p_bar*M_fin),:); 
 
     %% Threshold = 0
     threshold0 = 0;
     %% CENSORED
+    fprintf('*** Censored Posterior, threshold 0 ***\n');    
     kernel_init = @(xx) - C_posterior_garch11_mex(xx, y(1:T,1), threshold0, y_S)/T;    
     kernel = @(xx) C_posterior_garch11_mex(xx, y(1:T,1), threshold0, y_S);
     try
@@ -189,18 +199,26 @@ function results = PCP_garch11_run(c, sigma1, sigma2, kappa, omega, alpha, beta,
     VaR_5_post_C0 = y_post_C0(p_bar*M,:); 
     
     %% PARTIAL CENSORING: keep alpha and beta uncensored, then censor mu and sigma
+    fprintf('*** Partially Censored Posterior, threshold 0 ***\n');
     % mit_C0: joint cnadidate for the joint censored posterior
-    [draw_PC0, a_PC0] = sim_cond_mit_MH(mit_C0, draw_short, partition, M_short, BurnIn, kernel, GamMat);
+%     [draw_PC0, a_PC0] = sim_cond_mit_MH(mit_C0, draw_short, partition, M_short, BurnIn, kernel, GamMat);
+    [draw_PC0, a_PC0, lnw_PC0] = sim_cond_mit_MH_outloop(mit_C0, draw_short, partition, II, BurnIn, kernel, GamMat, cont.disp);
     accept_PC0 = mean(a_PC0);
+%     lnk_PC0 = kernel(draw_PC0);
+%     ind_fin = isfinite(lnk_PC0
+    ind_fin = isfinite(lnw_PC0);
+    M_fin = sum(ind_fin);
+    draw_PC0 = draw_PC0(ind_fin,:);
+    
     mean_draw_PC0 = mean(draw_PC0);
     std_draw_PC0 = std(draw_PC0);    
 
     h_post_PC0 = volatility_garch11(draw_PC0,y,y_S,H);
-    y_post_PC0 = bsxfun(@times,randn(M,H),sqrt(h_post_PC0(T+1:T+H,1))');
+    y_post_PC0 = bsxfun(@times,randn(M_fin,H),sqrt(h_post_PC0(T+1:T+H,1))');
     y_post_PC0 = bsxfun(@plus,y_post_PC0,draw_PC0(:,1));
     y_post_PC0 = sort(y_post_PC0);
-    VaR_1_post_PC0 = y_post_PC0(p_bar1*M,:); 
-    VaR_5_post_PC0 = y_post_PC0(p_bar*M,:); 
+    VaR_1_post_PC0 = y_post_PC0(round(p_bar1*M_fin),:); 
+    VaR_5_post_PC0 = y_post_PC0(round(p_bar*M_fin),:); 
     
     
     results = struct('y',y,'draw',draw,'draw_C',draw_C,'draw_PC',draw_PC,'draw_C0',draw_C0,'draw_PC0',draw_PC0,...

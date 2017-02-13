@@ -1,4 +1,4 @@
-function PCP_ar1_MC2(T, sigma2)
+function PCP_ar1_MC_fun(T, sigma2, II)
     close all
 
     addpath(genpath('include/'));
@@ -91,7 +91,10 @@ function PCP_ar1_MC2(T, sigma2)
     cont.mit.Hmax = 6;
     cont.mit.dfnc = 5;
     
-    II = 100;
+    if (nargin == 2)
+        II = 10;
+    end
+    
     partition = 3;
 
     %% various display options
@@ -177,24 +180,26 @@ function PCP_ar1_MC2(T, sigma2)
     end
 
     % MSEs
-    MSE_1 = mean((VaR_1 - q1).^2);
-    MSE_1_post = mean((VaR_1_post - q1).^2);
-    MSE_1_post_C = mean((VaR_1_post_C - q1).^2);
-    MSE_1_post_PC = mean((VaR_1_post_PC - q1).^2);
-    MSE_1_post_C0 = mean((VaR_1_post_C0 - q1).^2);
-    MSE_1_post_PC0 = mean((VaR_1_post_PC0 - q1).^2);
+    MSE_1 = mean((VaR_1 - q1).^2,2);
+    MSE_1_post = mean((VaR_1_post - q1).^2,2);
+    MSE_1_post_C = mean((VaR_1_post_C - q1).^2,2);
+    MSE_1_post_PC = mean((VaR_1_post_PC - q1).^2,2);
+    MSE_1_post_C0 = mean((VaR_1_post_C0 - q1).^2,2);
+    MSE_1_post_PC0 = mean((VaR_1_post_PC0 - q1).^2,2);
 
-    MSE_5 = mean((VaR_5 - q5).^2);
-    MSE_5_post = mean((VaR_5_post - q5).^2);
-    MSE_5_post_C = mean((VaR_5_post_C - q5).^2);
-    MSE_5_post_PC = mean((VaR_5_post_PC - q5).^2);
-    MSE_5_post_C0 = mean((VaR_5_post_C0 - q5).^2);
-    MSE_5_post_PC0 = mean((VaR_5_post_PC0 - q5).^2);
+    MSE_5 = mean((VaR_5 - q5).^2,2);
+    MSE_5_post = mean((VaR_5_post - q5).^2,2);
+    MSE_5_post_C = mean((VaR_5_post_C - q5).^2,2);
+    MSE_5_post_PC = mean((VaR_5_post_PC - q5).^2,2);
+    MSE_5_post_C0 = mean((VaR_5_post_C0 - q5).^2,2);
+    MSE_5_post_PC0 = mean((VaR_5_post_PC0 - q5).^2,2);
 
     time_total = toc;
 
     if save_on
-        name = ['results/',model,'/',model,'_',num2str(sigma1),'_',num2str(sigma2),'_T',num2str(T),'_H',num2str(H),'_PCP0_MC2_',v_new,'.mat'];
+        name = ['results/',model,'/',model,'_',num2str(sigma1),'_',num2str(sigma2),...
+            '_T',num2str(T),'_H',num2str(H),'_II',num2str(II)...
+            '_PCP0_MC2_',v_new,'.mat'];
         save(name,...
         'time_total',...
         'y','draw','draw_C','draw_PC','draw_C0','draw_PC0','param_true','q1','q5',...

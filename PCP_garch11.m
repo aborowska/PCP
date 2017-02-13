@@ -16,6 +16,14 @@ kappa = 0.5*(sigma1^2 + sigma2^2 - ((sigma2-sigma1)^2)/pi); % var of eps
 sigma1_k = sigma1/sqrt(kappa);
 sigma2_k = sigma2/sqrt(kappa);
 
+omega = 1;
+alpha = 0.1;
+beta = 0.8;
+% theta  = [mu, omega, alpha, beta]
+mu_true = [0, omega, alpha, beta];
+param_true = [c,sigma2,omega,alpha,beta];
+mu_init = [0, 1, 0.05, 0.85];
+
 
 T = 1000; % time series length
 p_bar1 = 0.01;
@@ -32,7 +40,7 @@ cont.mit.iter_max = 10;
 
 df = 5; % default df for a mit
 
-% various display options
+%% various display options
 cont.disp = true;%false;
 
 v_new = ver('symbolic');
@@ -104,33 +112,23 @@ VaR_5 = y_sort(p_bar*M);
 
 %% Misspecified model: GARCH(1,1) normal 
 %% Uncensored Posterior
-% theta  = [mu, omega, alpha, beta]
-% mu_init = [0, 0.01, 0.15, 0.8];
-% fn_trans_param = @(xx,mm) transform_param_garch(xx, mm);
-% fn_jacobian = @(xx) jacobian_garch(xx);
-% kernel_init = @(xx) -posterior_garch11(fn_trans_param(xx,'back'),y)/T;
-% options = optimset('display','off','TolFun',1e-5,'LargeScale','off','TolX',1e-5,'HessUpdate','bfgs','FinDiffType','central',...
-%      'maxiter',5000,'MaxFunEvals',5000);
-% [mu, ~, Hessian] = estimate(kernel_init,mu_init,fn_trans_param,fn_jacobian,options);
-% Sigma = inv(T*Hessian);
-
-% theta  = [mu, omega, alpha, beta]
-mu_init = [0, 0.1, 0.05, 0.85];
 y_S = var(y);
-% kernel_init = @(xx) -posterior_garch11(xx,y,y_S)/T;
-% kernel = @(xx) posterior_garch11(xx,y, y_S);
 kernel_init = @(xx) -posterior_garch11_mex(xx, y, y_S)/T;
 kernel = @(xx) posterior_garch11_mex(xx, y, y_S);
-
-[mu,~,~,~,~,Sigma] = fminunc(kernel_init, mu_init);
-Sigma = inv(T*Sigma);
-% draw = rmvt(mu,Sigma,df,M+BurnIn);
-% lnk = kernel(draw);
-% lnd = dmvgt_mex(draw, mu, Sigma, df, 1, GamMat, double(1));
-[mit, CV] = MitISEM_new(kernel_init, kernel, mu_init, cont, GamMat);
-[draw, lnk] = fn_rmvgt_robust(M+BurnIn, mit, kernel, false);
-lnd = dmvgt(draw, mit, true, GamMat); 
-    
+ 
+try
+    [mit, CV] = MitISEM_new(kernel_init, kernel, mu_init, cont, GamMat);
+    [draw, lnk] = fn_rmvgt_robust(M+BurnIn, mit, kernel, false);
+    lnd = dmvgt(draw, mit, true, GamMat); 
+catch
+    [mu,~,~,~,~,Sigma] = fminunc(kernel_init,mu_init,options);
+    Sigma = inv(T*Sigma);
+    draw = rmvt(mu,Sigma,df,M+BurnIn);
+    mit = struct('mu',mu,'Sigma',reshape(Sigma,1,length(mu)^2),'df', df, 'p', 1);
+    [mit, CV] = MitISEM_new(mit, kernel, mu_init, cont, GamMat);            
+    [draw, lnk] = fn_rmvgt_robust(M+BurnIn, mit, kernel, false);
+    lnd = dmvgt(draw, mit, true, GamMat); 
+end    
 lnw = lnk - lnd;
 lnw = lnw - max(lnw);
 [ind, a] = fn_MH(lnw);
@@ -140,12 +138,7 @@ accept = a/(M+BurnIn);
 draw = draw(BurnIn+1:BurnIn+M,:);    
 lnw = lnw(BurnIn+1:BurnIn+M,:);    
 
-% tic
 h_post = volatility_garch11(draw,y,y_S);
-% toc
-% tic
-% [~,~,h_post_mex] = kernel(draw);
-% toc
 y_post = draw(:,1) + sqrt(h_post).*randn(M,1);
 y_post = sort(y_post);
 VaR_1_post = y_post(p_bar1*M); 
@@ -159,10 +152,6 @@ threshold = threshold(2*p_bar*T);
 % kernel = @(xx) C_posterior_garch11(xx, y, threshold, y_S);
 kernel_init = @(xx) - C_posterior_garch11_mex(xx, y, threshold, y_S)/T;    
 kernel = @(xx) C_posterior_garch11_mex(xx, y, threshold, y_S);
-
-% lnk_C = kernel(draw_C(1:100,:));
-% h_C = volatility_garch11(draw_C(1:100,:),y,y_S);
-% [lnk_C,~,h_C] = kernel(draw_C(1:100,:));
 
 try
     [mit_C, CV_C] = MitISEM_new(kernel_init, kernel, mu_init, cont, GamMat); 
@@ -317,10 +306,7 @@ end
 %% PARTIALLY CENSORED
 partition = 3; 
 
-II = 100;
-% draw_org = draw;
-% M_org = M;
-% draw_short = draw(1:II,:);
+II = 100; 
 draw_short = draw((1:II:M)',:); % thinning - to get hight quality rhos
 M_short = M/II;
 

@@ -15,7 +15,7 @@ sigma2 = 2;
 c = (sigma2 - sigma1)/sqrt(2*pi);
 
 partition = 3;
-S = 100; % number of MC replications
+S = 1; % number of MC replications
 H = 100;
 
 % quantiles of interest
@@ -64,7 +64,7 @@ accept_C0 = zeros(S,1);
 accept_PC0 = zeros(S,1);
 
 %%
-T = 10000; % time series length
+T = 1000; % time series length
 fprintf('Time series length T = %d.\n',T)
 
 % Metropolis-Hastings for the parameters
@@ -88,7 +88,7 @@ v_new = v_new.Release;
 if strcmp(v_new,'(R2014a)')
     fn_hist = @(xx) hist(xx,20);
 else
-    fn_hist = @(xx) histogram(xx,50);
+    fn_hist = @(xx) histogram(xx);
 end
 
 plot_on = false;
@@ -217,11 +217,78 @@ for s = 1:S
     % draw_short = draw(1:II,:);
     draw_short = draw((1:II:M)',:); % thinning - to get hight quality rhos 
     M_short = M/II;
-
     [draw_PC, a_PC] = sim_cond_mit_MH(mit_C, draw_short, partition, M_short, BurnIn, kernel, GamMat);
+    
+
+% M = M_org
+% BurnIn = BurnIn_org;
+% draw = draw_org;
+    II2 = 10;
+    draw_short2 = draw((1:II2:M)',:); % thinning - to get hight quality rhos 
+    thinning = 10;
+    % H_org = H;
+    % M_org = M;
+    % M = II2;
+    % draw_org = draw;
+    % draw = draw_short2;
+    % mit_org = mit;
+    % mit = mit_C;    
+    % BurnIn_org = BurnIn;
+    % BurnIn = 2*BurnIn;
+    [draw_PC2, a_PC2] = sim_cond_mit_MH_outloop(mit_C, draw_short2, partition, II2, 2*BurnIn, kernel, GamMat, thinning, cont.disp);
+    % H = H_org;
     accept_PC(s,1) = mean(a_PC);
     mean_draw_PC(s,:) = mean(draw_PC);
     std_draw_PC(s,:) = std(draw_PC);
+
+if plot_on
+    ff = figure(22);
+    set(gcf,'units','normalized','outerposition',[0.1 0.1 0.9 0.9]);
+     
+    subplot(1,3,1)
+    hold on
+    fn_hist(draw(:,1))
+    fn_hist(draw_PC(:,1))
+    fn_hist(draw_PC2(:,1))
+    hold off
+    xlabel('\mu','FontSize',11)
+    plotTickLatex2D('FontSize',11);
+    
+    subplot(1,3,2)
+    hold on
+    fn_hist(draw(:,2))
+    fn_hist(draw_PC(:,2))
+    fn_hist(draw_PC2(:,2))
+    hold off
+    xlabel('\sigma','FontSize',11)
+    plotTickLatex2D('FontSize',11);
+    
+    subplot(1,3,3)
+    hold on
+    fn_hist(draw(:,3))
+    fn_hist(draw_PC(:,3))
+    fn_hist(draw_PC2(:,3))
+    hold off
+    xlabel('\rho','FontSize',11)
+    plotTickLatex2D('FontSize',11); 
+    
+    leg = legend('Uncensored','PCP 10\% II=100','PCP 10\% II=10');
+    set(leg,'Interpreter','latex','FontSize',11)
+ 
+    if save_on
+        name = ['figures/',model,'/',model,'_',num2str(sigma1),'_',num2str(sigma2),'_',num2str(T),'_PCP_IIcomp.eps'];
+        set(gcf,'PaperPositionMode','auto');
+        print_fail = 1;
+        while print_fail 
+            try                 
+                print(ff,name,'-depsc','-r0')
+                print_fail = 0;
+            catch
+                print_fail = 1;
+            end
+        end
+    end   
+end
     
 %     y_post_PC = draw_PC(:,1) + draw_PC(:,3).*y(T,1) + draw_PC(:,2).*randn(M,1);
 %     y_post_PC = sort(y_post_PC);

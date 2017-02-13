@@ -1,4 +1,6 @@
-function PCP_garch11_MC2(T, sigma2, S)
+function PCP_garch11_MC_fun(T, sigma2, S, II)
+% T = 1000; S = 1; II = 100;
+% sigma2 = 2 ; % <------------------ !!! 
 
     % clear all
     close all
@@ -101,10 +103,11 @@ function PCP_garch11_MC2(T, sigma2, S)
     df = 5; % default df for a mit
 
     partition = 3;
-    II = 100;
-
+    if (nargin == 3)
+        II = 10;
+    end
     %% various display options
-    cont.disp = true;%false;
+    cont.disp = false;
 
     v_new = ver('symbolic');
     v_new = v_new.Release;
@@ -186,24 +189,26 @@ function PCP_garch11_MC2(T, sigma2, S)
     end
 
     % MSEs
-    MSE_1 = mean((VaR_1 - q1).^2);
-    MSE_1_post = mean((VaR_1_post - q1).^2);
-    MSE_1_post_C = mean((VaR_1_post_C - q1).^2);
-    MSE_1_post_PC = mean((VaR_1_post_PC - q1).^2);
-    MSE_1_post_C0 = mean((VaR_1_post_C0 - q1).^2);
-    MSE_1_post_PC0 = mean((VaR_1_post_PC0 - q1).^2);
+    MSE_1 = mean((VaR_1 - q1).^2,2);
+    MSE_1_post = mean((VaR_1_post - q1).^2,2);
+    MSE_1_post_C = mean((VaR_1_post_C - q1).^2,2);
+    MSE_1_post_PC = mean((VaR_1_post_PC - q1).^2,2);
+    MSE_1_post_C0 = mean((VaR_1_post_C0 - q1).^2,2);
+    MSE_1_post_PC0 = mean((VaR_1_post_PC0 - q1).^2,2);
 
-    MSE_5 = mean((VaR_5 - q5).^2);
-    MSE_5_post = mean((VaR_5_post - q5).^2);
-    MSE_5_post_C = mean((VaR_5_post_C - q5).^2);
-    MSE_5_post_PC = mean((VaR_5_post_PC - q5).^2);
-    MSE_5_post_C0 = mean((VaR_5_post_C0 - q5).^2);
-    MSE_5_post_PC0 = mean((VaR_5_post_PC0 - q5).^2);
+    MSE_5 = mean((VaR_5 - q5).^2,2);
+    MSE_5_post = mean((VaR_5_post - q5).^2,2);
+    MSE_5_post_C = mean((VaR_5_post_C - q5).^2,2);
+    MSE_5_post_PC = mean((VaR_5_post_PC - q5).^2,2);
+    MSE_5_post_C0 = mean((VaR_5_post_C0 - q5).^2,2);
+    MSE_5_post_PC0 = mean((VaR_5_post_PC0 - q5).^2,2);
 
     time_total = toc;
 
     if save_on
-        name = ['results/',model,'/',model,'_',num2str(sigma1),'_',num2str(sigma2),'_T',num2str(T),'_H',num2str(H),'_PCP0_MC_',v_new,'.mat'];
+        name = ['results/',model,'/',model,'_',num2str(sigma1),'_',...
+            num2str(sigma2),'_T',num2str(T),'_H',num2str(H),...
+            '_II',num2str(II),'_PCP0_MC_',v_new,'.mat'];
         save(name,...
         'time_total',...
         'y','draw','draw_C','draw_PC','draw_C0','draw_PC0','param_true','q1','q5',...
@@ -216,6 +221,4 @@ function PCP_garch11_MC2(T, sigma2, S)
         'MSE_1','MSE_1_post','MSE_1_post_C','MSE_1_post_PC','MSE_1_post_C0','MSE_1_post_PC0',...
         'MSE_5','MSE_5_post','MSE_5_post_C','MSE_5_post_PC','MSE_5_post_C0','MSE_5_post_PC0')
     end
-
-
 end
