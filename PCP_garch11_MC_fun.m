@@ -1,6 +1,5 @@
 function PCP_garch11_MC_fun(T, sigma2, S, II)
-% T = 1000; S = 1; II = 100;
-% sigma2 = 2 ; % <------------------ !!! 
+% T = 1000; S = 1; II = 100; sigma2 = 2 ; % <------------------ !!! 
 
     % clear all
     close all

@@ -1,4 +1,8 @@
 function results = PCP_garch11_run(c, sigma1, sigma2, kappa, omega, alpha, beta, p_bar1, p_bar, T, H, M, BurnIn, mu_init, df, cont, options, partition, II, GamMat)
+    
+    sigma1_k = sigma1/sqrt(kappa);
+    sigma2_k = sigma2/sqrt(kappa);
+
     %% GARCH(1,1)
     eps = randn(T+H,1);
     ind = (eps>0);
@@ -18,8 +22,12 @@ function results = PCP_garch11_run(c, sigma1, sigma2, kappa, omega, alpha, beta,
     end
     
     % true VaRs
-    q1 = norminv(p_bar1, 0, h_true(T+1:T+H))';
-    q5 = norminv(p_bar, 0, h_true(T+1:T+H))'; 
+% %     q1 = norminv(p_bar1,c+rho*y(T:(T+H-1),1),sigma2)';
+% %     q5 = norminv(p_bar,c+rho*y(T:(T+H-1),1),sigma2)'
+%     q1 = norminv(p_bar1, 0, h_true(T+1:T+H))';
+%     q5 = norminv(p_bar, 0, h_true(T+1:T+H))';
+    q1 = norminv(p_bar1, c, sigma2_k*h_true(T+1:T+H))';
+    q5 = norminv(p_bar, c, sigma2_k*h_true(T+1:T+H))'; 
     
     % MC VaRs under the true model
     eps_sort = randn(M,H);
@@ -28,7 +36,8 @@ function results = PCP_garch11_run(c, sigma1, sigma2, kappa, omega, alpha, beta,
     eps_sort(~ind) = c + sigma2.*eps_sort(~ind);
     eps_sort = eps_sort/sqrt(kappa); 
 
-    y_sort = bsxfun(@times,eps_sort,sqrt(h_true(T+1:T+H,1))');
+%     y_sort = bsxfun(@times,eps_sort,sqrt(h_true(T+1:T+H,1))');
+    y_sort = bsxfun(@times,eps_sort,sigma2_k*sqrt(h_true(T+1:T+H,1))');
     y_sort = sort(y_sort);
     VaR_1 = y_sort(p_bar1*M,:); 
     VaR_5 = y_sort(p_bar*M,:); 
@@ -62,8 +71,9 @@ function results = PCP_garch11_run(c, sigma1, sigma2, kappa, omega, alpha, beta,
     accept = a/(M+BurnIn);
     draw = draw(BurnIn+1:BurnIn+M,:);    
        
-    h_post = volatility_garch11(draw,y,y_S,H);
-    y_post = bsxfun(@times,randn(M,H),sqrt(h_post(T+1:T+H,1))');
+    h_post = volatility_garch11(draw,y,y_S,H);   
+%     y_post = bsxfun(@times,randn(M,H),sqrt(h_post(T+1:T+H,:))');
+    y_post = randn(M,H).*sqrt(h_post);
     y_post = bsxfun(@plus,y_post,draw(:,1));
     y_post = sort(y_post);
     VaR_1_post = y_post(p_bar1*M,:); 
@@ -117,7 +127,8 @@ function results = PCP_garch11_run(c, sigma1, sigma2, kappa, omega, alpha, beta,
     draw_C = draw_C(BurnIn+1:BurnIn+M,:);
 
     h_post_C = volatility_garch11(draw_C,y,y_S,H);
-    y_post_C = bsxfun(@times,randn(M,H),sqrt(h_post_C(T+1:T+H,1))');
+%     y_post_C = bsxfun(@times,randn(M,H),sqrt(h_post_C(T+1:T+H,1))');
+    y_post_C = randn(M,H).*sqrt(h_post_C);
     y_post_C = bsxfun(@plus,y_post_C,draw_C(:,1));
     y_post_C = sort(y_post_C);
     VaR_1_post_C = y_post_C(p_bar1*M,:); 
@@ -144,7 +155,8 @@ function results = PCP_garch11_run(c, sigma1, sigma2, kappa, omega, alpha, beta,
     std_draw_PC = std(draw_PC);
     
     h_post_PC = volatility_garch11(draw_PC,y,y_S,H);
-    y_post_PC = bsxfun(@times,randn(M_fin,H),sqrt(h_post_PC(T+1:T+H,1))');
+%     y_post_PC = bsxfun(@times,randn(M_fin,H),sqrt(h_post_PC(T+1:T+H,1))');
+    y_post_PC = randn(M_fin,H).*sqrt(h_post_PC);
     y_post_PC = bsxfun(@plus,y_post_PC,draw_PC(:,1));
     y_post_PC = sort(y_post_PC);
     VaR_1_post_PC = y_post_PC(round(p_bar1*M_fin),:); 
@@ -192,7 +204,8 @@ function results = PCP_garch11_run(c, sigma1, sigma2, kappa, omega, alpha, beta,
     std_draw_C0 = std(draw_C0);
 
     h_post_C0 = volatility_garch11(draw_C0,y,y_S,H);
-    y_post_C0 = bsxfun(@times,randn(M,H),sqrt(h_post_C0(T+1:T+H,1))');
+%     y_post_C0 = bsxfun(@times,randn(M,H),sqrt(h_post_C0(T+1:T+H,1))');
+    y_post_C0 = randn(M,H).*sqrt(h_post_C0);
     y_post_C0 = bsxfun(@plus,y_post_C0,draw_C0(:,1));
     y_post_C0 = sort(y_post_C0);
     VaR_1_post_C0 = y_post_C0(p_bar1*M,:); 
@@ -214,7 +227,8 @@ function results = PCP_garch11_run(c, sigma1, sigma2, kappa, omega, alpha, beta,
     std_draw_PC0 = std(draw_PC0);    
 
     h_post_PC0 = volatility_garch11(draw_PC0,y,y_S,H);
-    y_post_PC0 = bsxfun(@times,randn(M_fin,H),sqrt(h_post_PC0(T+1:T+H,1))');
+%     y_post_PC0 = bsxfun(@times,randn(M_fin,H),sqrt(h_post_PC0(T+1:T+H,1))'); 
+    y_post_PC0 = randn(M_fin,H).*sqrt(h_post_PC0);
     y_post_PC0 = bsxfun(@plus,y_post_PC0,draw_PC0(:,1));
     y_post_PC0 = sort(y_post_PC0);
     VaR_1_post_PC0 = y_post_PC0(round(p_bar1*M_fin),:); 
