@@ -23,6 +23,7 @@ function [d, T] = C_posterior_ar1(theta, y, threshold)
     else
 %         d(r) = log(1-normcdf(threshold,a1(r),sqrt(P1(r))));
         d(r) = log(1-normcdf_my(threshold,a1(r),sqrt(P1(r))));
+%         d(r) = log(1-normcdf((threshold-a1(r))./sqrt(P1(r))));
         d(r) = d(r) - 0.5*sum(ind)*(log(2*pi) + log(sigma(r).^2)); % Gaussian constant for all the uncensored observations
     end
     
@@ -33,14 +34,15 @@ function [d, T] = C_posterior_ar1(theta, y, threshold)
                     d(ii) = d(ii) - 0.5*(((y(jj,1) - mu(ii,1) - rho(ii,1).*y(jj-1,1)).^2)./(sigma(ii,1).^2));                      
                 else  % P(y_t>=threshold|y_1,...,y_(t-1)) = 1 - P(y_t<threshold|y_1,...,y_(t-1))
 %                     d(ii) = d(ii) + log(1-normcdf(threshold,mu(ii,1) + rho(ii,1).*y(jj-1,1),sigma(ii,1)));                    
-                    d(ii) = d(ii) + log(1-normcdf_my(threshold,mu(ii,1) + rho(ii,1).*y(jj-1,1),sigma(ii,1)));                    
+                    d(ii) = d(ii) + log(1-normcdf_my(threshold,mu(ii,1) + rho(ii,1).*y(jj-1,1),sigma(ii,1)));
+%                     d(ii) = d(ii) + log(1-normcdf((threshold-(mu(ii,1) + rho(ii,1).*y(jj-1,1)))/sigma(ii,1)));  
                 end
             end
         end
     end
     
-%      (phi+1)/2 ~ betapdf((phi+1)/2, 20, 1.5);
-    prior = - log(beta(20, 1.5)) + (20-1)*log((rho+1)/2) + (1.5-1)*log(1-(rho+1)/2); 
-    prior = prior - log(sigma);
-    d(r) = d(r) + prior(r);
+% %      (phi+1)/2 ~ betapdf((phi+1)/2, 20, 1.5);
+%     prior = - log(beta(20, 1.5)) + (20-1)*log((rho+1)/2) + (1.5-1)*log(1-(rho+1)/2); 
+%     prior = prior - log(sigma);
+%     d(r) = d(r) + prior(r);
 end

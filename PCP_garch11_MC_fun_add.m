@@ -1,4 +1,4 @@
-function PCP_garch11_MC_fun(T, sigma2, S, II)
+function PCP_garch11_MC_fun_add(T, sigma2, S, II)
 % T = 1000; S = 1; II = 100; sigma2 = 2 ; % <------------------ !!! 
 
     % clear all
@@ -82,6 +82,13 @@ function PCP_garch11_MC_fun(T, sigma2, S, II)
     accept_C0 = zeros(S,1);
     accept_PC0 = zeros(S,1);
 
+    %% Additional parameters
+    VaR_1_post_add = zeros(S,H);
+    VaR_5_post_add = zeros(S,H); 
+    mean_mu_add = zeros(S,3);
+    median_mu_add = zeros(S,3);
+    std_mu_add = zeros(S,3);
+
     %% MitISEM results: mits and CVs
     mit = cell(S,1);
     mit_C = cell(S,1);
@@ -141,10 +148,10 @@ function PCP_garch11_MC_fun(T, sigma2, S, II)
                 fprintf(['\n',model, ' simulation no. %i\n'],s)
         %     end
         try
-            results = PCP_garch11_run(c, sigma1, sigma2, kappa, omega, alpha, beta, p_bar1, p_bar, T, H, M, BurnIn, mu_init, df, cont, options, partition, II, GamMat);
+            results = PCP_garch11_run_add(c, sigma1, sigma2, kappa, omega, alpha, beta, p_bar1, p_bar, T, H, M, BurnIn, mu_init, df, cont, options, partition, II, GamMat);
             s = s+1;
 
-            y = results.y;
+            y = results.y;  
             q1(s,:) = results.q1;
             q5(s,:) = results.q5;   
 
@@ -195,7 +202,14 @@ function PCP_garch11_MC_fun(T, sigma2, S, II)
             median_draw_PC0(s,:) = results.median_draw_PC0;
             std_draw_PC0(s,:) =  results.std_draw_PC0;
             VaR_1_post_PC0(s,:) = results.VaR_1_post_PC0; 
-            VaR_5_post_PC0(s,:) = results.VaR_5_post_PC0;                 
+            VaR_5_post_PC0(s,:) = results.VaR_5_post_PC0;    
+                
+            VaR_1_post_add(s,:)  = results.VaR_1_post_add;
+            VaR_5_post_add(s,:)  = results.VaR_5_post_add;
+            mean_mu_add(s,:)  = results.mean_mu_add;
+            median_mu_add(s,:)  = results.median_mu_add;
+            std_mu_add(s,:)  = results.std_mu_add;
+            
         end
     end
 
@@ -207,6 +221,8 @@ function PCP_garch11_MC_fun(T, sigma2, S, II)
     MSE_1_post_C0 = mean((VaR_1_post_C0 - q1).^2,2);
     MSE_1_post_PC0 = mean((VaR_1_post_PC0 - q1).^2,2);
 
+    MSE_1_post_add = mean((VaR_1_post_add - q1).^2,2);
+    
     MSE_5 = mean((VaR_5 - q5).^2,2);
     MSE_5_post = mean((VaR_5_post - q5).^2,2);
     MSE_5_post_C = mean((VaR_5_post_C - q5).^2,2);
@@ -214,12 +230,14 @@ function PCP_garch11_MC_fun(T, sigma2, S, II)
     MSE_5_post_C0 = mean((VaR_5_post_C0 - q5).^2,2);
     MSE_5_post_PC0 = mean((VaR_5_post_PC0 - q5).^2,2);
 
+    MSE_5_post_add = mean((VaR_5_post_add - q5).^2,2);
+
     time_total = toc;
 
     if save_on
         name = ['results/',model,'/',model,'_',num2str(sigma1),'_',...
             num2str(sigma2),'_T',num2str(T),'_H',num2str(H),...
-            '_II',num2str(II),'_PCP0_MC_',v_new,'.mat'];
+            '_II',num2str(II),'_PCP0_MC_',v_new,'_add_par.mat'];
         save(name,...
         'time_total',...
         'y','draw','draw_C','draw_PC','draw_C0','draw_PC0','param_true','q1','q5',...
@@ -231,6 +249,7 @@ function PCP_garch11_MC_fun(T, sigma2, S, II)
         'VaR_1','VaR_1_post','VaR_1_post_C','VaR_1_post_PC','VaR_1_post_C0','VaR_1_post_PC0',...
         'VaR_5','VaR_5_post','VaR_5_post_C','VaR_5_post_PC','VaR_5_post_C0','VaR_5_post_PC0',...
         'MSE_1','MSE_1_post','MSE_1_post_C','MSE_1_post_PC','MSE_1_post_C0','MSE_1_post_PC0',...
-        'MSE_5','MSE_5_post','MSE_5_post_C','MSE_5_post_PC','MSE_5_post_C0','MSE_5_post_PC0')
+        'MSE_5','MSE_5_post','MSE_5_post_C','MSE_5_post_PC','MSE_5_post_C0','MSE_5_post_PC0',...
+        'mean_mu_add','median_mu_add','std_mu_add','VaR_1_post_add','VaR_5_post_add','MSE_1_post_add','MSE_5_post_add')
     end
 end

@@ -1,4 +1,4 @@
-function results = PCP_ar1_run(c, sigma1, sigma2, rho, p_bar1, p_bar, T, H, M, BurnIn, mu_init, df, cont, options, partition, II, GamMat)
+function results = PCP_ar1_run_varc(c, sigma1, sigma2, rho, p_bar1, p_bar, T, H, M, BurnIn, mu_init, df, cont, options, partition, II, GamMat)
 
     %% simple AR(1)
     eps = randn(T+H,1);
@@ -60,15 +60,46 @@ function results = PCP_ar1_run(c, sigma1, sigma2, rho, p_bar1, p_bar, T, H, M, B
     mean_draw = mean(draw);
     std_draw = std(draw);
     
-    %% Threshold = 10% perscentile of the data sample
-    threshold = sort(y(1:T));
-    threshold = threshold(2*p_bar*T);
+    %% Time varying threshold, THR = 1
+%     threshold = sort(y(1:T));
+%     threshold = threshold(2*p_bar*T);
+    threshold = 1;
     %% CENSORED
-    fprintf('*** Censored Posterior, threshold 10%% ***\n');
-%     kernel_init = @(xx) - C_posterior_ar1(xx, y(1:T), threshold)/T;    
-%     kernel_init = @(xx) - C_loglik_ar1(xx, y, threshold)/T;
-    kernel_init = @(xx) - C_posterior_ar1_mex(xx, y(1:T), threshold)/T;    
-    kernel = @(xx) C_posterior_ar1_mex(xx, y(1:T), threshold);
+    fprintf('*** Censored Posterior, time varying threshold, THR = 1 ***\n');
+    kernel_init = @(xx) - C_posterior_ar1_varc(xx, y(1:T), threshold)/T; 
+    kernel = @(xx) C_posterior_ar1_varc(xx, y(1:T), threshold); 
+    [mu_C,~,~,~,~,Sigma_C] = fminunc(kernel_init,mu_init,options);
+    [d, ~, D, Y] = kernel([mu_init; mu_C]); 
+ 
+
+    subplot(2,1,1)
+    hold on
+    plot(D(1,:))
+    plot(D(2,:),'m')
+    hold off
+    subplot(2,1,2)
+    hold on
+    plot(y,'r')
+    plot(Y(1,:))
+    plot(Y(2,:),'m')  
+    hold off
+ 
+    fprintf('*** Censored Posterior, threshold = 0 ***\n');
+    threshold0 = 0;
+    kernel_init = @(xx) - C_posterior_ar1(xx, y(1:T), threshold0)/T; 
+    kernel = @(xx) C_posterior_ar1(xx, y(1:T), threshold0); 
+    [mu_C0,~,~,~,~,Sigma_C0] = fminunc(kernel_init,mu_init,options);
+    
+    
+    
+    
+   
+    
+    
+%     kernel_init = @(xx) - C_posterior_ar1_mex(xx, y(1:T), threshold)/T;    
+%     kernel = @(xx) C_posterior_ar1_mex(xx, y(1:T), threshold);
+    kernel_init = @(xx) - C_posterior_ar1_varc_mex(xx, y(1:T), threshold)/T;    
+    kernel = @(xx) C_posterior_ar1_varc_mex(xx, y(1:T), threshold);
     try
         [mit_C, CV_C] = MitISEM_new(kernel_init, kernel, mu_init, cont, GamMat);   
     catch

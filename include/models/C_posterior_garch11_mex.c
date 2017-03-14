@@ -85,7 +85,7 @@ void prior_garch11(double *theta, mwSignedIndex N,
         }        
         if (r1[i] == 1)
         {
-            r2[i] = log(2);             // unif on alpha+beta<1 
+            r2[i] = log(0.5);             // unif on alpha+beta<1 
         }
     }
 }

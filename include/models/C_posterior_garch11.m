@@ -54,7 +54,7 @@ function R = prior_garch(M, omega, alpha, beta)
     r1 = (c1 & c2 & c3);
 
     r2 = -Inf*ones(M,1);
-    r2(r1==true) = log(2);
+    r2(r1==true) = log(0.5);
     
     R = [r1, r2];
 end

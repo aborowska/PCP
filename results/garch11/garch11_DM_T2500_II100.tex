@@ -1,0 +1,21 @@
+{ \renewcommand{\arraystretch}{1.2} 
+\begin{table}[!ht]
+\center 
+\begin{tabular}{l | rrr rrr} 
+VaR 1\% $\setminus$ 5\% & \multicolumn{1}{c}{True} & \multicolumn{1}{c}{Posterior} & \multicolumn{1}{c}{CP0} & \multicolumn{1}{c}{PCP0} & \multicolumn{1}{c}{CP10\%} & \multicolumn{1}{c}{PCP10\%} \\ \hline 
+True &    --\phantom{$^{***}$} & 0.1677\phantom{$^{***}$} & -2.0761$^{**}$\phantom{$^{*}$} & -1.2666\phantom{$^{***}$} & -1.2137\phantom{$^{***}$} & -5.7227$^{***}$  \\ 
+Posterior & 3.4656$^{***}$ &    --\phantom{$^{***}$} & -1.3005\phantom{$^{***}$} & -1.2858\phantom{$^{***}$} & -0.7557\phantom{$^{***}$} & -4.2226$^{***}$  \\ 
+CP0 & 3.3173$^{***}$ & -1.5099\phantom{$^{***}$} &    --\phantom{$^{***}$} & -1.1978\phantom{$^{***}$} & 2.0306$^{**}$\phantom{$^{*}$} & -4.1119$^{***}$  \\ 
+PCP0 & 1.2561\phantom{$^{***}$} & 1.1580\phantom{$^{***}$} & 1.2045\phantom{$^{***}$} &    --\phantom{$^{***}$} & 1.2288\phantom{$^{***}$} & 0.9792\phantom{$^{***}$}  \\ 
+CP10\% & 2.5450$^{**}$\phantom{$^{*}$} & -2.2313$^{**}$\phantom{$^{*}$} & -2.1787$^{**}$\phantom{$^{*}$} & -1.2226\phantom{$^{***}$} &    --\phantom{$^{***}$} & -5.8458$^{***}$  \\ 
+PCP10\% & 5.9115$^{***}$ & 1.9533$^{*}$\phantom{$^{**}$} & 3.9207$^{***}$ & -1.0646\phantom{$^{***}$} & 4.7882$^{***}$ &    --\phantom{$^{***}$}  \\ 
+\hline 
+\multicolumn{7}{l}{\footnotesize{CP: Censored posterior.}}  \\ 
+\multicolumn{7}{l}{\footnotesize{PCP: Partially censored posterior.}} \\ 
+\multicolumn{7}{l}{\footnotesize{(P)CP0: Censoring with threshold 0.}} \\ 
+\multicolumn{7}{l}{\footnotesize{(P)CP10\%: Censoring with threshold 10\% sample quantile.}}  \\ 
+\end{tabular}
+ \caption{Diebold-Mariano test statistics for  pairwise method comparision of forecasting performace based on loss diffential vectors of length $S = 50$, with the loss function defined as the RMSE over $H=100$ out-of-sample periods. In-sample period: $T = 2500$.} 
+\label{tab:garch11_DM_T_2500}  
+\end{table}
+}

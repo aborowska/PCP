@@ -1,0 +1,21 @@
+{ \renewcommand{\arraystretch}{1.2} 
+\begin{table}[!ht] 
+\center 
+\begin{tabular}{l | rrr rrr} 
+VaR 1\% $\setminus$ 5\% & \multicolumn{1}{c}{True} & \multicolumn{1}{c}{Posterior} & \multicolumn{1}{c}{CP0} & \multicolumn{1}{c}{PCP0} & \multicolumn{1}{c}{CP10\%} & \multicolumn{1}{c}{PCP10\%} \\ \hline 
+True &    --\phantom{$^{***}$} & 0.7316\phantom{$^{***}$} & -2.5217$^{**}$\phantom{$^{*}$} & -1.9948$^{**}$\phantom{$^{*}$} & -2.5607$^{**}$\phantom{$^{*}$} & -2.2976$^{**}$\phantom{$^{*}$}  \\ 
+Posterior & 1.8427$^{*}$\phantom{$^{**}$} &    --\phantom{$^{***}$} & -2.1446$^{**}$\phantom{$^{*}$} & -2.0092$^{**}$\phantom{$^{*}$} & -2.3264$^{**}$\phantom{$^{*}$} & -2.3569$^{**}$\phantom{$^{*}$}  \\ 
+CP0 & 3.2075$^{***}$ & 0.3988\phantom{$^{***}$} &    --\phantom{$^{***}$} & -1.9083$^{*}$\phantom{$^{**}$} & -0.1838\phantom{$^{***}$} & -2.0825$^{**}$\phantom{$^{*}$}  \\ 
+PCP0 & 2.0056$^{**}$\phantom{$^{*}$} & 1.9627$^{**}$\phantom{$^{*}$} & 1.9547$^{*}$\phantom{$^{**}$} &    --\phantom{$^{***}$} & 1.9066$^{*}$\phantom{$^{**}$} & 1.1740\phantom{$^{***}$}  \\ 
+CP10\% & 3.1445$^{***}$ & 0.2090\phantom{$^{***}$} & -0.4654\phantom{$^{***}$} & -1.9622$^{**}$\phantom{$^{*}$} &    --\phantom{$^{***}$} & -2.0361$^{**}$\phantom{$^{*}$}  \\ 
+PCP10\% & 2.2836$^{**}$\phantom{$^{*}$} & 2.1620$^{**}$\phantom{$^{*}$} & 2.1489$^{**}$\phantom{$^{*}$} & -1.1936\phantom{$^{***}$} & 2.1575$^{**}$\phantom{$^{*}$} &    --\phantom{$^{***}$}  \\ 
+\hline 
+\multicolumn{7}{l}{\footnotesize{CP: Censored posterior.}}  \\ 
+\multicolumn{7}{l}{\footnotesize{PCP: Partially censored posterior.}} \\ 
+\multicolumn{7}{l}{\footnotesize{(P)CP0: Censoring with threshold 0.}} \\ 
+\multicolumn{7}{l}{\footnotesize{(P)CP10\%: Censoring with threshold 10\% sample quantile.}}  \\ 
+\end{tabular}
+ \caption{Diebold-Mariano test statistics for  pairwise method comparision of forecasting performace based on loss diffential vectors of length $S = 50$, with the loss function defined as the RMSE over $H=100$ out-of-sample periods. In-sample period: $T = 1000$.} 
+\label{tab:garch11_DM_T_1000}  
+\end{table}
+}

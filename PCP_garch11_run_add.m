@@ -1,4 +1,4 @@
-function results = PCP_garch11_run(c, sigma1, sigma2, kappa, omega, alpha, beta, p_bar1, p_bar, T, H, M, BurnIn, mu_init, df, cont, options, partition, II, GamMat)
+function results = PCP_garch11_run_add(c, sigma1, sigma2, kappa, omega, alpha, beta, p_bar1, p_bar, T, H, M, BurnIn, mu_init, df, cont, options, partition, II, GamMat)
 
     sigma1_k = sigma1/sqrt(kappa);
     sigma2_k = sigma2/sqrt(kappa);
@@ -79,6 +79,34 @@ function results = PCP_garch11_run(c, sigma1, sigma2, kappa, omega, alpha, beta,
     mean_draw = mean(draw);
     median_draw = median(draw);
     std_draw = std(draw);
+    
+    
+    %% ADDITIONAL PARAMS
+    % Threshold = 10% perscentile of the data sample
+    fprintf('*** Additional Parameters ***\n');    
+    threshold = sort(y(1:T));
+    threshold = threshold(2*p_bar*T);
+    mu_add_init = [0, 1, 1];
+    mu_add = zeros(M,3);
+    Sigma_add = zeros(M,3*3);
+    for ii = 1:M
+        if (mod(ii,1000)==0)
+            fprintf('Add param iter = %d\n',ii)
+        end
+        kernel_init = @(aa) - C_addparam_posterior_garch11_mex(aa, draw(ii,:), y, threshold, y_S)/T;   
+        [mu_add(ii,:),~,~,~,~,S_add] = fminunc(kernel_init, mu_add_init,options);
+        Sigma_add(ii,:) = reshape(inv(T*S_add),1,9);
+    end
+    h_add = bsxfun(@times,h_post,mu_add(:,3));
+    y_post_add = bsxfun(@plus,sqrt(h_add).*randn(M,H),mu_add(:,1) + mu_add(:,2).*draw(:,1));
+    y_post_add = sort(y_post_add);
+    VaR_1_post_add = y_post_add(p_bar1*M); 
+    VaR_5_post_add = y_post_add(p_bar*M); 
+
+    mean_mu_add = mean(mu_add);
+    median_mu_add = median(mu_add);
+    std_mu_add = std(mu_add);
+
 
     %% Threshold = 10% perscentile of the data sample
     threshold = sort(y(1:T));
@@ -233,6 +261,6 @@ function results = PCP_garch11_run(c, sigma1, sigma2, kappa, omega, alpha, beta,
     'accept',accept,'accept_C',accept_C,'accept_PC',accept_PC,'accept_C0',accept_C0,'accept_PC0',accept_PC0,...
     'mit',mit,'CV',CV,'mit_C',mit_C,'CV_C',CV_C,'mit_C0',mit_C0,'CV_C0',CV_C0,...
     'VaR_1',VaR_1,'VaR_1_post',VaR_1_post,'VaR_1_post_C',VaR_1_post_C,'VaR_1_post_PC',VaR_1_post_PC,'VaR_1_post_C0',VaR_1_post_C0,'VaR_1_post_PC0',VaR_1_post_PC0,...
-    'VaR_5',VaR_5,'VaR_5_post',VaR_5_post,'VaR_5_post_C',VaR_5_post_C,'VaR_5_post_PC',VaR_5_post_PC,'VaR_5_post_C0',VaR_5_post_C0,'VaR_5_post_PC0',VaR_5_post_PC0);
-
+    'VaR_5',VaR_5,'VaR_5_post',VaR_5_post,'VaR_5_post_C',VaR_5_post_C,'VaR_5_post_PC',VaR_5_post_PC,'VaR_5_post_C0',VaR_5_post_C0,'VaR_5_post_PC0',VaR_5_post_PC0,...
+    'VaR_1_post_add',VaR_1_post_add,'VaR_5_post_add',VaR_5_post_add,'mean_mu_add',mean_mu_add,'median_mu_add',median_mu_add,'std_mu_add',std_mu_add);
 end

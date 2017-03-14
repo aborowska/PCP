@@ -4,16 +4,23 @@ function DM = DM_test(model, T, sigma1, sigma2, H, II)
 %     sigma2 = 2;
 %     T = 1000;
 %     H = 100;
- 
-%     model = 'garch11';
-%     sigma1 = 1;
-%     sigma2 = 2;
-%     T = 2500;
-%     H = 100;
+%      model = 'garch11';
+
+    model = 'agarch11';
+    sigma1 = 1;
+    sigma2 = 2;
+    T = 1000;
+    H = 100;
 
     v_new = '(R2015a)';
-%     II = 100;
-    name = ['results/',model,'/',model,'_',num2str(sigma1),'_',num2str(sigma2),'_T',num2str(T),'_H',num2str(H),'_II',num2str(II),'_PCP0_MC2_',v_new,'.mat'];
+    II = 10;
+    if strcmp(model,'ar1')
+        name = ['results/',model,'/',model,'_',num2str(sigma1),'_',num2str(sigma2),'_T',num2str(T),'_H',num2str(H),'_II',num2str(II),'_PCP0_MC2_',v_new,'.mat'];
+    elseif strcmp(model,'garch11')
+        name = ['results/',model,'/',model,'_',num2str(sigma1),'_',num2str(sigma2),'_T',num2str(T),'_H',num2str(H),'_II',num2str(II),'_PCP0_MC_',v_new,'.mat'];
+    else
+        name = ['results/',model,'/',model,'_',num2str(sigma1),'_',num2str(sigma2),'_T',num2str(T),'_H',num2str(H),'_II',num2str(II),'_PCP0_MC2_',v_new,'.mat'];    
+    end
     load(name, '-regexp','^q\w*')
     load(name, '-regexp','^VaR\w*')
     % Ordering: MC sampling from the true model,
@@ -44,7 +51,7 @@ function DM = DM_test(model, T, sigma1, sigma2, H, II)
     RMSE_1 = zeros(S,6);
     RMSE_1(:,1) = sqrt(mean((VaR_1 - q1).^2,2));
     RMSE_1(:,2) = sqrt(mean((VaR_1_post - q1).^2,2));
-    RMSE_1(:,3)= sqrt(mean((VaR_1_post_C - q1).^2,2));
+    RMSE_1(:,3) = sqrt(mean((VaR_1_post_C - q1).^2,2));
     RMSE_1(:,4) = sqrt(mean((VaR_1_post_PC - q1).^2,2));
     RMSE_1(:,5) = sqrt(mean((VaR_1_post_C0 - q1).^2,2));
     RMSE_1(:,6) = sqrt(mean((VaR_1_post_PC0 - q1).^2,2));

@@ -1,4 +1,4 @@
-function results = PCP_ar1_run(c, sigma1, sigma2, rho, p_bar1, p_bar, T, H, M, BurnIn, mu_init, df, cont, options, partition, II, GamMat)
+function results = PCP_ar1_run_c(c, sigma1, sigma2, rho, p_bar1, p_bar, T, H, M, BurnIn, mu_init, df, cont, options, partition, II, GamMat)
 
     %% simple AR(1)
     eps = randn(T+H,1);
@@ -163,13 +163,68 @@ function results = PCP_ar1_run(c, sigma1, sigma2, rho, p_bar1, p_bar, T, H, M, B
     VaR_1_post_PC0 = y_post_PC0(p_bar1*M,:); 
     VaR_5_post_PC0 = y_post_PC0(p_bar*M,:); 
     
-  
+    %% Threshold = c
+    thresholdc = c;
+    %% CENSORED
+    fprintf('*** Censored Posterior, threshold c ***\n');    
+    kernel_init = @(xx) - C_posterior_ar1_mex(xx, y(1:T), thresholdc)/T; 
+    kernel = @(xx) C_posterior_ar1_mex(xx, y(1:T), thresholdc);
+    try
+        [mit_Cc, CV_Cc] = MitISEM_new(kernel_init, kernel, mu_init, cont, GamMat);
+    catch
+        [mu_Cc,~,~,~,~,Sigma_Cc] = fminunc(kernel_init,mu_init,options);
+        Sigma_Cc = inv(T*Sigma_Cc);
+        mit_Cc = struct('mu',mu_Cc,'Sigma',reshape(Sigma_Cc,1,length(mu_Cc)^2),'df', df, 'p', 1);
+        [mit_Cc, CV_Cc] = MitISEM_new(mit_Cc, kernel, mu_init, cont, GamMat);
+    end
+    [draw_Cc, lnk_Cc] = fn_rmvgt_robust(M+BurnIn, mit_Cc, kernel, false);
+    lnd_Cc = dmvgt(draw_Cc, mit_Cc, true, GamMat);    
+    lnw_Cc = lnk_Cc - lnd_Cc;
+    lnw_Cc = lnw_Cc - max(lnw_Cc);
+    [ind, a] = fn_MH(lnw_Cc);
+    draw_Cc = draw_Cc(ind,:);
+    accept_Cc = a/(M+BurnIn);
+    draw_Cc = draw_Cc(BurnIn+1:BurnIn+M,:);
+    mean_draw_Cc = mean(draw_Cc);
+    std_draw_Cc = std(draw_Cc);
+
+    y_post_Cc = bsxfun(@times,randn(M,H),draw_Cc(:,2));
+    y_post_Cc = bsxfun(@plus,y_post_Cc,draw_Cc(:,1));
+    y_post_Cc = y_post_Cc + draw_Cc(:,3)*y(T:(T+H-1),1)';
+    y_post_Cc = sort(y_post_Cc);
+    VaR_1_post_Cc = y_post_Cc(p_bar1*M,:); 
+    VaR_5_post_Cc = y_post_Cc(p_bar*M,:); 
+
+    %% PARTIAL CENSORING: keep rho uncensored, then censor mu and sigma
+    fprintf('*** Partially Censored Posterior, threshold c ***\n');
+    % mit_Cc: joint candidate for the joint censored posterior
+    % Short version
+%     [draw_PCc, a_PCc] = sim_cond_mit_MH(mit_Cc, draw_short, partition, M_short, BurnIn, kernel, GamMat);
+    [draw_PCc, a_PCc] = sim_cond_mit_MH_outloop(mit_Cc, draw_short, partition, II, BurnIn, kernel, GamMat, cont.disp);
+    accept_PCc = mean(a_PCc);
+    mean_draw_PCc = mean(draw_PCc);
+    std_draw_PCc = std(draw_PCc);    
+
+    y_post_PCc = bsxfun(@times,randn(M,H),draw_PCc(:,2));
+    y_post_PCc = bsxfun(@plus,y_post_PCc,draw_PCc(:,1));
+    y_post_PCc = y_post_PCc + draw_PCc(:,3)*y(T:(T+H-1),1)';
+    y_post_PCc = sort(y_post_PCc);
+    VaR_1_post_PCc = y_post_PCc(p_bar1*M,:); 
+    VaR_5_post_PCc = y_post_PCc(p_bar*M,:); 
+    
     %% Results
     results = struct('y',y,'draw',draw,'draw_C',draw_C,'draw_PC',draw_PC,'draw_C0',draw_C0,'draw_PC0',draw_PC0,...
+        'draw_Cc',draw_Cc,'draw_PCc',draw_PCc,...
         'q1',q1,'q5',q5,...
         'mean_draw',mean_draw,'mean_draw_C',mean_draw_C,'mean_draw_PC',mean_draw_PC,'mean_draw_C0',mean_draw_C0,'mean_draw_PC0',mean_draw_PC0,...
+        'mean_draw_Cc',mean_draw_Cc,'mean_draw_PCc',mean_draw_PCc,...
         'std_draw',std_draw,'std_draw_C',std_draw_C,'std_draw_PC',std_draw_PC,'std_draw_C0',std_draw_C0,'std_draw_PC0',std_draw_PC0,...
+        'std_draw_Cc',std_draw_Cc,'std_draw_PCc',std_draw_PCc,...
         'accept',accept,'accept_C',accept_C,'accept_PC',accept_PC,'accept_C0',accept_C0,'accept_PC0',accept_PC0,...
+        'accept_Cc',accept_Cc,'accept_PCc',accept_PCc,...
         'mit',mit,'CV',CV,'mit_C',mit_C,'CV_C',CV_C,'mit_C0',mit_C0,'CV_C0',CV_C0,...
+        'mit_Cc',mit_Cc,'CV_Cc',CV_Cc,...
         'VaR_1',VaR_1,'VaR_1_post',VaR_1_post,'VaR_1_post_C',VaR_1_post_C,'VaR_1_post_PC',VaR_1_post_PC,'VaR_1_post_C0',VaR_1_post_C0,'VaR_1_post_PC0',VaR_1_post_PC0,...
-        'VaR_5',VaR_5,'VaR_5_post',VaR_5_post,'VaR_5_post_C',VaR_5_post_C,'VaR_5_post_PC',VaR_5_post_PC,'VaR_5_post_C0',VaR_5_post_C0,'VaR_5_post_PC0',VaR_5_post_PC0);
+        'VaR_1_post_Cc',VaR_1_post_Cc,'VaR_1_post_PCc',VaR_1_post_PCc,...
+        'VaR_5',VaR_5,'VaR_5_post',VaR_5_post,'VaR_5_post_C',VaR_5_post_C,'VaR_5_post_PC',VaR_5_post_PC,'VaR_5_post_C0',VaR_5_post_C0,'VaR_5_post_PC0',VaR_5_post_PC0,...
+        'VaR_5_post_Cc',VaR_5_post_Cc,'VaR_5_post_PCc',VaR_5_post_PCc);

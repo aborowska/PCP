@@ -1,0 +1,21 @@
+{ \renewcommand{\arraystretch}{1.2} 
+\begin{table}[!ht] 
+\center 
+\begin{tabular}{l | rrr rrr} 
+VaR 1\% $\setminus$ 5\% & \multicolumn{1}{c}{True} & \multicolumn{1}{c}{Posterior} & \multicolumn{1}{c}{CP0} & \multicolumn{1}{c}{PCP0} & \multicolumn{1}{c}{CP10\%} & \multicolumn{1}{c}{PCP10\%} \\ \hline 
+True &    --\phantom{$^{***}$} & 0.9261\phantom{$^{***}$} & -2.2796$^{**}$\phantom{$^{*}$} & -1.7111$^{*}$\phantom{$^{**}$} & -2.2321$^{**}$\phantom{$^{*}$} & -1.3516\phantom{$^{***}$}  \\ 
+Posterior & 2.0686$^{**}$\phantom{$^{*}$} &    --\phantom{$^{***}$} & -1.9904$^{**}$\phantom{$^{*}$} & -1.7518$^{*}$\phantom{$^{**}$} & -1.8351$^{*}$\phantom{$^{**}$} & -1.3709\phantom{$^{***}$}  \\ 
+CP0 & 2.9113$^{***}$ & -0.3855\phantom{$^{***}$} &    --\phantom{$^{***}$} & -1.6456$^{*}$\phantom{$^{**}$} & 1.1151\phantom{$^{***}$} & -1.3218\phantom{$^{***}$}  \\ 
+PCP0 & 1.7758$^{*}$\phantom{$^{**}$} & 1.7264$^{*}$\phantom{$^{**}$} & 1.7357$^{*}$\phantom{$^{**}$} &    --\phantom{$^{***}$} & 1.6593$^{*}$\phantom{$^{**}$} & -0.5976\phantom{$^{***}$}  \\ 
+CP10\% & 3.0120$^{***}$ & -0.7151\phantom{$^{***}$} & -1.4334\phantom{$^{***}$} & -1.7448$^{*}$\phantom{$^{**}$} &    --\phantom{$^{***}$} & -1.3273\phantom{$^{***}$}  \\ 
+PCP10\% & 1.5029\phantom{$^{***}$} & 1.4791\phantom{$^{***}$} & 1.4819\phantom{$^{***}$} & 0.5478\phantom{$^{***}$} & 1.4863\phantom{$^{***}$} &    --\phantom{$^{***}$}  \\ 
+\hline 
+\multicolumn{7}{l}{\footnotesize{CP: Censored posterior.}}  \\ 
+\multicolumn{7}{l}{\footnotesize{PCP: Partially censored posterior.}} \\ 
+\multicolumn{7}{l}{\footnotesize{(P)CP0: Censoring with threshold 0.}} \\ 
+\multicolumn{7}{l}{\footnotesize{(P)CP10\%: Censoring with threshold 10\% sample quantile.}}  \\ 
+\end{tabular}
+ \caption{Diebold-Mariano test statistics for  pairwise method comparision of forecasting performace based on loss diffential vectors of length $S = 50$, with the loss function defined as the RMSE over $H=100$ out-of-sample periods. In-sample period: $T = 2500$.} 
+\label{tab:garch11_DM_T_2500}  
+\end{table}
+}

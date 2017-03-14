@@ -7,6 +7,7 @@ function cont =  MitISEM_Control
     
     cont.mit.CV_tol = 0.1; %0.1
     cont.mit.CV_old = 100;
+    cont.mit.CV_max = 1;
 
     cont.mit.ISpc = 0.1;
     cont.mit.pnc = 0.1; % probability of a new component

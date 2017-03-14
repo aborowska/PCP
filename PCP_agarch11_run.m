@@ -1,4 +1,4 @@
-function results = PCP_garch11_run(c, sigma1, sigma2, kappa, omega, alpha, beta, p_bar1, p_bar, T, H, M, BurnIn, mu_init, df, cont, options, partition, II, GamMat)
+function results = PCP_agarch11_run(c, sigma1, sigma2, kappa, omega, alpha, beta, p_bar1, p_bar, T, H, M, BurnIn, mu_init, df, cont, options, partition, II, GamMat)
 
     sigma1_k = sigma1/sqrt(kappa);
     sigma2_k = sigma2/sqrt(kappa);
@@ -45,10 +45,8 @@ function results = PCP_garch11_run(c, sigma1, sigma2, kappa, omega, alpha, beta,
     %% Uncensored Posterior
     fprintf('*** Uncensored Posterior ***\n');
     y_S = var(y(1:T));
-%         mu_init(1,1) = mean(y(1:T));
-%         mu_init(1,2) = y_S;
-    kernel_init = @(xx) -posterior_garch11_mex(xx, y(1:T), y_S)/T;
-    kernel = @(xx) posterior_garch11_mex(xx, y(1:T), y_S);
+    kernel_init = @(xx) -posterior_agarch11_mex(xx, y(1:T), y_S)/T;
+    kernel = @(xx) posterior_agarch11_mex(xx, y(1:T), y_S);
     try
         [mit, CV] = MitISEM_new(kernel_init, kernel, mu_init, cont, GamMat);
         [draw, lnk] = fn_rmvgt_robust(M+BurnIn, mit, kernel, false);
@@ -70,7 +68,7 @@ function results = PCP_garch11_run(c, sigma1, sigma2, kappa, omega, alpha, beta,
     accept = a/(M+BurnIn);
     draw = draw(BurnIn+1:BurnIn+M,:);    
 
-    h_post = volatility_garch11(draw,y,y_S,H);   
+    h_post = volatility_agarch11(draw,y,y_S,H);   
     y_post = randn(M,H).*sqrt(h_post);
     y_post = bsxfun(@plus,y_post,draw(:,1));
     y_post = sort(y_post);
@@ -85,9 +83,9 @@ function results = PCP_garch11_run(c, sigma1, sigma2, kappa, omega, alpha, beta,
     threshold = threshold(2*p_bar*T);
     %% CENSORED
     fprintf('*** Censored Posterior, threshold 10%% ***\n');
-    kernel_init = @(xx) - C_posterior_garch11_mex(xx, y(1:T,1), threshold, y_S)/T;    
-    kernel = @(xx) C_posterior_garch11_mex(xx, y(1:T,1), threshold, y_S);
-    
+    kernel_init = @(xx) - C_posterior_agarch11_mex(xx, y(1:T,1), threshold, y_S)/T;    
+    kernel = @(xx) C_posterior_agarch11_mex(xx, y(1:T,1), threshold, y_S);
+
 %     cont.mit.CV_tol = 0.3; 
     cont.mit.CV_max = 1.9;
     CV_C = cont.mit.CV_old;
@@ -114,6 +112,7 @@ function results = PCP_garch11_run(c, sigma1, sigma2, kappa, omega, alpha, beta,
             lnd_C = dmvgt(draw_C, mit_C, true, GamMat);    
         end 
     end
+
     lnw_C = lnk_C - lnd_C;
     lnw_C = lnw_C - max(lnw_C);
     [ind, a] = fn_MH(lnw_C);
@@ -121,7 +120,7 @@ function results = PCP_garch11_run(c, sigma1, sigma2, kappa, omega, alpha, beta,
     accept_C = a/(M+BurnIn);
     draw_C = draw_C(BurnIn+1:BurnIn+M,:);
 
-    h_post_C = volatility_garch11(draw_C,y,y_S,H);
+    h_post_C = volatility_agarch11(draw_C,y,y_S,H);
     y_post_C = randn(M,H).*sqrt(h_post_C);
     y_post_C = bsxfun(@plus,y_post_C,draw_C(:,1));
     y_post_C = sort(y_post_C);
@@ -148,8 +147,7 @@ function results = PCP_garch11_run(c, sigma1, sigma2, kappa, omega, alpha, beta,
     median_draw_PC = median(draw_PC);
     std_draw_PC = std(draw_PC);
 
-    h_post_PC = volatility_garch11(draw_PC,y,y_S,H);
-%     y_post_PC = bsxfun(@times,randn(M_fin,H),sqrt(h_post_PC(T+1:T+H,1))');
+    h_post_PC = volatility_agarch11(draw_PC,y,y_S,H);
     y_post_PC = randn(M_fin,H).*sqrt(h_post_PC);
     y_post_PC = bsxfun(@plus,y_post_PC,draw_PC(:,1));
     y_post_PC = sort(y_post_PC);
@@ -160,9 +158,9 @@ function results = PCP_garch11_run(c, sigma1, sigma2, kappa, omega, alpha, beta,
     threshold0 = 0;
     %% CENSORED
     fprintf('*** Censored Posterior, threshold 0 ***\n');    
-    kernel_init = @(xx) - C_posterior_garch11_mex(xx, y(1:T,1), threshold0, y_S)/T;    
-    kernel = @(xx) C_posterior_garch11_mex(xx, y(1:T,1), threshold0, y_S);
-    
+    kernel_init = @(xx) - C_posterior_agarch11_mex(xx, y(1:T,1), threshold0, y_S)/T;    
+    kernel = @(xx) C_posterior_agarch11_mex(xx, y(1:T,1), threshold0, y_S);
+
     CV_C0 = cont.mit.CV_old;
     while (CV_C0(end) >= 2)
         try
@@ -197,7 +195,7 @@ function results = PCP_garch11_run(c, sigma1, sigma2, kappa, omega, alpha, beta,
     median_draw_C0 = median(draw_C0);
     std_draw_C0 = std(draw_C0);
 
-    h_post_C0 = volatility_garch11(draw_C0,y,y_S,H);
+    h_post_C0 = volatility_agarch11(draw_C0,y,y_S,H);
     y_post_C0 = randn(M,H).*sqrt(h_post_C0);
     y_post_C0 = bsxfun(@plus,y_post_C0,draw_C0(:,1));
     y_post_C0 = sort(y_post_C0);
@@ -218,7 +216,7 @@ function results = PCP_garch11_run(c, sigma1, sigma2, kappa, omega, alpha, beta,
     median_draw_PC0 = median(draw_PC0);
     std_draw_PC0 = std(draw_PC0);    
 
-    h_post_PC0 = volatility_garch11(draw_PC0,y,y_S,H);
+    h_post_PC0 = volatility_agarch11(draw_PC0,y,y_S,H);
     y_post_PC0 = randn(M_fin,H).*sqrt(h_post_PC0);
     y_post_PC0 = bsxfun(@plus,y_post_PC0,draw_PC0(:,1));
     y_post_PC0 = sort(y_post_PC0);

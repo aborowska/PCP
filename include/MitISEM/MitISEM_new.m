@@ -5,6 +5,8 @@ function [mit_new, CV] = MitISEM_new(kernel_init, kernel, mu_init, cont, GamMat)
     Hmax = cont.mit.Hmax;
     CV_tol = cont.mit.CV_tol;
     CV_old = cont.mit.CV_old;
+    CV_max = cont.mit.CV_max;
+    
     norm = cont.mit.norm;
      
     resampl_on = cont.resmpl_on;
@@ -189,7 +191,7 @@ function [mit_new, CV] = MitISEM_new(kernel_init, kernel, mu_init, cont, GamMat)
         % evaluate convergence
         CV_old = CV(size(CV,2));
         
-        [CV_new, hstop_new] = fn_CVstop(w, CV_old, CV_tol);
+        [CV_new, hstop_new] = fn_CVstop(w, CV_old, CV_tol, CV_max);
         CV = [CV, CV_new];
         if cont.disp
             fprintf('CV = ')               

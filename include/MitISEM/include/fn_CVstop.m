@@ -1,10 +1,10 @@
-function [CV_new, hstop] = fn_CVstop(w, CV_old, CV_tol, lnk, lnd, lnd_new)
+function [CV_new, hstop] = fn_CVstop(w, CV_old, CV_tol, CV_max, lnk, lnd, lnd_new)
 % compute new CV from IS weights
 % and indicator to finalize the number of mixture components in MitISEM
 %     if std(w) == 0 
 %         error('IS weights w are constnat, try increasing number of draws N.')
 %     end
-    if (nargin > 3)
+    if (nargin > 4)
         w = lnk - lnd;
         M = max(w);       
         w = exp(w - M);
@@ -24,7 +24,11 @@ function [CV_new, hstop] = fn_CVstop(w, CV_old, CV_tol, lnk, lnd, lnd_new)
     else
         CV_new = std(w)/mean(w);
     end
+    
     if ((nargin > 1) && (nargout > 1))
         hstop = (abs((CV_new - CV_old)/CV_old) <= CV_tol);
+        if (nargin == 4)
+            hstop = hstop * (CV_new <= CV_max);
+        end
     end
 end

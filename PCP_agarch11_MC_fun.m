@@ -1,5 +1,5 @@
-function PCP_garch11_MC_fun(T, sigma2, S, II)
-% T = 1000; S = 1; II = 100; sigma2 = 2 ; % <------------------ !!! 
+function PCP_agarch11_MC_fun(T, sigma2, S, II)
+% T = 1000; S = 1; II = 10; sigma2 = 2 ; % <------------------ !!! 
 
     % clear all
     close all
@@ -9,10 +9,9 @@ function PCP_garch11_MC_fun(T, sigma2, S, II)
     s = RandStream('mt19937ar','Seed',1);
     RandStream.setGlobalStream(s); 
 
-    model = 'garch11';     partition = 3;
-%     model = 'garch11_v2';    partition = 2;
+    model = 'agarch11';     partition = 3;
     fprintf('Model: %s.\n',model)
-    parameters = {'$\\mu$','$\\omega$','$\\alpha$','$\\beta$'};
+    parameters = {'$\\mu$','$\\gamma$','$\\omega$','$\\alpha$','$\\beta$'};
 
     sigma1 = 1;
     % sigma2 = 2;
@@ -20,13 +19,16 @@ function PCP_garch11_MC_fun(T, sigma2, S, II)
     kappa = 0.5*(sigma1^2 + sigma2^2 - ((sigma2-sigma1)^2)/pi); % var of eps
     sigma1_k = sigma1/sqrt(kappa);
     sigma2_k = sigma2/sqrt(kappa);
-
+    
+    gama = 0; % "typo" on purpose: not to confuse with the gamma function
     omega = 1;
     alpha = 0.1;
     beta = 0.8;
-    mu_true = [0, omega, alpha, beta];
-    param_true = [c,sigma2,omega,alpha,beta];
-    mu_init = [0, 1, 0.05, 0.85];
+    % theta  = [mu, gama, omega, alpha, beta]
+    mu_true = [0, 0, omega, alpha, beta];
+    param_true = [c,sigma2,gama,omega,alpha,beta];
+    mu_init = [0, -0.1, 1, 0.05, 0.85];
+    % mu_init = [mean(y), -0.01, 0.01, 0.05, 0.85];
 
     % S = 20; % number of MC replications
     H = 100;
@@ -58,23 +60,23 @@ function PCP_garch11_MC_fun(T, sigma2, S, II)
     %% simulated parameters:
     % true model, posterior, censored posterior 10%, partially censored posterior 10%, 
     % censored posterior at 0, partially censored posterior at 0
-    mean_draw = zeros(S,4);
-    mean_draw_C = zeros(S,4);
-    mean_draw_PC = zeros(S,4);
-    mean_draw_C0 = zeros(S,4);
-    mean_draw_PC0 = zeros(S,4);
+    mean_draw = zeros(S,5);
+    mean_draw_C = zeros(S,5);
+    mean_draw_PC = zeros(S,5);
+    mean_draw_C0 = zeros(S,5);
+    mean_draw_PC0 = zeros(S,5);
 
-    median_draw = zeros(S,4);
-    median_draw_C = zeros(S,4);
-    median_draw_PC = zeros(S,4);
-    median_draw_C0 = zeros(S,4);
-    median_draw_PC0 = zeros(S,4);
+    median_draw = zeros(S,5);
+    median_draw_C = zeros(S,5);
+    median_draw_PC = zeros(S,5);
+    median_draw_C0 = zeros(S,5);
+    median_draw_PC0 = zeros(S,5);
 
-    std_draw = zeros(S,4);
-    std_draw_C = zeros(S,4);
-    std_draw_PC = zeros(S,4);
-    std_draw_C0 = zeros(S,4);
-    std_draw_PC0 = zeros(S,4);
+    std_draw = zeros(S,5);
+    std_draw_C = zeros(S,5);
+    std_draw_PC = zeros(S,5);
+    std_draw_C0 = zeros(S,5);
+    std_draw_PC0 = zeros(S,5);
 
     accept = zeros(S,1);
     accept_C = zeros(S,1);
@@ -113,7 +115,7 @@ function PCP_garch11_MC_fun(T, sigma2, S, II)
         II = 10;
     end
     %% various display options
-    cont.disp = false;
+    cont.disp = true; %false;
 
     v_new = ver('symbolic');
     v_new = v_new.Release;
@@ -141,7 +143,7 @@ function PCP_garch11_MC_fun(T, sigma2, S, II)
                 fprintf(['\n',model, ' simulation no. %i\n'],s)
         %     end
         try
-            results = PCP_garch11_run(c, sigma1, sigma2, kappa, omega, alpha, beta, p_bar1, p_bar, T, H, M, BurnIn, mu_init, df, cont, options, partition, II, GamMat);
+            results = PCP_agarch11_run(c, sigma1, sigma2, kappa, omega, alpha, beta, p_bar1, p_bar, T, H, M, BurnIn, mu_init, df, cont, options, partition, II, GamMat);
             s = s+1;
 
             y = results.y;

@@ -6,7 +6,7 @@ addpath(genpath('include/'));
 s = RandStream('mt19937ar','Seed',1);
 RandStream.setGlobalStream(s); 
 
-model = 'garch11';
+model = 'garch11';   partition = 3;
 parameters = {'$\\mu$','$\\omega$','$\\alpha$','$\\beta$'};
 
 sigma1 = 1;
@@ -302,17 +302,11 @@ if plot_on
 end
 
 
-
 %% PARTIALLY CENSORED
-partition = 3; 
-
-II = 100; 
+% partition = 3; 
+II = 10; 
 draw_short = draw((1:II:M)',:); % thinning - to get hight quality rhos
-M_short = M/II;
-
-% draw = draw_short;
-% M = M/II;
-[draw_PC, a_PC] = sim_cond_mit_MH(mit_C, draw_short, partition, M_short, BurnIn, kernel, GamMat);
+[draw_PC, a_PC, lnw_PC] = sim_cond_mit_MH_outloop(mit_C, draw_short, partition, II, BurnIn, kernel, GamMat, cont.disp);
 
 accept_PC = mean(a_PC);
 h_post_PC = volatility_garch11(draw_PC, y, y_S);
@@ -321,93 +315,82 @@ y_post_PC = sort(y_post_PC);
 VaR_1_post_PC = y_post_PC(p_bar1*M); 
 VaR_5_post_PC = y_post_PC(p_bar*M); 
 
-  
-
 if save_on
     save(['results/',model,'/',model,'_',num2str(sigma1),'_',num2str(sigma2),'_T',num2str(T),'.mat'],...
-    'y','draw','draw_C','param_true',...
-    'accept','accept_C',...
-    'mit','CV','mit_C','CV_C',...
-    'VaR_1','VaR_1_post','VaR_1_post_C',...
-    'VaR_5','VaR_5_post','VaR_5_post_C','-append')
+    'draw_PC','II','accept_PC','VaR_1_post_PC','VaR_5_post_PC','-append')
 end
 
-
+fn_hist = @(xx) histogram(xx); 
 if plot_on
-      set(gcf,'units','normalized','outerposition',[0.1 0.05 0.45 0.75]);
-        
-        ax1 = axes('Position',[0.05 0.60 0.36 0.38],'Visible','on');        
-        hold on
-        fn_hist(draw(:,1))
-        fn_hist(draw_C(:,1))
-        fn_hist(draw_PC(:,1))
-        xlabel('\mu','FontSize',11)
-        plotTickLatex2D('FontSize',11);  
-        YL = get(gca,'YLim');
-        line([c c], YL,'Color','r','LineWidth',3); 
-        hold off
-  
-        ax2 = axes('Position',[0.46 0.60 0.36 0.38],'Visible','on');        
-        hold on
-        fn_hist(draw(:,2))
-        fn_hist(draw_C(:,2))
-        fn_hist(draw_PC(:,2))
-        xlabel('\omega','FontSize',11)
-        plotTickLatex2D('FontSize',11);  
-        YL = get(gca,'YLim');
-        line([omega omega], YL,'Color','r','LineWidth',3); 
-        hold off
+    ff = figure(10);
+%         set(gcf,'units','normalized','outerposition',[0.1 0.05 0.45 0.75]);
+    set(gcf,'units','normalized','outerposition',[0.1 0.1 0.8 0.9]);
 
-        
-        ax3 = axes('Position',[0.05 0.10 0.36 0.38],'Visible','on');        
-        hold on
-        fn_hist(draw(:,3))
-        fn_hist(draw_C(:,3))
-        fn_hist(draw_PC(:,3))        
-        xlabel('\alpha','FontSize',11)
-        plotTickLatex2D('FontSize',11);  
-        YL = get(gca,'YLim');
-        line([alpha alpha], YL,'Color','r','LineWidth',3); 
-        hold off
+    ax1 = axes('Position',[0.05 0.60 0.36 0.38],'Visible','on');        
+    hold on
+    fn_hist(draw(:,1))
+    fn_hist(draw_C(:,1))
+    fn_hist(draw_PC(:,1))
+    xlabel('\mu','FontSize',11)
+    plotTickLatex2D('FontSize',11);  
+    YL = get(gca,'YLim');
+    line([c c], YL,'Color','r','LineWidth',3); 
+    hold off
 
-        
-        ax4 = axes('Position',[0.46 0.10 0.36 0.38],'Visible','on');        
-        hold on
-        fn_hist(draw(:,4))
-        fn_hist(draw_C(:,4))
-        fn_hist(draw_PC(:,4))        
-        xlabel('\beta','FontSize',11)
-        plotTickLatex2D('FontSize',11);  
-        YL = get(gca,'YLim');
-        line([beta beta], YL,'Color','r','LineWidth',3); 
-        hold off
+    ax2 = axes('Position',[0.46 0.60 0.36 0.38],'Visible','on');        
+    hold on
+    fn_hist(draw(:,2))
+    fn_hist(draw_C(:,2))
+    fn_hist(draw_PC(:,2))
+    xlabel('\omega','FontSize',11)
+    plotTickLatex2D('FontSize',11);  
+    YL = get(gca,'YLim');
+    line([omega omega], YL,'Color','r','LineWidth',3); 
+    hold off
 
-        leg = legend('Uncensored','CP10\%','PCP10\%','True');
-        set(leg,'Interpreter','latex','FontSize',11,'position',[0.85 0.42 0.14 0.2])
-        
+
+    ax3 = axes('Position',[0.05 0.10 0.36 0.38],'Visible','on');        
+    hold on
+    fn_hist(draw(:,3))
+    fn_hist(draw_C(:,3))
+    fn_hist(draw_PC(:,3))        
+    xlabel('\alpha','FontSize',11)
+    plotTickLatex2D('FontSize',11);  
+    YL = get(gca,'YLim');
+    line([alpha alpha], YL,'Color','r','LineWidth',3); 
+    hold off
+
+
+    ax4 = axes('Position',[0.46 0.10 0.36 0.38],'Visible','on');        
+    hold on
+    fn_hist(draw(:,4))
+    fn_hist(draw_C(:,4))
+    fn_hist(draw_PC(:,4))        
+    xlabel('\beta','FontSize',11)
+    plotTickLatex2D('FontSize',11);  
+    YL = get(gca,'YLim');
+    line([beta beta], YL,'Color','r','LineWidth',3); 
+    hold off
+
+    leg = legend('Uncensored','CP10\%','PCP10\%','True');
+    set(leg,'Interpreter','latex','FontSize',11,'position',[0.85 0.42 0.14 0.2])
+
+    if save_on
+        name = ['figures/',model,'/',model,'_',num2str(sigma1),'_',num2str(sigma2),'_',num2str(T),'.eps'];
+        set(gcf,'PaperPositionMode','auto');
+        print_fail = 1;
+        while print_fail 
+            try                 
+                print(ff,name,'-depsc','-r0')
+                print_fail = 0;
+            catch
+                print_fail = 1;
+            end
+        end
+    end
 end
 %% ADDITIONAL PARAMS
 mu_add_init = [0, 1, 1];
-% mu_add = zeros(20,3);
-% Sigma_add = zeros(20,3*3);
-% 
-% mu_add_mex = zeros(20,3);
-% Sigma_add_mex = zeros(20,3*3);
-% 
-% for ii = 1:20
-% %     tic
-% %     kernel_init = @(aa) - C_addparam_posterior_garch11(aa, draw(10*ii,:), y, threshold, y_S)/T;
-% %     [mu_add(ii,:),~,~,~,~,S_add] = fminunc(kernel_init, mu_add_init);
-% %     Sigma_add(ii,:) = reshape(inv(T*S_add),1,9);
-% %     toc
-% 
-% %     tic
-%     kernel_init = @(aa) - C_addparam_posterior_garch11_mex(aa, draw(10*ii,:), y, threshold, y_S)/T;   
-%     [mu_add_mex(ii,:),~,~,~,~,S_add] = fminunc(kernel_init, mu_add_init);
-%     Sigma_add_mex(ii,:) = reshape(inv(T*S_add),1,9);
-% %     toc
-% end
-
 mu_add = zeros(M,3);
 Sigma_add = zeros(M,3*3);
 
@@ -418,6 +401,11 @@ for ii = 1:M
     kernel_init = @(aa) - C_addparam_posterior_garch11_mex(aa, draw(ii,:), y, threshold, y_S)/T;   
     [mu_add(ii,:),~,~,~,~,S_add] = fminunc(kernel_init, mu_add_init,options);
     Sigma_add(ii,:) = reshape(inv(T*S_add),1,9);
+end
+
+if save_on
+    save(['results/',model,'/',model,'_',num2str(sigma1),'_',num2str(sigma2),'_T',num2str(T),'add_par.mat'],...
+    'mu_add','Sigma_add','draw','draw_C','draw_PC','y','threshold','mit','mit_C')
 end
 
 if plot_on
@@ -454,51 +442,14 @@ if plot_on
     end    
 end
 
+% h_post = volatility_garch11(draw,y,y_S);
+% h_add = bsxfun(@times,sqrt(h_post),mu_add(:,3));
+h_add = bsxfun(@times,h_post,mu_add(:,3));
+y_post_add = mu_add(:,1) + mu_add(:,2).*draw(:,1) + sqrt(h_add).*randn(M,1);
+y_post_add = sort(y_post_add);
+VaR_1_post_add = y_post_add(p_bar1*M); 
+VaR_5_post_add = y_post_add(p_bar*M); 
+
+
 kernel = @(aa, xx) C_addparam_posterior_garch11(aa, xx, y, y_S);
 
-
-
-[mu,~,~,~,~,Sigma] = fminunc(kernel_init, mu_init);
-
-
-
-%% Threshold = 0
-threshold0 = 0;
-%% CENSORED
-kernel_init = @(xx) - C_posterior_garch11_mex(xx, y, threshold0, y_S)/T;    
-kernel = @(xx) C_posterior_garch11_mex(xx, y, threshold0, y_S);
-try
-    [mit_C0, CV_C0] = MitISEM_new(kernel_init, kernel, mu_init, cont, GamMat);
-catch
-    [mu_C0,~,~,~,~,Sigma_C0] = fminunc(kernel_init,mu_init,options);
-    Sigma_C0 = inv(T*Sigma_C0);
-    mit_C0 = struct('mu',mu_C0,'Sigma',reshape(Sigma_C0,1,length(mu_C0)^2),'df', df, 'p', 1);
-    CV_0 = cont.mit.CV_old;
-end
-[draw_C0, lnk_C0] = fn_rmvgt_robust(M+BurnIn, mit_C0, kernel, false);
-lnd_C0 = dmvgt(draw_C0, mit_C0, true, GamMat);    
-lnw_C0 = lnk_C0 - lnd_C0;
-lnw_C0 = lnw_C0 - max(lnw_C0);
-[ind, a] = fn_MH(lnw_C0);
-draw_C0 = draw_C0(ind,:);
-accept_C0 = a/(M+BurnIn);
-draw_C0 = draw_C0(BurnIn+1:BurnIn+M,:);
-
-h_post_C0 = volatility_garch11(draw_C0,y,y_S);
-y_post_C0 = draw_C0(:,1) + sqrt(h_post_C0).*randn(M,1);
-VaR_1_post_C0) = y_post_C0(p_bar1*M); 
-VaR_5_post_C0 = y_post_C0(p_bar*M); 
-
-
-
-
-if save_on
-    save(['results/',model,'/',model,'_',num2str(sigma1),'_',num2str(sigma2),'_T',num2str(T),'_PCP0.mat'],...
-    'y','draw','draw_C','draw_PC','draw_C0','draw_PC0','param_true','q1','q5',...
-    'accept','accept_C','accept_PC','accept_C0','accept_PC0',...
-    'II','mit','CV','mit_C','CV_C','mit_C0','CV_C0',...
-    'VaR_1','VaR_1_post','VaR_1_post_C','VaR_1_post_PC','VaR_1_post_C0','VaR_1_post_PC0',...
-    'VaR_5','VaR_5_post','VaR_5_post_C','VaR_5_post_PC','VaR_5_post_C0','VaR_5_post_PC0',...
-    'MSE_1','MSE_1_post','MSE_1_post_C','MSE_1_post_PC','MSE_1_post_C0','MSE_1_post_PC0',...
-    'MSE_5','MSE_5_post','MSE_5_post_C','MSE_5_post_PC','MSE_5_post_C0','MSE_5_post_PC0')
-end
