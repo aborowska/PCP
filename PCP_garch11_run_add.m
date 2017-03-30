@@ -1,5 +1,8 @@
-function results = PCP_garch11_run_add(c, sigma1, sigma2, kappa, omega, alpha, beta, p_bar1, p_bar, T, H, M, BurnIn, mu_init, df, cont, options, partition, II, GamMat)
+function results = PCP_garch11_run_add(sdd, c, sigma1, sigma2, kappa, omega, alpha, beta, p_bar1, p_bar, T, H, M, BurnIn, mu_init, df, cont, options, partition, II, GamMat)
 
+    s = RandStream('mt19937ar','Seed',sdd);
+    RandStream.setGlobalStream(s); 
+    
     sigma1_k = sigma1/sqrt(kappa);
     sigma2_k = sigma2/sqrt(kappa);
 
@@ -22,12 +25,8 @@ function results = PCP_garch11_run_add(c, sigma1, sigma2, kappa, omega, alpha, b
     end
 
     % true VaRs
-% %     q1 = norminv(p_bar1,c+rho*y(T:(T+H-1),1),sigma2)';
-% %     q5 = norminv(p_bar,c+rho*y(T:(T+H-1),1),sigma2)'
-%     q1 = norminv(p_bar1, 0, h_true(T+1:T+H))';
-%     q5 = norminv(p_bar, 0, h_true(T+1:T+H))';
-    q1 = norminv(p_bar1, c, sigma2_k*h_true(T+1:T+H))';
-    q5 = norminv(p_bar, c, sigma2_k*h_true(T+1:T+H))'; 
+    q1 = norminv(p_bar1, c, sigma2_k*sqrt(h_true(T+1:T+H)))';
+    q5 = norminv(p_bar, c, sigma2_k*sqrt(h_true(T+1:T+H)))'; 
 
     % MC VaRs under the true model
     eps_sort = randn(M,H);
@@ -45,8 +44,6 @@ function results = PCP_garch11_run_add(c, sigma1, sigma2, kappa, omega, alpha, b
     %% Uncensored Posterior
     fprintf('*** Uncensored Posterior ***\n');
     y_S = var(y(1:T));
-%         mu_init(1,1) = mean(y(1:T));
-%         mu_init(1,2) = y_S;
     kernel_init = @(xx) -posterior_garch11_mex(xx, y(1:T), y_S)/T;
     kernel = @(xx) posterior_garch11_mex(xx, y(1:T), y_S);
     try
@@ -86,22 +83,29 @@ function results = PCP_garch11_run_add(c, sigma1, sigma2, kappa, omega, alpha, b
     fprintf('*** Additional Parameters ***\n');    
     threshold = sort(y(1:T));
     threshold = threshold(2*p_bar*T);
-    mu_add_init = [0, 1, 1];
-    mu_add = zeros(M,3);
-    Sigma_add = zeros(M,3*3);
+%     mu_add_init = [0, 1, 1];
+%     mu_add = zeros(M,3);
+%     Sigma_add = zeros(M,3*3);
+    mu_add_init = [0, 1];
+    mu_add = zeros(M,2);
+    Sigma_add = zeros(M,2*2);
+    
     for ii = 1:M
         if (mod(ii,1000)==0)
             fprintf('Add param iter = %d\n',ii)
         end
         kernel_init = @(aa) - C_addparam_posterior_garch11_mex(aa, draw(ii,:), y, threshold, y_S)/T;   
         [mu_add(ii,:),~,~,~,~,S_add] = fminunc(kernel_init, mu_add_init,options);
-        Sigma_add(ii,:) = reshape(inv(T*S_add),1,9);
+%         Sigma_add(ii,:) = reshape(inv(T*S_add),1,9);
+        Sigma_add(ii,:) = reshape(inv(T*S_add),1,4);
     end
-    h_add = bsxfun(@times,h_post,mu_add(:,3));
-    y_post_add = bsxfun(@plus,sqrt(h_add).*randn(M,H),mu_add(:,1) + mu_add(:,2).*draw(:,1));
+%     h_add = bsxfun(@times,h_post,mu_add(:,3));
+%     y_post_add = bsxfun(@plus,sqrt(h_add).*randn(M,H),mu_add(:,1) + mu_add(:,2).*draw(:,1));
+    h_add = bsxfun(@times,h_post,mu_add(:,2));
+    y_post_add = bsxfun(@plus,sqrt(h_add).*randn(M,H),mu_add(:,1) +  draw(:,1));
     y_post_add = sort(y_post_add);
-    VaR_1_post_add = y_post_add(p_bar1*M); 
-    VaR_5_post_add = y_post_add(p_bar*M); 
+    VaR_1_post_add = y_post_add(p_bar1*M,:); 
+    VaR_5_post_add = y_post_add(p_bar*M,:); 
 
     mean_mu_add = mean(mu_add);
     median_mu_add = median(mu_add);

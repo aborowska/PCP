@@ -1,5 +1,8 @@
-function results = PCP_garch11_run(c, sigma1, sigma2, kappa, omega, alpha, beta, p_bar1, p_bar, T, H, M, BurnIn, mu_init, df, cont, options, partition, II, GamMat)
-
+function results = PCP_garch11_run(sdd, c, sigma1, sigma2, kappa, omega, alpha, beta, p_bar1, p_bar, T, H, M, BurnIn, mu_init, df, cont, options, partition, II, GamMat)
+    
+    s = RandStream('mt19937ar','Seed',sdd);
+    RandStream.setGlobalStream(s); 
+    
     sigma1_k = sigma1/sqrt(kappa);
     sigma2_k = sigma2/sqrt(kappa);
 
@@ -26,8 +29,8 @@ function results = PCP_garch11_run(c, sigma1, sigma2, kappa, omega, alpha, beta,
 % %     q5 = norminv(p_bar,c+rho*y(T:(T+H-1),1),sigma2)'
 %     q1 = norminv(p_bar1, 0, h_true(T+1:T+H))';
 %     q5 = norminv(p_bar, 0, h_true(T+1:T+H))';
-    q1 = norminv(p_bar1, c, sigma2_k*h_true(T+1:T+H))';
-    q5 = norminv(p_bar, c, sigma2_k*h_true(T+1:T+H))'; 
+    q1 = norminv(p_bar1, c, sigma2_k*sqrt(h_true(T+1:T+H)))';
+    q5 = norminv(p_bar, c, sigma2_k*sqrt(h_true(T+1:T+H)))'; 
 
     % MC VaRs under the true model
     eps_sort = randn(M,H);

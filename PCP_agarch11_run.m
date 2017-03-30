@@ -1,5 +1,8 @@
-function results = PCP_agarch11_run(c, sigma1, sigma2, kappa, omega, alpha, beta, p_bar1, p_bar, T, H, M, BurnIn, mu_init, df, cont, options, partition, II, GamMat)
-
+function results = PCP_agarch11_run(sdd, c, sigma1, sigma2, kappa, omega, alpha, beta, p_bar1, p_bar, T, H, M, BurnIn, mu_init, df, cont, options, partition, II, GamMat)
+    
+    s = RandStream('mt19937ar','Seed',sdd);
+    RandStream.setGlobalStream(s); 
+    
     sigma1_k = sigma1/sqrt(kappa);
     sigma2_k = sigma2/sqrt(kappa);
 
@@ -26,8 +29,8 @@ function results = PCP_agarch11_run(c, sigma1, sigma2, kappa, omega, alpha, beta
 % %     q5 = norminv(p_bar,c+rho*y(T:(T+H-1),1),sigma2)'
 %     q1 = norminv(p_bar1, 0, h_true(T+1:T+H))';
 %     q5 = norminv(p_bar, 0, h_true(T+1:T+H))';
-    q1 = norminv(p_bar1, c, sigma2_k*h_true(T+1:T+H))';
-    q5 = norminv(p_bar, c, sigma2_k*h_true(T+1:T+H))'; 
+    q1 = norminv(p_bar1, c, sigma2_k*sqrt(h_true(T+1:T+H)))';
+    q5 = norminv(p_bar, c, sigma2_k*sqrt(h_true(T+1:T+H)))'; 
 
     % MC VaRs under the true model
     eps_sort = randn(M,H);
@@ -137,7 +140,8 @@ function results = PCP_agarch11_run(c, sigma1, sigma2, kappa, omega, alpha, beta
 %     M_short = M/II;
 %     [draw_PC, a_PC] = sim_cond_mit_MH(mit_C, draw_short, partition, M_short, BurnIn, kernel, GamMat);
 %     [draw_PC, a_PC] = sim_cond_mit_MH(mit_C, draw_short, partition, II, BurnIn, kernel, GamMat);
-    [draw_PC, a_PC, lnw_PC] = sim_cond_mit_MH_outloop(mit_C, draw_short, partition, II, BurnIn, kernel, GamMat, cont.disp);
+thinning = 1;
+    [draw_PC, a_PC, lnw_PC] = sim_cond_mit_MH_outloop(mit_C, draw_short, partition, II, BurnIn, kernel, GamMat, cont.disp, thinning);
     accept_PC = mean(a_PC); 
     ind_fin = isfinite(lnw_PC);
     M_fin = sum(ind_fin);

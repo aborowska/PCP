@@ -67,7 +67,8 @@ void prior_garch11(double *theta, mwSignedIndex N,
     for (i=0; i<N; i++)
     {
         r1[i] = 1;
-        if (theta[i+2*N] <= 0) // omega>0
+//         if (theta[i+2*N] <= 0) // omega>0
+        if (theta[i+1*N] <= 0) // omega>0
         {
             r1[i] = 0;
         }   
@@ -96,7 +97,7 @@ void posterior_agarch11_mex(double *theta, double *y, double *y_S,
         mwSignedIndex N, mwSignedIndex T, double *d, double *h)
 {
     mwSignedIndex *r1;
-    double *r2, mu, sigma;
+    double *r2, mu, sigma, gam;
     mwSignedIndex i, j;
         
     /* Variable size arrays */
@@ -117,7 +118,9 @@ void posterior_agarch11_mex(double *theta, double *y, double *y_S,
     {
         for (i=0; i<N; i++)
         {           
-            h[i] = theta[i+2*N] + theta[i+3*N]*theta[i+N]*theta[i+N]/(1-theta[i+3*N]-theta[i+4*N]);                          
+//             h[i] = theta[i+2*N] + theta[i+3*N]*theta[i+N]*theta[i+N]/(1-theta[i+3*N]-theta[i+4*N]);                          
+            gam = theta[i] - theta[i+2*N];
+            h[i] = theta[i+1*N] + theta[i+3*N]*gam*gam/(1-theta[i+3*N]-theta[i+4*N]);                          
         }         
     }
     
@@ -138,9 +141,13 @@ void posterior_agarch11_mex(double *theta, double *y, double *y_S,
             
             for (j=1; j<T; j++)
             {   
-                mu = y[j-1] - theta[i] + theta[i+N];
-                h[i] = theta[i+2*N]*(1.0-theta[i+3*N]-theta[i+4*N]) + theta[i+3*N]*(mu*mu) + theta[i+4*N]*h[i];
-                mu = y[j] - theta[i];                
+//                 mu = y[j-1] - theta[i] + theta[i+N];
+//                 h[i] = theta[i+2*N]*(1.0-theta[i+3*N]-theta[i+4*N]) + theta[i+3*N]*(mu*mu) + theta[i+4*N]*h[i];
+                mu = y[j-1] - theta[i+2*N];
+                mu = mu*mu;
+                h[i] = theta[i+1*N]*(1.0-theta[i+3*N]-theta[i+4*N]) + theta[i+3*N]*mu + theta[i+4*N]*h[i];               
+                
+                mu = y[j] - theta[i];
                 mu = mu*mu;
                 sigma = mu/h[i];
                 sigma = sigma + log(h[i]); 

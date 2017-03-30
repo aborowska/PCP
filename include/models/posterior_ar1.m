@@ -27,6 +27,7 @@ function [d, T] = posterior_ar1(theta, y)
 % %      (phi+1)/2 ~ betapdf((phi+1)/2, 20, 1.5);
 %     prior = - log(beta(20, 1.5)) + (20-1)*log((rho+1)/2) + (1.5-1)*log(1-(rho+1)/2); 
 %     prior = prior - log(sigma);
-%     d(r) = d(r) + prior(r);
+    prior = - log(sigma);
+    d(r) = d(r) + prior(r);
 end
    

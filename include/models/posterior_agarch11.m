@@ -3,8 +3,10 @@ function d = posterior_agarch11(theta, y, y_S)
     M = size(theta,1);
 
     mu = theta(:,1);
-    gama = theta(:,2); % "typo" on purpose: not to confuse with the gamma function
-    omega = theta(:,3);
+%     gama = theta(:,2); % "typo" on purpose: not to confuse with the gamma function
+%     omega = theta(:,3);
+    omega = theta(:,2); % "typo" on purpose: not to confuse with the gamma function
+    mu2 = theta(:,3);
     alpha = theta(:,4);
     beta = theta(:,5);
      
@@ -20,10 +22,13 @@ function d = posterior_agarch11(theta, y, y_S)
             if nargin == 3
                 h(1,1) = y_S;
             else
-                h(1,1) = omega(ii,1) + (alpha(ii,1)*gama(ii,1)^2)/(1-alpha(ii,1)-beta(ii,1)); % unconditional variance
+%                 h(1,1) = omega(ii,1) + (alpha(ii,1)*gama(ii,1)^2)/(1-alpha(ii,1)-beta(ii,1)); % unconditional variance
+                gama = mu(ii,1) - mu2(ii,1);
+                h(1,1) = omega(ii,1) + (alpha(ii,1)*gama^2)/(1-alpha(ii,1)-beta(ii,1)); % unconditional variance
             end
 %             d(ii,1) = ((y(1,1)-mu(ii,1)).^2)/h(1,1);
-            h(2:T) = omega(ii,1)*(1-alpha(ii,1)-beta(ii,1)) + alpha(ii,1)*(y(ind,1)-mu(ii,1)+gama(ii,1)).^2;
+%             h(2:T) = omega(ii,1)*(1-alpha(ii,1)-beta(ii,1)) + alpha(ii,1)*(y(ind,1)-mu(ii,1)+gama(ii,1)).^2;
+            h(2:T) = omega(ii,1)*(1-alpha(ii,1)-beta(ii,1)) + alpha(ii,1)*(y(ind,1)-mu2(ii,1)).^2;
             for jj = 2:T
 %                 h(jj,1) = omega(ii,1) + alpha(ii,1)*(y(jj-1,1)-mu(ii,1)+gama(ii,1)).^2 ...
 %                     + beta(ii,1)*h(jj-1,1);

@@ -31,7 +31,8 @@ RandStream.setGlobalStream(s);
 
 model = 'agarch11'; 
 partition = 3;
-parameters = {'$\\mu$','$\\gamma$','$\\omega$','$\\alpha$','$\\beta$'};
+% parameters = {'$\\mu$','$\\gamma$','$\\omega$','$\\alpha$','$\\beta$'};
+parameters = {'$\\mu$','$\\omega$','$\\mu2$','$\\alpha$','$\\beta$'};
 
 sigma1 = 1;
 sigma2 = 2;
@@ -40,17 +41,22 @@ kappa = 0.5*(sigma1^2 + sigma2^2 - ((sigma2-sigma1)^2)/pi); % var of eps
 sigma1_k = sigma1/sqrt(kappa);
 sigma2_k = sigma2/sqrt(kappa);
 
-gama = 0; % "typo" on purpose: not to confuse with the gamma function
+% gama = 0; % "typo" on purpose: not to confuse with the gamma function
+mu2 = 0; % gama = mu - mu2;
 omega = 1;
 alpha = 0.1;
 beta = 0.8;
-% theta  = [mu, gama, omega, alpha, beta]
-mu_true = [0, 0, omega, alpha, beta];
-param_true = [c,sigma2,gama,omega,alpha,beta];
-mu_init = [0, -0.1, 1, 0.05, 0.85];
-% mu_init = [mean(y), -0.01, 0.01, 0.05, 0.85];
+% % theta  = [mu, gama, omega, alpha, beta]
+% mu_true = [0, 0, omega, alpha, beta];
+% param_true = [c,sigma2,gama,omega,alpha,beta];
+% mu_init = [0, -0.1, 1, 0.05, 0.85];
+% % mu_init = [mean(y), -0.01, 0.01, 0.05, 0.85];
 
-
+% theta  = [mu, omega, mu2, alpha, beta]
+mu_true = [0, omega, 0, alpha, beta];
+param_true = [c,sigma2,omega,mu2,alpha,beta];
+mu_init = [0, 1, 0.1, 0.05, 0.85];
+ 
 T = 1000; % time series length
 p_bar1 = 0.01;
 p_bar = 0.05;
@@ -234,15 +240,20 @@ catch
         Sigma_C = inv(T*Sigma_C);
         draw_C = rmvt(mu_C,Sigma_C,df,M+BurnIn);
         mit_C = struct('mu',mu_C,'Sigma',reshape(Sigma_C,1,length(mu_C)^2),'df', df, 'p', 1);
-        [mit_C, CV_C] = MitISEM_new(mit_C, kernel, mu_init, cont, GamMat);   
+%         [mit_C, CV_C] = MitISEM_new(mit_C, kernel, mu_init, cont, GamMat);   
+        cont.mit. CV_max = 1.9;
+        [mit_C, CV_C] = MitISEM_new2(mit_C, kernel, mu_init, cont, GamMat);   
         [draw_C, lnk_C] = fn_rmvgt_robust(M+BurnIn, mit_C, kernel, false);
         lnd_C = dmvgt(draw_C, mit_C, true, GamMat);    
     catch
         mu_C = fminunc(kernel_init,mu_init,options);
         mit_C = struct('mu',mu_C,'Sigma',reshape(Sigma,1,length(mu_C)^2),'df', df, 'p', 1);
-        [mit_C, CV_C] = MitISEM_new(mit_C, kernel, mu_init, cont, GamMat);   
+%         [mit_C, CV_C] = MitISEM_new(mit_C, kernel, mu_init, cont, GamMat);   
+        cont.mit. CV_max = 1.9;
+        [mit_C, CV_C] = MitISEM_new2(mit_C, kernel, mu_init, cont, GamMat);
         if CV_C(end)>2
-            [mit_C, CV_C] = MitISEM_new(mit_C, kernel, mu_init, cont, GamMat);   
+%             [mit_C, CV_C] = MitISEM_new(mit_C, kernel, mu_init, cont, GamMat);   
+            [mit_C, CV_C] = MitISEM_new2(mit_C, kernel, mu_init, cont, GamMat);
         end
         [draw_C, lnk_C] = fn_rmvgt_robust(M+BurnIn, mit_C, kernel, false);
         lnd_C = dmvgt(draw_C, mit_C, true, GamMat);    
@@ -274,7 +285,7 @@ end
 %% PARTIALLY CENSORED
 % partition = 3; 
 
-II = 100; 
+II = 10; 
 draw_short = draw((1:II:M)',:); % thinning - to get hight quality rhos
 M_short = M/II;
 
@@ -305,7 +316,7 @@ if plot_on
         hold on
         fn_hist(draw(:,1))
         fn_hist(draw_C(:,1))
-        fn_hist(draw_PC(:,1))     
+%         fn_hist(draw_PC(:,1))     
         xlabel('\mu','FontSize',11)
         plotTickLatex2D('FontSize',11);  
         YL = get(gca,'YLim');
@@ -317,11 +328,11 @@ if plot_on
         hold on
         fn_hist(draw(:,2))
         fn_hist(draw_C(:,2))
-        fn_hist(draw_PC(:,2))        
-        xlabel('\gamma','FontSize',11)
+%         fn_hist(draw_PC(:,2))        
+        xlabel('\mu_2','FontSize',11)
         plotTickLatex2D('FontSize',11);  
         YL = get(gca,'YLim');
-        line([gama gama], YL,'Color','r','LineWidth',3); 
+        line([mu2  mu2], YL,'Color','r','LineWidth',3); 
         hold off
 
  
@@ -330,7 +341,7 @@ if plot_on
         hold on
         fn_hist(draw(:,3))
         fn_hist(draw_C(:,3))
-        fn_hist(draw_PC(:,3))        
+%         fn_hist(draw_PC(:,3))        
         xlabel('\omega','FontSize',11)
         plotTickLatex2D('FontSize',11);  
         YL = get(gca,'YLim');
@@ -342,7 +353,7 @@ if plot_on
         hold on
         fn_hist(draw(:,4))
         fn_hist(draw_C(:,4))
-        fn_hist(draw_PC(:,4))        
+%         fn_hist(draw_PC(:,4))        
         xlabel('\alpha','FontSize',11)
         plotTickLatex2D('FontSize',11);  
         YL = get(gca,'YLim');
@@ -353,7 +364,7 @@ if plot_on
         hold on
         fn_hist(draw(:,5))
         fn_hist(draw_C(:,5))
-        fn_hist(draw_PC(:,5))        
+%         fn_hist(draw_PC(:,5))        
         xlabel('\beta','FontSize',11)
         plotTickLatex2D('FontSize',11);  
         YL = get(gca,'YLim');

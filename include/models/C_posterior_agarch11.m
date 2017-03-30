@@ -3,15 +3,18 @@ function d = C_posterior_agarch11(theta, y, threshold, y_S)
     M = size(theta,1);
     
     mu = theta(:,1);
-    gama = theta(:,2); % "typo" on purpose: not to confuse with the gamma function
-    omega = theta(:,3);
+%     gama = theta(:,2); % "typo" on purpose: not to confuse with the gamma function
+%     omega = theta(:,3);
+    omega = theta(:,2); % "typo" on purpose: not to confuse with the gamma function
+    mu2 = theta(:,3);
     alpha = theta(:,4);
     beta = theta(:,5);
      
     if (nargin == 4)
         h1 = y_S*ones(M,1);
     else
-        h1 = omega + (alpha.*gama.^2)./(1-alpha-beta); % unconditional variance
+       gama = mu - mu2;
+       h1 = omega + (alpha.*gama.^2)./(1-alpha-beta); % unconditional variance
     end    
     
     d = -Inf*ones(M,1);
@@ -29,7 +32,8 @@ function d = C_posterior_agarch11(theta, y, threshold, y_S)
             h = zeros(T,1);
             h(1,1) = h1(ii,1);
             for jj = 2:T
-                h(jj,1) = omega(ii,1)*(1-alpha(ii,1)-beta(ii,1)) + alpha(ii,1)*(y(jj-1,1)-mu(ii,1)+gama(ii,1)).^2  + beta(ii,1)*h(jj-1,1);
+%                 h(jj,1) = omega(ii,1)*(1-alpha(ii,1)-beta(ii,1)) + alpha(ii,1)*(y(jj-1,1)-mu(ii,1)+gama(ii,1)).^2  + beta(ii,1)*h(jj-1,1);
+                h(jj,1) = omega(ii,1)*(1-alpha(ii,1)-beta(ii,1)) + alpha(ii,1)*(y(jj-1,1)-mu2(ii,1)).^2  + beta(ii,1)*h(jj-1,1);
                 if ind(jj,1)
                     d(ii,1) = d(ii,1) - 0.5*(log(2*pi) + log(h(jj,1)) + ((y(jj,1)-mu(ii,1)).^2)/h(jj,1));
                 else  % P(y_t>=threshold|y_1,...,y_(t-1)) = 1 - P(y_t<threshold|y_1,...,y_(t-1))

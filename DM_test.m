@@ -47,22 +47,22 @@ function DM = DM_test(model, T, sigma1, sigma2, H, II)
     % SE_5(:,:,5) = (VaR_5_post_C - q5).^2;
     % SE_5(:,:,6) = (VaR_5_post_PC - q5).^2;
 
-    %% Root Mean Squared Errors 
-    RMSE_1 = zeros(S,6);
-    RMSE_1(:,1) = sqrt(mean((VaR_1 - q1).^2,2));
-    RMSE_1(:,2) = sqrt(mean((VaR_1_post - q1).^2,2));
-    RMSE_1(:,3) = sqrt(mean((VaR_1_post_C - q1).^2,2));
-    RMSE_1(:,4) = sqrt(mean((VaR_1_post_PC - q1).^2,2));
-    RMSE_1(:,5) = sqrt(mean((VaR_1_post_C0 - q1).^2,2));
-    RMSE_1(:,6) = sqrt(mean((VaR_1_post_PC0 - q1).^2,2));
+    %% Mean Squared Errors 
+    MSE_1 = zeros(S,6);
+    MSE_1(:,1) = (mean((VaR_1 - q1).^2,2));
+    MSE_1(:,2) = (mean((VaR_1_post - q1).^2,2));
+    MSE_1(:,3) = (mean((VaR_1_post_C0 - q1).^2,2));
+    MSE_1(:,4) = (mean((VaR_1_post_PC0 - q1).^2,2));
+    MSE_1(:,5) = (mean((VaR_1_post_C - q1).^2,2));
+    MSE_1(:,6) = (mean((VaR_1_post_PC - q1).^2,2));
 
-    RMSE_5 = zeros(S,6);
-    RMSE_5(:,1) = sqrt(mean((VaR_5 - q5).^2,2));
-    RMSE_5(:,2) = sqrt(mean((VaR_5_post - q5).^2,2));
-    RMSE_5(:,3) = sqrt(mean((VaR_5_post_C - q5).^2,2));
-    RMSE_5(:,4) = sqrt(mean((VaR_5_post_PC - q5).^2,2));
-    RMSE_5(:,5) = sqrt(mean((VaR_5_post_C0 - q5).^2,2));
-    RMSE_5(:,6) = sqrt(mean((VaR_5_post_PC0 - q5).^2,2));
+    MSE_5 = zeros(S,6);
+    MSE_5(:,1) = (mean((VaR_5 - q5).^2,2));
+    MSE_5(:,2) = (mean((VaR_5_post - q5).^2,2));
+    MSE_5(:,3) = (mean((VaR_5_post_C0 - q5).^2,2));
+    MSE_5(:,4) = (mean((VaR_5_post_PC0 - q5).^2,2));
+    MSE_5(:,5) = (mean((VaR_5_post_C - q5).^2,2));
+    MSE_5(:,6) = (mean((VaR_5_post_PC - q5).^2,2));
 
 %     % remove "bad" simulations
 %     ind_imag_1 = (imag(sum(RMSE_1,2)) == 0);
@@ -82,12 +82,12 @@ function DM = DM_test(model, T, sigma1, sigma2, H, II)
 
     for ii = 2:6
         for jj = 1:(ii-1)
-            % loss differnetial vector (loss = RMSE over H out-of-sample periods)
+            % loss differnetial vector (loss = MSE over H out-of-sample periods)
             % elements of d are iid hence no Newey-West type correction needed
-            d = RMSE_1(:,ii) - RMSE_1(:,jj);
+            d = MSE_1(:,ii) - MSE_1(:,jj);
             DM(ii,jj) = mean(d)/(std(d)/sqrt(S));
 
-            d = RMSE_5(:,jj) - RMSE_5(:,ii);
+            d = MSE_5(:,jj) - MSE_5(:,ii);
             DM(jj,ii) = mean(d)/(std(d)/sqrt(S));    
         end
     end

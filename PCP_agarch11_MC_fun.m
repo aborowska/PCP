@@ -6,12 +6,14 @@ function PCP_agarch11_MC_fun(T, sigma2, S, II)
 
     addpath(genpath('include/'));
 
-    s = RandStream('mt19937ar','Seed',1);
-    RandStream.setGlobalStream(s); 
+%     s = RandStream('mt19937ar','Seed',1);
+%     RandStream.setGlobalStream(s); 
 
-    model = 'agarch11';     partition = 3;
+    model = 'agarch11';    
+    partition = 3;
     fprintf('Model: %s.\n',model)
-    parameters = {'$\\mu$','$\\gamma$','$\\omega$','$\\alpha$','$\\beta$'};
+    % parameters = {'$\\mu$','$\\gamma$','$\\omega$','$\\alpha$','$\\beta$'};
+    parameters = {'$\\mu$','$\\omega$','$\\mu2$','$\\alpha$','$\\beta$'};
 
     sigma1 = 1;
     % sigma2 = 2;
@@ -20,15 +22,21 @@ function PCP_agarch11_MC_fun(T, sigma2, S, II)
     sigma1_k = sigma1/sqrt(kappa);
     sigma2_k = sigma2/sqrt(kappa);
     
-    gama = 0; % "typo" on purpose: not to confuse with the gamma function
+    % gama = 0; % "typo" on purpose: not to confuse with the gamma function
+    mu2 = 0; % gama = mu - mu2;
     omega = 1;
     alpha = 0.1;
-    beta = 0.8;
-    % theta  = [mu, gama, omega, alpha, beta]
-    mu_true = [0, 0, omega, alpha, beta];
-    param_true = [c,sigma2,gama,omega,alpha,beta];
-    mu_init = [0, -0.1, 1, 0.05, 0.85];
-    % mu_init = [mean(y), -0.01, 0.01, 0.05, 0.85];
+    beta = 0.7; %0.8;
+    % % theta  = [mu, gama, omega, alpha, beta]
+    % mu_true = [0, 0, omega, alpha, beta];
+    % param_true = [c,sigma2,gama,omega,alpha,beta];
+    % mu_init = [0, -0.1, 1, 0.05, 0.85];
+    % % mu_init = [mean(y), -0.01, 0.01, 0.05, 0.85];
+
+    % theta  = [mu, omega, mu2, alpha, beta]
+    mu_true = [0, omega, 0, alpha, beta];
+    param_true = [c,sigma2,omega,mu2,alpha,beta];
+    mu_init = [0, 1, 0.1, 0.05, 0.85];
 
     % S = 20; % number of MC replications
     H = 100;
@@ -92,6 +100,8 @@ function PCP_agarch11_MC_fun(T, sigma2, S, II)
     CV = cell(S,1);
     CV_C = cell(S,1);
     CV_C0 = cell(S,1);
+    
+    SDD = zeros(S,1);
 
     %%
     % T = 1000; % time series length
@@ -138,14 +148,17 @@ function PCP_agarch11_MC_fun(T, sigma2, S, II)
     tic
     % for s = 1:S
     s = 0;
+    sdd = 0;
     while s < S    
+        sdd = sdd + 1;
         %     if (mod(s,10)==0)
                 fprintf(['\n',model, ' simulation no. %i\n'],s)
         %     end
         try
-            results = PCP_agarch11_run(c, sigma1, sigma2, kappa, omega, alpha, beta, p_bar1, p_bar, T, H, M, BurnIn, mu_init, df, cont, options, partition, II, GamMat);
+            results = PCP_agarch11_run(sdd, c, sigma1, sigma2, kappa, omega, alpha, beta, p_bar1, p_bar, T, H, M, BurnIn, mu_init, df, cont, options, partition, II, GamMat);
             s = s+1;
-
+            SDD(s,:) = sdd;
+ 
             y = results.y;
             q1(s,:) = results.q1;
             q5(s,:) = results.q5;   
@@ -219,11 +232,18 @@ function PCP_agarch11_MC_fun(T, sigma2, S, II)
     time_total = toc;
 
     if save_on
-        name = ['results/',model,'/',model,'_',num2str(sigma1),'_',...
+        if (beta == 0.8)
+            name = ['results/',model,'/',model,'_',num2str(sigma1),'_',...
             num2str(sigma2),'_T',num2str(T),'_H',num2str(H),...
             '_II',num2str(II),'_PCP0_MC_',v_new,'.mat'];
+        else
+            name = ['results/',model,'/',model,'_',num2str(sigma1),'_',...
+            num2str(sigma2),'_T',num2str(T),'_H',num2str(H),...
+            '_II',num2str(II),sprintf('_beta_%3.1f',beta),'_PCP0_MC_',v_new,'.mat'];
+        end
+        
         save(name,...
-        'time_total',...
+        'time_total','SDD',...
         'y','draw','draw_C','draw_PC','draw_C0','draw_PC0','param_true','q1','q5',...
         'mean_draw','mean_draw_C','mean_draw_PC','mean_draw_C0','mean_draw_PC0',...
         'median_draw','median_draw_C','median_draw_PC','median_draw_C0','median_draw_PC0',...

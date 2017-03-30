@@ -29,8 +29,8 @@ void prior_ar1(double *theta, mwSignedIndex N,
         if (r1[i] == 1)
         {
             r2[i] = -log(theta[i+N]);           // sigma ~ 1/sigma
-            rho = (theta[i+2*N]+1.0)/2.0;       // (phi+1)/2 ~ betapdf((phi+1)/2, 20, 1.5);                   
-            r2[i] = r2[i] + beta + (20-1)*log(rho) + (1.5-1)*log(1-rho);  
+//             rho = (theta[i+2*N]+1.0)/2.0;       // (phi+1)/2 ~ betapdf((phi+1)/2, 20, 1.5);                   
+//             r2[i] = r2[i] + beta + (20-1)*log(rho) + (1.5-1)*log(1-rho);  
         }
     }
 }

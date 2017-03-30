@@ -42,19 +42,13 @@ void normcdf_my_mex(double *x,  double *mu, double *Sigma, mwSignedIndex N,
 {
     mwSignedIndex i;
     double z;
-
-//     z = mxMalloc((1)*sizeof(double));    
     
     for (i=0; i<N; i++)
     {
-//         z[0] = (x[i]-mu[0])/(sqrt(2)*Sigma[0]);
-//         erf(z);
-//         val[i] = 0.5*(1+z[0]);
         z = (x[i]-mu[0])/(sqrt(2)*Sigma[0]);
         myerf(&z);
         val[i] = 0.5*(1+z);
     }
-//     mxFree(z);
 }
 
 /* ********************************************************************* */
@@ -145,18 +139,18 @@ void C_addparam_posterior_garch11_mex(double *theta_add, double *theta, double *
             if (cond[0]==1) //pdf
             {
                 // stationary distribution for the first observation
-				mu = y[0] - theta_add[i] - theta_add[i+N]*theta[i];
+				mu = y[0] - theta_add[i] - theta[i];
                 mu = mu*mu;
-                sigma = mu/(theta_add[i+2*N]*h[i]);
-                sigma = sigma + log(h[i]); 
+                sigma = mu/(theta_add[i+1*N]*h[i]);
+                sigma = sigma + log(theta_add[i+1*N]*h[i]); 
                 sigma = sigma + log2PI;                                
                 d[i] = d[i] - 0.5*sigma; 
             }
             else //cdf
             {
                 // stationary distribution for the first observation
-	            mu = theta_add[i] + theta_add[i+N]*theta[i];	
-                sigma = theta_add[i+2*N]*h[i];
+	            mu = theta_add[i] + theta[i];	
+                sigma = theta_add[i+1*N]*h[i];
                 sigma = sqrt(sigma);
                 normcdf_my_mex(threshold, &mu, &sigma, 1, &cdf);
                 d[i] = d[i] + log(1.0-cdf);    
@@ -164,22 +158,22 @@ void C_addparam_posterior_garch11_mex(double *theta_add, double *theta, double *
             
             for (j=1; j<T; j++)
             {   
-                mu = y[j-1] - theta_add[i] - theta_add[i+N]*theta[i];
+                mu = y[j-1] - theta_add[i] - theta[i];
                 h[i] = theta[i+N]*(1.0-theta[i+2*N]-theta[i+3*N]) + theta[i+2*N]*(mu*mu) + theta[i+3*N]*h[i];
 
                 if (cond[j]==1) //pdf
                 {
-					mu = y[j] - theta_add[i] - theta_add[i+N]*theta[i];
+					mu = y[j] - theta_add[i] - theta[i];
                     mu = mu*mu;
-                    sigma = mu/(theta_add[i+2*N]*h[i]);
-                    sigma = sigma + log(h[i]); 
+                    sigma = mu/(theta_add[i+1*N]*h[i]);
+                    sigma = sigma + log(theta_add[i+1*N]*h[i]); 
                     sigma = sigma + log2PI;                                
                     d[i] = d[i] - 0.5*sigma; 
                 }
                 else //cdf
                 {                
-					mu = theta_add[i] + theta_add[i+N]*theta[i];					
-                    sigma = theta_add[i+2*N]*h[i];
+					mu = theta_add[i] + theta[i];					
+                    sigma = theta_add[i+1*N]*h[i];
                     sigma = sqrt(sigma);
                     normcdf_my_mex(threshold, &mu, &sigma, 1, &cdf);
                     d[i] = d[i] + log(1-cdf);                    

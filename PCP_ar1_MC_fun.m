@@ -11,20 +11,20 @@ function PCP_ar1_MC_fun(T, sigma2, II)
     parameters = {'$\\mu$','$\\sigma$','$\\phi$'};
 
     sigma1 = 1;
-sigma2 = 2;    
-    % sigma2 = 1;
+    % sigma2 = 2;    
     c = (sigma2 - sigma1)/sqrt(2*pi);
     rho = 0.8;
     param_true = [c, sigma2, rho];
     mu_init = [0,1,0.9];
-S = 1;
-H = 0;
-T = 100;
-%     S = 100; % number of MC replications
-%     H = 100;
+
+    S = 100; % number of MC replications
+    H = 100;
     
-    threshold_c = false; % true = run the version with an additional theoretical threshold equal to c
-    varc = true; % run the version with time varying threshold
+    threshold_c = true; % true = run the version with an additional theoretical threshold equal to c
+    if (sigma1 == sigma2)
+        threshold_c = false;
+    end
+    varc = false; % run the version with time varying threshold
  
     % quantiles of interest
     p_bar1 = 0.01;
@@ -81,19 +81,19 @@ T = 100;
     CV_C0 = cell(S,1);    
 
     if threshold_c 
-            mit_Cc = cell(S,1);
-            CV_Cc = cell(S,1);      
-            accept_Cc = zeros(S,1);
-            mean_draw_Cc = zeros(S,3);
-            std_draw_Cc = zeros(S,3);
-            VaR_1_post_Cc = zeros(S,H); 
-            VaR_5_post_Cc = zeros(S,H);
+        mit_Cc = cell(S,1);
+        CV_Cc = cell(S,1);      
+        accept_Cc = zeros(S,1);
+        mean_draw_Cc = zeros(S,3);
+        std_draw_Cc = zeros(S,3);
+        VaR_1_post_Cc = zeros(S,H); 
+        VaR_5_post_Cc = zeros(S,H);
 
-            accept_PCc = zeros(S,1);
-            mean_draw_PCc = zeros(S,3);
-            std_draw_PCc =  zeros(S,3);
-            VaR_1_post_PCc = zeros(S,H); 
-            VaR_5_post_PCc = zeros(S,H); 
+        accept_PCc = zeros(S,1);
+        mean_draw_PCc = zeros(S,3);
+        std_draw_PCc =  zeros(S,3);
+        VaR_1_post_PCc = zeros(S,H); 
+        VaR_5_post_PCc = zeros(S,H); 
     end    
     
     %%
