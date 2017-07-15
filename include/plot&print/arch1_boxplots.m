@@ -18,6 +18,45 @@ load(name, '-regexp','^std\w*')
 load(name, '-regexp','^q\w*')
 load(name, '-regexp','^VaR\w*')
 
+%% Boxplots: ONE SIMULATION DRAWS
+ff = figure(10);
+set(gcf,'units','normalized','outerposition',[0.1 0.05 0.5 0.6]);
+subplot(2,2,1)
+boxplot([draw(:,1),draw_C0(:,1),draw_PC0(:,1),draw_C(:,1),draw_PC(:,1)],...
+    'labels' ,methods)
+xlabel('\mu')
+
+subplot(2,2,2)
+boxplot([draw(:,2),draw_C0(:,2),draw_PC0(:,2),draw_C(:,2),draw_PC(:,2)],...
+    'labels' ,methods)
+xlabel('\omega')
+
+subplot(2,2,3)
+boxplot([draw(:,3),draw_C0(:,3),draw_PC0(:,3),draw_C(:,3),draw_PC(:,3)],...
+    'labels' ,methods)
+xlabel('\mu2')
+
+subplot(2,2,4)
+boxplot([draw(:,4),draw_C0(:,4),draw_PC0(:,4),draw_C(:,4),draw_PC(:,4)],...
+    'labels' ,methods)
+xlabel('\alpha')
+suptitle('One simulation draws')
+
+if save_on 
+    name = ['figures/',model,'/',model,'_',num2str(sigma1),'_',num2str(sigma2),...
+        '_T',num2str(T),'_H',num2str(H),'_II',num2str(II),'_box_draws.eps'];
+    set(gcf,'PaperPositionMode','auto');
+    print_fail = 1;
+    while print_fail 
+        try                 
+            print(ff,name,'-depsc','-r0')
+            print_fail = 0;
+        catch
+            print_fail = 1;
+        end
+    end
+end
+
 %% Boxplots: MEAN DRAWS
 ff = figure(100);
 set(gcf,'units','normalized','outerposition',[0.1 0.05 0.5 0.6]);

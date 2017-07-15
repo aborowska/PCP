@@ -25,10 +25,6 @@ function results = PCP_agarch11_run(sdd, c, sigma1, sigma2, kappa, omega, alpha,
     end
 
     % true VaRs
-% %     q1 = norminv(p_bar1,c+rho*y(T:(T+H-1),1),sigma2)';
-% %     q5 = norminv(p_bar,c+rho*y(T:(T+H-1),1),sigma2)'
-%     q1 = norminv(p_bar1, 0, h_true(T+1:T+H))';
-%     q5 = norminv(p_bar, 0, h_true(T+1:T+H))';
     q1 = norminv(p_bar1, c, sigma2_k*sqrt(h_true(T+1:T+H)))';
     q5 = norminv(p_bar, c, sigma2_k*sqrt(h_true(T+1:T+H)))'; 
 

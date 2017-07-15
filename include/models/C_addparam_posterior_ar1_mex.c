@@ -43,18 +43,12 @@ void normcdf_my_mex(double *x,  double *mu, double *Sigma, mwSignedIndex N,
     mwSignedIndex i;
     double z;
 
-//     z = mxMalloc((1)*sizeof(double));    
-    
     for (i=0; i<N; i++)
     {
-//         z[0] = (x[i]-mu[0])/(sqrt(2)*Sigma[0]);
-//         erf(z);
-//         val[i] = 0.5*(1+z[0]);
         z = (x[i]-mu[0])/(sqrt(2)*Sigma[0]);
         myerf(&z);
         val[i] = 0.5*(1+z);
     }
-//     mxFree(z);
 }
 
 /* ********************************************************************* */
@@ -89,11 +83,11 @@ void prior_ar1(double *theta, mwSignedIndex N,
 
 /* ********************************************************************* */
 
-void C_posterior_ar1_mex(double *y, mwSignedIndex N, mwSignedIndex T,
-        double *threshold, double *theta, double *d)
+void C_addparam_posterior_ar1_mex(double *theta_add, double *theta, double *y,
+        mwSignedIndex N, mwSignedIndex T, double *threshold, double *d)
 {
     mwSignedIndex *r1, *cond;
-    double *r2, *a1, *P1, mu, sigma; 
+    double *r2, *a1, *P1, mu, sigma, Padd; 
     double sum_cond, cdf;
     mwSignedIndex i, j;
         
@@ -123,7 +117,7 @@ void C_posterior_ar1_mex(double *y, mwSignedIndex N, mwSignedIndex T,
     for (i=0; i<N; i++)
     {
         a1[i] = theta[i]/(1.0-theta[i+2*N]);        
-        P1[i] = (theta[i+N]*theta[i+N])/(1.0 - theta[i+2*N]*theta[i+2*N]);
+        P1[i] = (theta[i+N]*theta[i+N])/(1.0 - theta[i+2*N]*theta[i+2*N]);      
     }    
          
     /* PDF */
@@ -133,17 +127,20 @@ void C_posterior_ar1_mex(double *y, mwSignedIndex N, mwSignedIndex T,
         {
             d[i] = r2[i]; // prior
             // the first observation: from the stationary distribution
+            Padd = theta_add[i+1*N]*theta_add[i+1*N]*P1[i];
+                    
             if (cond[0]==1) //pdf
             {
                 // stationary distribution for the first observation
-                mu = y[0] - a1[i];
-                mu = mu*mu;
-                sigma = mu/P1[i];
-                sigma = sigma + log(P1[i]); 
+                mu = y[0] - a1[i] - theta_add[i];
+                mu = mu*mu;              
+                sigma = mu/Padd;
+                sigma = sigma + log(Padd); 
                 sigma = sigma + log2PI;                                
                 d[i] = d[i] - 0.5*sigma; 
                 // Gaussian constants for all the remaining uncensored observations
-                sigma = theta[i+N]*theta[i+N];
+                sigma = theta_add[i+1*N]*theta[i+N];
+                sigma = sigma*sigma;                
                 sigma = log(sigma);
                 sigma = sigma + log2PI;
                 d[i] = d[i] - 0.5*(sum_cond-1)*sigma; 
@@ -151,29 +148,36 @@ void C_posterior_ar1_mex(double *y, mwSignedIndex N, mwSignedIndex T,
             else //cdf
             {
                 // stationary distribution for the first observation
-                sigma = sqrt(P1[i]);
-                normcdf_my_mex(threshold, &a1[i], &sigma, 1, &cdf);
+//                 sigma = sqrt(theta_add[i+1*N]*theta_add[i+1*N]*P1[i]);
+                sigma = sqrt(Padd);
+                mu = a1[i] + theta_add[i];
+                normcdf_my_mex(threshold, &mu, &sigma, 1, &cdf);
                 d[i] = d[i] + log(1.0-cdf);
                 // Gaussian constant for all the uncensored observations    
-                sigma = theta[i+N]*theta[i+N];
-                sigma = log(sigma);
+//                 sigma = theta[i+N]*theta[i+N];
+//                 sigma = Padd*Padd;
+//                 sigma = log(sigma);
+                sigma = log(Padd);
                 sigma = sigma + log2PI;                
                 d[i] = d[i] - 0.5*sum_cond*sigma;      
             }
-            
+
+            sigma = theta_add[i+1*N]*theta[i+N];           
             for (j=1; j<T; j++)
             {   
                 if (cond[j]==1) //pdf
                 {
-                    mu = y[j] - theta[i] - theta[i+2*N]*y[j-1];
+                    mu = y[j] - theta[i] - theta[i+2*N]*y[j-1] - theta_add[i];
                     mu = mu*mu;
-                    mu = mu/(theta[i+N]*theta[i+N]);
+//                     mu = mu/(theta[i+N]*theta[i+N]);
+                    mu = mu/(sigma*sigma);                    
                     d[i] = d[i] - 0.5*mu;
                 }
                 else //cdf
                 {
-                    mu = theta[i] + theta[i+2*N]*y[j-1];
-                    normcdf_my_mex(threshold, &mu, &theta[i+N], 1, &cdf);
+                    mu = theta[i] + theta[i+2*N]*y[j-1] + theta_add[i];
+//                     normcdf_my_mex(threshold, &mu, &theta[i+N], 1, &cdf);
+                    normcdf_my_mex(threshold, &mu, &sigma, 1, &cdf);                    
                     d[i] = d[i] + log(1-cdf);                    
                 }                
             }         
@@ -199,16 +203,17 @@ void mexFunction( int nlhs, mxArray *plhs[],
                   int nrhs, const mxArray *prhs[])
 {
     int N, T, *T_out;                              /* size of matrix */
-    double *theta, *y, *threshold;                 /* input*/
+    double *theta_add, *theta, *y, *threshold;    /* input*/
     double *d;                                     /* output */
 
     /* Getting the inputs */
-    theta = mxGetPr(prhs[0]);
-    y = mxGetPr(prhs[1]);
-    threshold = mxGetPr(prhs[2]);
+    theta_add = mxGetPr(prhs[0]); 
+    theta = mxGetPr(prhs[1]);
+    y = mxGetPr(prhs[2]);
+    threshold = mxGetPr(prhs[3]);
     
     N = mxGetM(prhs[0]); /* no of parameter draws */
-    T = mxGetM(prhs[1]); /* no. of observations */
+    T = mxGetM(prhs[2]); /* no. of observations */
 
     /* create the output matrix */
     plhs[0] = mxCreateDoubleMatrix(N,1,mxREAL); 
@@ -219,6 +224,6 @@ void mexFunction( int nlhs, mxArray *plhs[],
     T_out = mxGetPr(plhs[1]);
   
     /* call the function */
-    C_posterior_ar1_mex(y, N, T, threshold, theta, d); 
+    C_addparam_posterior_ar1_mex(theta_add, theta, y, N, T, threshold, d); 
     T_out[0] = T;
 }

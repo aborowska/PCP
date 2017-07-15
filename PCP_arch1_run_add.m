@@ -79,9 +79,6 @@ function results = PCP_arch1_run_add(sdd, c, sigma1, sigma2, kappa, omega, alpha
     fprintf('*** Additional Parameters ***\n');    
     threshold = sort(y(1:T));
     threshold = threshold(2*p_bar*T);
-%     mu_add_init3 = [0, 1, 1];
-%     mu_add3 = zeros(M,3);
-%     Sigma_add3 = zeros(M,3*3);
     mu_add_init = [0, 1];
     mu_add = zeros(M,2);
     Sigma_add = zeros(M,2*2);    
@@ -92,13 +89,7 @@ function results = PCP_arch1_run_add(sdd, c, sigma1, sigma2, kappa, omega, alpha
         kernel_init = @(aa) - C_addparam_posterior_arch1_mex(aa, draw(ii,:), y(1:T), threshold, y_S)/T;   
         [mu_add(ii,:),~,~,~,~,S_add] = fminunc(kernel_init, mu_add_init,options);
         Sigma_add(ii,:) = reshape(inv(T*S_add),1,4);
-
-%         kernel_init = @(aa) - C_addparam3_posterior_arch1_mex(aa, draw(ii,:), y(1:T), threshold, y_S)/T;   
-%         [mu_add3(ii,:),~,~,~,~,S_add3] = fminunc(kernel_init, mu_add_init3,options);
-%         Sigma_add3(ii,:) = reshape(inv(T*S_add3),1,9);
     end
-%     h_add = bsxfun(@times,h_post,mu_add(:,3));
-%     y_post_add = bsxfun(@plus,sqrt(h_add).*randn(M,H),mu_add(:,1) + mu_add(:,2).*draw(:,1));
     h_add = bsxfun(@times,h_post,mu_add(:,2));
     y_post_add = bsxfun(@plus,sqrt(h_add).*randn(M,H),mu_add(:,1) + draw(:,1));
     y_post_add = sort(y_post_add);
@@ -263,6 +254,6 @@ function results = PCP_arch1_run_add(sdd, c, sigma1, sigma2, kappa, omega, alpha
     'accept',accept,'accept_C',accept_C,'accept_PC',accept_PC,'accept_C0',accept_C0,'accept_PC0',accept_PC0,...
     'mit',mit,'CV',CV,'mit_C',mit_C,'CV_C',CV_C,'mit_C0',mit_C0,'CV_C0',CV_C0,...
     'VaR_1',VaR_1,'VaR_1_post',VaR_1_post,'VaR_1_post_C',VaR_1_post_C,'VaR_1_post_PC',VaR_1_post_PC,'VaR_1_post_C0',VaR_1_post_C0,'VaR_1_post_PC0',VaR_1_post_PC0,...
-    'VaR_5',VaR_5,'VaR_5_post',VaR_5_post,'VaR_5_post_C',VaR_5_post_C,'VaR_5_post_PC',VaR_5_post_PC,'VaR_5_post_C0',VaR_5_post_C0,'VaR_5_post_PC0',VaR_5_post_PC0);
-
+    'VaR_5',VaR_5,'VaR_5_post',VaR_5_post,'VaR_5_post_C',VaR_5_post_C,'VaR_5_post_PC',VaR_5_post_PC,'VaR_5_post_C0',VaR_5_post_C0,'VaR_5_post_PC0',VaR_5_post_PC0,...
+    'VaR_1_post_add',VaR_1_post_add,'VaR_5_post_add',VaR_5_post_add,'mean_mu_add',mean_mu_add,'median_mu_add',median_mu_add,'std_mu_add',std_mu_add);
 end 

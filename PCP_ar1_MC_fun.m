@@ -1,4 +1,5 @@
-function PCP_ar1_MC_fun(T, sigma2, II)
+function PCP_ar1_MC_fun(T, sigma2, S, II)
+ % T = 1000; S = 1; II = 10; sigma2 = 2 ; % <------------------ !!! 
     close all
 
     addpath(genpath('include/'));
@@ -9,6 +10,7 @@ function PCP_ar1_MC_fun(T, sigma2, II)
     model = 'ar1';
     fprintf('Model: %s.\n',model)
     parameters = {'$\\mu$','$\\sigma$','$\\phi$'};
+    partition = 3;
 
     sigma1 = 1;
     % sigma2 = 2;    
@@ -17,14 +19,14 @@ function PCP_ar1_MC_fun(T, sigma2, II)
     param_true = [c, sigma2, rho];
     mu_init = [0,1,0.9];
 
-    S = 100; % number of MC replications
+%     S = 100; % number of MC replications
     H = 100;
     
-    threshold_c = true; % true = run the version with an additional theoretical threshold equal to c
+    threshold_c = false; % true = run the version with an additional theoretical threshold equal to c
     if (sigma1 == sigma2)
         threshold_c = false;
     end
-    varc = false; % run the version with time varying threshold
+    varc = true; % run the version with time varying threshold
  
     % quantiles of interest
     p_bar1 = 0.01;
@@ -32,7 +34,46 @@ function PCP_ar1_MC_fun(T, sigma2, II)
     % theoretical quantiles
     q1 = zeros(S,H);
     q5 = zeros(S,H);
+    % T = 10000; % time series length
+    fprintf('Time series length T = %d.\n',T)
 
+    % Metropolis-Hastings for the parameters
+    M = 10000; % number of draws 
+    BurnIn = 1000;
+
+    x_gam = (0:0.00001:50)'+0.00001;
+    GamMat = gamma(x_gam);
+
+    df = 5; % default df for a mit
+    cont = MitISEM_Control;
+    cont.mit.iter_max = 10;
+    cont.mit.Hmax = 6;
+    cont.mit.dfnc = 5;
+    
+    if (nargin == 2)
+        II = 10;
+    end
+    
+    %% various display options
+    cont.disp = false;
+
+    plot_on = false;
+    save_on = true;
+
+    v_new = ver('symbolic');
+    v_new = v_new.Release;
+    if strcmp(v_new,'(R2014a)')
+        fn_hist = @(xx) hist(xx,20);
+    else
+        fn_hist = @(xx) histogram(xx,50);
+    end
+
+    options = optimset('Display','off');
+    % w = warning('query','last');
+    % id = w.identifier;
+    id = 'optim:fminunc:SwitchingMethod';
+    warning('off',id);
+    
     %% simulated quantiles: 
     % true model, posterior, censored posterior 10%, partially censored posterior 10%, 
     % censored posterior at 0, partially censored posterior at 0
@@ -95,49 +136,6 @@ function PCP_ar1_MC_fun(T, sigma2, II)
         VaR_1_post_PCc = zeros(S,H); 
         VaR_5_post_PCc = zeros(S,H); 
     end    
-    
-    %%
-    % T = 10000; % time series length
-    fprintf('Time series length T = %d.\n',T)
-
-    % Metropolis-Hastings for the parameters
-    M = 10000; % number of draws 
-    BurnIn = 1000;
-
-    x_gam = (0:0.00001:50)'+0.00001;
-    GamMat = gamma(x_gam);
-
-    df = 5; % default df for a mit
-    cont = MitISEM_Control;
-    cont.mit.iter_max = 10;
-    cont.mit.Hmax = 6;
-    cont.mit.dfnc = 5;
-    
-    if (nargin == 2)
-        II = 10;
-    end
-    
-    partition = 3;
-
-    %% various display options
-    cont.disp = false;
-
-    plot_on = false;
-    save_on = true;
-
-    v_new = ver('symbolic');
-    v_new = v_new.Release;
-    if strcmp(v_new,'(R2014a)')
-        fn_hist = @(xx) hist(xx,20);
-    else
-        fn_hist = @(xx) histogram(xx,50);
-    end
-
-    options = optimset('Display','off');
-    % w = warning('query','last');
-    % id = w.identifier;
-    id = 'optim:fminunc:SwitchingMethod';
-    warning('off',id);
 
     %% MC Simulations
     tic
@@ -188,23 +186,24 @@ function PCP_ar1_MC_fun(T, sigma2, II)
             std_draw_PC(s,:) =  results.std_draw_PC;
             VaR_1_post_PC(s,:) = results.VaR_1_post_PC; 
             VaR_5_post_PC(s,:) = results.VaR_5_post_PC; 
+                      
+            if ~varc
+                mit_C0{s,1} = results.mit_C0;  
+                CV_C0{s,1} = results.CV_C0;
+                draw_C0 = results.draw_C0;
+                accept_C0(s,1) = results.accept_C0;
+                mean_draw_C0(s,:) = results.mean_draw_C0;
+                std_draw_C0(s,:) =  results.std_draw_C0;
+                VaR_1_post_C0(s,:) = results.VaR_1_post_C0; 
+                VaR_5_post_C0(s,:) = results.VaR_5_post_C0; 
 
-            mit_C0{s,1} = results.mit_C0;  
-            CV_C0{s,1} = results.CV_C0;
-            draw_C0 = results.draw_C0;
-            accept_C0(s,1) = results.accept_C0;
-            mean_draw_C0(s,:) = results.mean_draw_C0;
-            std_draw_C0(s,:) =  results.std_draw_C0;
-            VaR_1_post_C0(s,:) = results.VaR_1_post_C0; 
-            VaR_5_post_C0(s,:) = results.VaR_5_post_C0; 
-
-            draw_PC0 = results.draw_PC0;
-            accept_PC0(s,1) = results.accept_PC0;
-            mean_draw_PC0(s,:) = results.mean_draw_PC0;
-            std_draw_PC0(s,:) =  results.std_draw_PC0;
-            VaR_1_post_PC0(s,:) = results.VaR_1_post_PC0; 
-            VaR_5_post_PC0(s,:) = results.VaR_5_post_PC0; 
-
+                draw_PC0 = results.draw_PC0;
+                accept_PC0(s,1) = results.accept_PC0;
+                mean_draw_PC0(s,:) = results.mean_draw_PC0;
+                std_draw_PC0(s,:) =  results.std_draw_PC0;
+                VaR_1_post_PC0(s,:) = results.VaR_1_post_PC0; 
+                VaR_5_post_PC0(s,:) = results.VaR_5_post_PC0; 
+            end
             if threshold_c
                 mit_Cc{s,1} = results.mit_Cc;
                 CV_Cc{s,1} = results.CV_Cc;        
@@ -230,17 +229,19 @@ function PCP_ar1_MC_fun(T, sigma2, II)
     MSE_1_post = mean((VaR_1_post - q1).^2,2);
     MSE_1_post_C = mean((VaR_1_post_C - q1).^2,2);
     MSE_1_post_PC = mean((VaR_1_post_PC - q1).^2,2);
-    MSE_1_post_C0 = mean((VaR_1_post_C0 - q1).^2,2);
-    MSE_1_post_PC0 = mean((VaR_1_post_PC0 - q1).^2,2);
-    
+    if ~varc
+        MSE_1_post_C0 = mean((VaR_1_post_C0 - q1).^2,2);
+        MSE_1_post_PC0 = mean((VaR_1_post_PC0 - q1).^2,2);
+    end
     
     MSE_5 = mean((VaR_5 - q5).^2,2);
     MSE_5_post = mean((VaR_5_post - q5).^2,2);
     MSE_5_post_C = mean((VaR_5_post_C - q5).^2,2);
     MSE_5_post_PC = mean((VaR_5_post_PC - q5).^2,2);
-    MSE_5_post_C0 = mean((VaR_5_post_C0 - q5).^2,2);
-    MSE_5_post_PC0 = mean((VaR_5_post_PC0 - q5).^2,2);
-
+    if ~varc
+        MSE_5_post_C0 = mean((VaR_5_post_C0 - q5).^2,2);
+        MSE_5_post_PC0 = mean((VaR_5_post_PC0 - q5).^2,2);
+    end
     
     if threshold_c
         MSE_1_post_Cc = mean((VaR_1_post_Cc - q1).^2,2);
@@ -255,27 +256,17 @@ function PCP_ar1_MC_fun(T, sigma2, II)
         if threshold_c
             name = ['results/',model,'/',model,'_',num2str(sigma1),'_',num2str(sigma2),...
                 '_T',num2str(T),'_H',num2str(H),'_II',num2str(II)...
-                '_PCP0_MC2_',v_new,'_c.mat'];
+                '_PCP0_MC_',v_new,'_c.mat'];
         elseif varc        
             name = ['results/',model,'/',model,'_',num2str(sigma1),'_',num2str(sigma2),...
                 '_T',num2str(T),'_H',num2str(H),'_II',num2str(II)...
-                '_PCP0_MC2_',v_new,'_varc.mat'];
+                '_PCP0_MC_',v_new,'_varc.mat'];
         else
             name = ['results/',model,'/',model,'_',num2str(sigma1),'_',num2str(sigma2),...
                 '_T',num2str(T),'_H',num2str(H),'_II',num2str(II)...
-                '_PCP0_MC2_',v_new,'.mat'];
+                '_PCP0_MC_',v_new,'.mat'];
         end
-        save(name,...
-        'time_total',...
-        'y','draw','draw_C','draw_PC','draw_C0','draw_PC0','param_true','q1','q5',...
-        'mean_draw','mean_draw_C','mean_draw_PC','mean_draw_C0','mean_draw_PC0',...
-        'std_draw','std_draw_C','std_draw_PC','std_draw_C0','std_draw_PC0',...
-        'accept','accept_C','accept_PC','accept_C0','accept_PC0',...
-        'II','mit','CV','mit_C','CV_C','mit_C0','CV_C0',...
-        'VaR_1','VaR_1_post','VaR_1_post_C','VaR_1_post_PC','VaR_1_post_C0','VaR_1_post_PC0',...
-        'VaR_5','VaR_5_post','VaR_5_post_C','VaR_5_post_PC','VaR_5_post_C0','VaR_5_post_PC0',...
-        'MSE_1','MSE_1_post','MSE_1_post_C','MSE_1_post_PC','MSE_1_post_C0','MSE_1_post_PC0',...
-        'MSE_5','MSE_5_post','MSE_5_post_C','MSE_5_post_PC','MSE_5_post_C0','MSE_5_post_PC0')
+
         if threshold_c
              save(name,...   
              'draw_Cc','draw_PCc','mean_draw_Cc','mean_draw_PCc','std_draw_Cc','std_draw_PCc',...
@@ -283,6 +274,30 @@ function PCP_ar1_MC_fun(T, sigma2, II)
              'VaR_1_post_Cc','VaR_1_post_PCc','VaR_5_post_Cc','VaR_5_post_PCc',...
              'MSE_1_post_Cc','MSE_1_post_PC0',...
              'MSE_5_post_Cc','MSE_5_post_PCc','-append')
+        elseif varc
+            save(name,...
+            'time_total',...
+            'y','draw','draw_C','draw_PC','param_true','q1','q5',...
+            'mean_draw','mean_draw_C','mean_draw_PC',...
+            'std_draw','std_draw_C','std_draw_PC',...
+            'accept','accept_C','accept_PC',...
+            'II','mit','CV','mit_C','CV_C',...
+            'VaR_1','VaR_1_post','VaR_1_post_C','VaR_1_post_PC',...
+            'VaR_5','VaR_5_post','VaR_5_post_C','VaR_5_post_PC',...
+            'MSE_1','MSE_1_post','MSE_1_post_C','MSE_1_post_PC',...
+            'MSE_5','MSE_5_post','MSE_5_post_C','MSE_5_post_PC')
+        else
+            save(name,...
+            'time_total',...
+            'y','draw','draw_C','draw_PC','draw_C0','draw_PC0','param_true','q1','q5',...
+            'mean_draw','mean_draw_C','mean_draw_PC','mean_draw_C0','mean_draw_PC0',...
+            'std_draw','std_draw_C','std_draw_PC','std_draw_C0','std_draw_PC0',...
+            'accept','accept_C','accept_PC','accept_C0','accept_PC0',...
+            'II','mit','CV','mit_C','CV_C','mit_C0','CV_C0',...
+            'VaR_1','VaR_1_post','VaR_1_post_C','VaR_1_post_PC','VaR_1_post_C0','VaR_1_post_PC0',...
+            'VaR_5','VaR_5_post','VaR_5_post_C','VaR_5_post_PC','VaR_5_post_C0','VaR_5_post_PC0',...
+            'MSE_1','MSE_1_post','MSE_1_post_C','MSE_1_post_PC','MSE_1_post_C0','MSE_1_post_PC0',...
+            'MSE_5','MSE_5_post','MSE_5_post_C','MSE_5_post_PC','MSE_5_post_C0','MSE_5_post_PC0')
         end
     end
 

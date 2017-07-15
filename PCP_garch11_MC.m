@@ -11,7 +11,7 @@ fprintf('Model: %s.\n',model)
 parameters = {'$\\mu$','$\\omega$','$\\alpha$','$\\beta$'};
 
 sigma1 = 1;
-sigma2 = 2;
+sigma2 = 1;
 c = (sigma2 - sigma1)/sqrt(2*pi); % mean of eps
 kappa = 0.5*(sigma1^2 + sigma2^2 - ((sigma2-sigma1)^2)/pi); % var of eps
 sigma1_k = sigma1/sqrt(kappa);
@@ -72,7 +72,7 @@ accept_C0 = zeros(S,1);
 accept_PC0 = zeros(S,1);
 
 %%
-T = 1000; % time series length
+T = 2500; % time series length
 fprintf('Time series length T = %d.\n',T)
 
 % Metropolis-Hastings for the parameters

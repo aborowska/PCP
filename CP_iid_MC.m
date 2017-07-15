@@ -11,7 +11,7 @@ fprintf('Model: %s.\n',model)
 parameters = {'$\\mu$','$\\sigma$'};
 
 sigma1 = 1; 
-sigma2 = 1;
+sigma2 = 2;
 c = (sigma2 - sigma1)/(sqrt(2*pi));%1/sqrt(2*pi); %0.3989
 
 S = 100; % number of MC replications
@@ -26,7 +26,7 @@ VaR_5_post = zeros(S,1);
 VaR_5_post_C = zeros(S,1);
 VaR_5_post_C0 = zeros(S,1);
 
-T = 100; %time series length
+T = 1000; %time series length
 
 p_bar1 = 0.01;
 p_bar = 0.05;    

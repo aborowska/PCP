@@ -42,19 +42,13 @@ void normcdf_my_mex(double *x,  double *mu, double *Sigma, mwSignedIndex N,
 {
     mwSignedIndex i;
     double z;
-
-//     z = mxMalloc((1)*sizeof(double));    
-    
+   
     for (i=0; i<N; i++)
     {
-//         z[0] = (x[i]-mu[0])/(sqrt(2)*Sigma[0]);
-//         erf(z);
-//         val[i] = 0.5*(1+z[0]);
         z = (x[i]-mu[0])/(sqrt(2)*Sigma[0]);
         myerf(&z);
         val[i] = 0.5*(1+z);
     }
-//     mxFree(z);
 }
 
 /* ********************************************************************* */
@@ -81,8 +75,8 @@ void prior_ar1(double *theta, mwSignedIndex N,
         if (r1[i] == 1)
         {
             r2[i] = -log(theta[i+N]);           // sigma ~ 1/sigma
-            rho = (theta[i+2*N]+1.0)/2.0;       // (phi+1)/2 ~ betapdf((phi+1)/2, 20, 1.5);                   
-            r2[i] = r2[i] + beta + (20-1)*log(rho) + (1.5-1)*log(1-rho);  
+//             rho = (theta[i+2*N]+1.0)/2.0;       // (phi+1)/2 ~ betapdf((phi+1)/2, 20, 1.5);                   
+//             r2[i] = r2[i] + beta + (20-1)*log(rho) + (1.5-1)*log(1-rho);  
         }
     }
 }
@@ -117,7 +111,7 @@ void C_posterior_ar1_varc_mex(double *y, mwSignedIndex N, mwSignedIndex T,
     {           
         if (r1[i]==1) // compute only for valid draws
         {
-            d[i] = 0; //r2[i]; // prior
+            d[i] = r2[i]; // prior
             // the first observation: from the stationary distribution
             THR =  threshold[0]*a1[i];             
             if  (y[0] < THR) //pdf // below the (un)condiional mean

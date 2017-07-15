@@ -32,13 +32,14 @@ function results = PCP_ar1_run_varc(c, sigma1, sigma2, rho, p_bar1, p_bar, T, H,
 %     kernel_init = @(xx) -posterior_ar1(xx,y(1:T))/T;
 
     kernel_init = @(xx) -posterior_ar1_mex(xx,y(1:T))/T;
-    kernel = @(xx) posterior_ar1_mex(xx,y(1:T));  
+    kernel = @(xx) posterior_ar1_mex(xx,y(1:T));
+    [mu_mle,~,~,~,~,Sigma] = fminunc(kernel_init,mu_init, options);
+    
     try
         [mit, CV] = MitISEM_new(kernel_init, kernel, mu_init, cont, GamMat);
     catch
-        [mu,~,~,~,~,Sigma] = fminunc(kernel_init,mu_init, options);
         Sigma = inv(T*Sigma);
-        mit = struct('mu',mu,'Sigma',reshape(Sigma,1,length(mu)^2),'df', df, 'p', 1);
+        mit = struct('mu',mu_mle,'Sigma',reshape(Sigma,1,length(mu_mle)^2),'df', df, 'p', 1);
         [mit, CV] = MitISEM_new(mit, kernel, mu_init, cont, GamMat);
     end
     [draw, lnk] = fn_rmvgt_robust(M+BurnIn, mit, kernel, false);
@@ -63,43 +64,27 @@ function results = PCP_ar1_run_varc(c, sigma1, sigma2, rho, p_bar1, p_bar, T, H,
     %% Time varying threshold, THR = 1
 %     threshold = sort(y(1:T));
 %     threshold = threshold(2*p_bar*T);
-    threshold = 1;
+%     threshold = 1; %0.9;
     %% CENSORED
     fprintf('*** Censored Posterior, time varying threshold, THR = 1 ***\n');
-    kernel_init = @(xx) - C_posterior_ar1_varc(xx, y(1:T), threshold)/T; 
-    kernel = @(xx) C_posterior_ar1_varc(xx, y(1:T), threshold); 
-    [mu_C,~,~,~,~,Sigma_C] = fminunc(kernel_init,mu_init,options);
-    [d, ~, D, Y] = kernel([mu_init; mu_C]); 
- 
+%     kernel_init = @(xx) - C_posterior_ar1_varc_mex(xx, y(1:T), threshold)/T; 
+%     kernel = @(xx) C_posterior_ar1_varc_mex(xx, y(1:T), threshold); 
+%     [mu_C,~,~,~,~,Sigma_C] = fminunc(kernel_init,mu_init,options);
+%  
+    % NOPARAMETERS
+    threshold = 1;
+    kernel_init = @(xx) - C_posterior_ar1_varc_noparam_mex(xx, y(1:T), threshold)/T; 
+    kernel = @(xx) C_posterior_ar1_varc_noparam_mex(xx, y(1:T), threshold);     
+    [mu_C2,~,~,~,~,Sigma_C2] = fminunc(kernel_init,mu_init,options);
+    Sigma_C2 = inv(T*Sigma_C2);
 
-    subplot(2,1,1)
-    hold on
-    plot(D(1,:))
-    plot(D(2,:),'m')
-    hold off
-    subplot(2,1,2)
-    hold on
-    plot(y,'r')
-    plot(Y(1,:))
-    plot(Y(2,:),'m')  
-    hold off
  
-    fprintf('*** Censored Posterior, threshold = 0 ***\n');
-    threshold0 = 0;
-    kernel_init = @(xx) - C_posterior_ar1(xx, y(1:T), threshold0)/T; 
-    kernel = @(xx) C_posterior_ar1(xx, y(1:T), threshold0); 
-    [mu_C0,~,~,~,~,Sigma_C0] = fminunc(kernel_init,mu_init,options);
+%     fprintf('*** Censored Posterior, threshold = 0 ***\n');
+%     threshold0 = 0;
+%     kernel_init = @(xx) - C_posterior_ar1(xx, y(1:T), threshold0)/T; 
+%     kernel = @(xx) C_posterior_ar1(xx, y(1:T), threshold0); 
+%     [mu_C0,~,~,~,~,Sigma_C0] = fminunc(kernel_init,mu_init,options);
     
-    
-    
-    
-   
-    
-    
-%     kernel_init = @(xx) - C_posterior_ar1_mex(xx, y(1:T), threshold)/T;    
-%     kernel = @(xx) C_posterior_ar1_mex(xx, y(1:T), threshold);
-    kernel_init = @(xx) - C_posterior_ar1_varc_mex(xx, y(1:T), threshold)/T;    
-    kernel = @(xx) C_posterior_ar1_varc_mex(xx, y(1:T), threshold);
     try
         [mit_C, CV_C] = MitISEM_new(kernel_init, kernel, mu_init, cont, GamMat);   
     catch
@@ -127,12 +112,10 @@ function results = PCP_ar1_run_varc(c, sigma1, sigma2, rho, p_bar1, p_bar, T, H,
     VaR_5_post_C  = y_post_C(p_bar*M,:); 
     
     %% PARTIAL CENSORING: keep rho uncensored, then censor mu and sigma
-    fprintf('*** Partially Censored Posterior, threshold 10%% ***\n');
+    fprintf('*** Partially Censored Posterior, time varying threshold, THR = 1 ***\n');
     % mit_C: joint candidate for the joint censored posterior
     % Short version
     draw_short = draw((1:II:M)',:); % thinning - to get hight quality rhos 
-%     M_short = M/II;
-%     [draw_PC, a_PC] = sim_cond_mit_MH(mit_C, draw_short, partition, M_short, BurnIn, kernel, GamMat);
     [draw_PC, a_PC] = sim_cond_mit_MH_outloop(mit_C, draw_short, partition, II, BurnIn, kernel, GamMat, cont.disp);
     accept_PC = mean(a_PC);
     mean_draw_PC = mean(draw_PC);
@@ -144,63 +127,25 @@ function results = PCP_ar1_run_varc(c, sigma1, sigma2, rho, p_bar1, p_bar, T, H,
     y_post_PC = sort(y_post_PC);
     VaR_1_post_PC  = y_post_PC(p_bar1*M,:); 
     VaR_5_post_PC  = y_post_PC(p_bar*M,:); 
-    
-    %% Threshold = 0
-    threshold0 = 0;
-    %% CENSORED
-    fprintf('*** Censored Posterior, threshold 0 ***\n');    
-    kernel_init = @(xx) - C_posterior_ar1_mex(xx, y(1:T), threshold0)/T; 
-    kernel = @(xx) C_posterior_ar1_mex(xx, y(1:T), threshold0);
-    try
-        [mit_C0, CV_C0] = MitISEM_new(kernel_init, kernel, mu_init, cont, GamMat);
-    catch
-        [mu_C0,~,~,~,~,Sigma_C0] = fminunc(kernel_init,mu_init,options);
-        Sigma_C0 = inv(T*Sigma_C0);
-        mit_C0 = struct('mu',mu_C0,'Sigma',reshape(Sigma_C0,1,length(mu_C0)^2),'df', df, 'p', 1);
-        [mit_C0, CV_C0] = MitISEM_new(mit_C0, kernel, mu_init, cont, GamMat);
-    end
-    [draw_C0, lnk_C0] = fn_rmvgt_robust(M+BurnIn, mit_C0, kernel, false);
-    lnd_C0 = dmvgt(draw_C0, mit_C0, true, GamMat);    
-    lnw_C0 = lnk_C0 - lnd_C0;
-    lnw_C0 = lnw_C0 - max(lnw_C0);
-    [ind, a] = fn_MH(lnw_C0);
-    draw_C0 = draw_C0(ind,:);
-    accept_C0 = a/(M+BurnIn);
-    draw_C0 = draw_C0(BurnIn+1:BurnIn+M,:);
-    mean_draw_C0 = mean(draw_C0);
-    std_draw_C0 = std(draw_C0);
 
-    y_post_C0 = bsxfun(@times,randn(M,H),draw_C0(:,2));
-    y_post_C0 = bsxfun(@plus,y_post_C0,draw_C0(:,1));
-    y_post_C0 = y_post_C0 + draw_C0(:,3)*y(T:(T+H-1),1)';
-    y_post_C0 = sort(y_post_C0);
-    VaR_1_post_C0 = y_post_C0(p_bar1*M,:); 
-    VaR_5_post_C0 = y_post_C0(p_bar*M,:); 
-
-    %% PARTIAL CENSORING: keep rho uncensored, then censor mu and sigma
-    fprintf('*** Partially Censored Posterior, threshold 0 ***\n');
-    % mit_C0: joint candidate for the joint censored posterior
-    % Short version
-%     [draw_PC0, a_PC0] = sim_cond_mit_MH(mit_C0, draw_short, partition, M_short, BurnIn, kernel, GamMat);
-    [draw_PC0, a_PC0] = sim_cond_mit_MH_outloop(mit_C0, draw_short, partition, II, BurnIn, kernel, GamMat, cont.disp);
-    accept_PC0 = mean(a_PC0);
-    mean_draw_PC0 = mean(draw_PC0);
-    std_draw_PC0 = std(draw_PC0);    
-
-    y_post_PC0 = bsxfun(@times,randn(M,H),draw_PC0(:,2));
-    y_post_PC0 = bsxfun(@plus,y_post_PC0,draw_PC0(:,1));
-    y_post_PC0 = y_post_PC0 + draw_PC0(:,3)*y(T:(T+H-1),1)';
-    y_post_PC0 = sort(y_post_PC0);
-    VaR_1_post_PC0 = y_post_PC0(p_bar1*M,:); 
-    VaR_5_post_PC0 = y_post_PC0(p_bar*M,:); 
-    
+    %% CENSORED MLE PARAMETERS    
+    threshold = 0.1; %<---------- HiGhER?
+    quantile = norminv(threshold);
+    fprintf('*** Censored Posterior, MLE time varying threshold, THR = %3.2f ***\n',threshold);
   
+%     kernel_init = @(xx) - C_posterior_ar1_varc_mle_mex(xx, y(1:T), mu_mle, quantile)/T; 
+    kernel_init = @(xx) - C_posterior_ar1_varc_mle(xx, y(1:T), mu_mle, quantile)/T; 
+    kernel = @(xx) C_posterior_ar1_varc_mle_mex(xx, y(1:T), mu_mle, quantile);     
+    [mu_Cm,~,~,~,~,Sigma_Cm] = fminunc(kernel_init,mu_init,options);
+    Sigma_Cm = inv(T*Sigma_Cm);
+
     %% Results
-    results = struct('y',y,'draw',draw,'draw_C',draw_C,'draw_PC',draw_PC,'draw_C0',draw_C0,'draw_PC0',draw_PC0,...
+    results = struct('y',y,'draw',draw,'draw_C',draw_C,'draw_PC',draw_PC,...
         'q1',q1,'q5',q5,...
-        'mean_draw',mean_draw,'mean_draw_C',mean_draw_C,'mean_draw_PC',mean_draw_PC,'mean_draw_C0',mean_draw_C0,'mean_draw_PC0',mean_draw_PC0,...
-        'std_draw',std_draw,'std_draw_C',std_draw_C,'std_draw_PC',std_draw_PC,'std_draw_C0',std_draw_C0,'std_draw_PC0',std_draw_PC0,...
-        'accept',accept,'accept_C',accept_C,'accept_PC',accept_PC,'accept_C0',accept_C0,'accept_PC0',accept_PC0,...
-        'mit',mit,'CV',CV,'mit_C',mit_C,'CV_C',CV_C,'mit_C0',mit_C0,'CV_C0',CV_C0,...
-        'VaR_1',VaR_1,'VaR_1_post',VaR_1_post,'VaR_1_post_C',VaR_1_post_C,'VaR_1_post_PC',VaR_1_post_PC,'VaR_1_post_C0',VaR_1_post_C0,'VaR_1_post_PC0',VaR_1_post_PC0,...
-        'VaR_5',VaR_5,'VaR_5_post',VaR_5_post,'VaR_5_post_C',VaR_5_post_C,'VaR_5_post_PC',VaR_5_post_PC,'VaR_5_post_C0',VaR_5_post_C0,'VaR_5_post_PC0',VaR_5_post_PC0);
+        'mean_draw',mean_draw,'mean_draw_C',mean_draw_C,'mean_draw_PC',mean_draw_PC,...
+        'std_draw',std_draw,'std_draw_C',std_draw_C,'std_draw_PC',std_draw_PC,...
+        'accept',accept,'accept_C',accept_C,'accept_PC',accept_PC,...
+        'mit',mit,'CV',CV,'mit_C',mit_C,'CV_C',CV_C,...
+        'VaR_1',VaR_1,'VaR_1_post',VaR_1_post,'VaR_1_post_C',VaR_1_post_C,'VaR_1_post_PC',VaR_1_post_PC,...
+        'VaR_5',VaR_5,'VaR_5_post',VaR_5_post,'VaR_5_post_C',VaR_5_post_C,'VaR_5_post_PC',VaR_5_post_PC);
+end

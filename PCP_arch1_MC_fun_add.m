@@ -35,7 +35,7 @@ function PCP_arch1_MC_fun_add(T, sigma2, S, II)
 
     % quantiles of interest
     p_bar1 = 0.01;
-    p_bar = 0.05;
+    p_bar = 0.025;
     % theoretical quantiles
     q1 = zeros(S,H);
     q5 = zeros(S,H);
@@ -157,7 +157,7 @@ function PCP_arch1_MC_fun_add(T, sigma2, S, II)
                 fprintf(['\n',model, ' simulation no. %i\n'],s)
         %     end
         try
-            results = PCP_arch1_run(sdd, c, sigma1, sigma2, kappa, omega, alpha, p_bar1, p_bar, T, H, M, BurnIn, mu_init, df, cont, options, partition, II, GamMat);
+            results = PCP_arch1_run_add(sdd, c, sigma1, sigma2, kappa, omega, alpha, p_bar1, p_bar, T, H, M, BurnIn, mu_init, df, cont, options, partition, II, GamMat);
             s = s+1;
             SDD(s,:) = sdd;
  
@@ -244,11 +244,17 @@ function PCP_arch1_MC_fun_add(T, sigma2, S, II)
     time_total = toc;
 
     if save_on
-        name = ['results/',model,'/',model,'_',num2str(sigma1),'_',...
-        num2str(sigma2),'_T',num2str(T),'_H',num2str(H),...
-        '_II',num2str(II),'_PCP0_MC_',v_new,'_add.mat'];   
+        if (p_bar == 0.05)
+            name = ['results/',model,'/',model,'_',num2str(sigma1),'_',...
+            num2str(sigma2),'_T',num2str(T),'_H',num2str(H),...
+            '_II',num2str(II),'_PCP0_MC_',v_new,'_add.mat'];   
+        else
+            name = ['results/',model,'/',model,'_',num2str(sigma1),'_',...
+            num2str(sigma2),'_T',num2str(T),'_H',num2str(H),...
+            '_II',num2str(II),'_pbar_',sprintf('%5.3f',p_bar),'_PCP0_MC_',v_new,'_add.mat'];   
+        end
         
-      save(name,...
+        save(name,...
         'time_total','SDD',...
         'y','draw','draw_C','draw_PC','draw_C0','draw_PC0','param_true','q1','q5',...
         'mean_draw','mean_draw_C','mean_draw_PC','mean_draw_C0','mean_draw_PC0',...
