@@ -1,0 +1,33 @@
+{ \renewcommand{\arraystretch}{1.2} 
+\begin{sidewaystable} 
+\center 
+\begin{tabular}{cc cc cccc cccc} 
+Value & & True/MC$^*$ & Posterior & CP0  & PCP0 & CP10\%  & PCP10\% &CP var ah & PCP var ah & CP var mle & PCP var mle \\ \hline 
+\hline 
+\multicolumn{12}{c}{$T =1000$}  \\ 
+\hline 
+AR && -- & 0.8764 & 0.8793 & 0.6827 & 0.8573 & 0.6436 &0.8777 & 0.7578 & 0.8709 & 0.7675  \\  
+$\mu$&& 0.3989 & 0.0042 & 0.1387 & 0.1142 & 0.2536 & 0.2621 & 0.3524 & 0.3411 & 0.4027 & 0.3876  \\ 
+&&   & (0.0483) & (0.0804) & (0.0739) & (0.3319) & (0.1993) &(0.0837) & (0.0820) & (0.2316) & (0.2290)  \\ 
+$\sigma$&& 2.0000 & 1.5282 & 1.7321 & 1.7188 & 1.9026 & 1.9057 & 1.9364 & 1.9287 & 1.9888 & 1.9800  \\ 
+&&   & (0.0343) & (0.0596) & (0.0566) & (0.1517) & (0.1240) &(0.0738) & (0.0727) & (0.1584) & (0.1566)  \\ 
+$\phi$&& 0.8000 & 0.7939 & 0.8134 & 0.7939 & 0.7911 & 0.7939 & 0.7763 & 0.7927 & 0.7868 & 0.7927  \\ 
+&&   & (0.0192) & (0.0310) & (0.0192) & (0.0696) & (0.0192) &(0.0295) & (0.0192) & (0.0402) & (0.0192)  \\ 
+VaR 1\% && -4.3149 & -3.6159 & -3.9615 & -3.9496 & -4.2684 & -4.2449 &-4.1373 & -4.1266 & -4.2117 & -4.1990 \\ 
+  && [0.0056] & [0.5010] & [0.1482] & [0.1517] & [0.0700] & [0.0485] &[0.0576] & [0.0511] & [0.0501] & [0.0379]  \\ 
+VaR 5\% && -2.9500 & -2.5690 & -2.7724 & -2.7719 & -2.9612 & -2.9357 &-2.8076 & -2.8037 & -2.8438 & -2.8401 \\ 
+  && [0.0018] & [0.1545] & [0.0466] & [0.0424] & [0.0553] & [0.0207] &[0.0308] & [0.0235] & [0.0272] & [0.0163]  \\ 
+\hline 
+\multicolumn{12}{l}{\footnotesize{$^*$ True value for parameters, MC mean value for the mean (over out-of-sample horizon) VaRs.}}  \\ 
+\multicolumn{12}{l}{\footnotesize{AR: acceptance rate for the independent MH (M = 10,000, burn in of 1,000).}}  \\ 
+\multicolumn{12}{l}{\footnotesize{CP: Censored posterior.}}  \\ 
+\multicolumn{12}{l}{\footnotesize{PCP: Partially censored posterior.}} \\ 
+\multicolumn{12}{l}{\footnotesize{(P)CP0: Censoring with threshold 0.}} \\ 
+\multicolumn{12}{l}{\footnotesize{(P)CP10\%: Censoring with threshold 10\% sample quantile.}}  \\ 
+\multicolumn{12}{l}{\footnotesize{(P)CP var ah: Time Varying Censoring, ad hoc method.}} \\ 
+\multicolumn{12}{l}{\footnotesize{(P)CP var mle: Time Varying Censoring, MLE based method.}}  \\ 
+\end{tabular}
+ \caption{Simulation results for standard posterior, censored posterior and partially censored posterior (the latter two with two time-constant and two time-varying thresholds) for the ar1 zero mean split normal model with $\sigma_{1} = 1$ and $\sigma_{2} = 2$. For the censored and the partially censored posterior the focus is on the left tail. All results averaged 100 MC replications. Results for the VaRs additionally averaged over out-of-sample horizon of $H=100$. (Mean) standard errors in parentheses, (Mean) MSEs in brackets.} 
+\label{tab:ar1_pcp_var}  
+\end{sidewaystable}
+}

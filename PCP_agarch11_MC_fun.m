@@ -26,7 +26,7 @@ function PCP_agarch11_MC_fun(T, sigma2, S, II)
     mu2 = 0; % gama = mu - mu2;
     omega = 1;
     alpha = 0.1;
-    beta = 0.7; %0.8;
+    beta = 0.8; % 0.7
     % % theta  = [mu, gama, omega, alpha, beta]
     % mu_true = [0, 0, omega, alpha, beta];
     % param_true = [c,sigma2,gama,omega,alpha,beta];
@@ -41,14 +41,58 @@ function PCP_agarch11_MC_fun(T, sigma2, S, II)
     % S = 20; % number of MC replications
     H = 100;
 
-    varc = true; % run the version with time varying threshold
+    varc = true; % false; % run the version with time varying threshold
 
     % quantiles of interest
+    p_bar0 = 0.005;
     p_bar1 = 0.01;
     p_bar = 0.05;
+    
     % theoretical quantiles
+    q05 = zeros(S,H);
     q1 = zeros(S,H);
     q5 = zeros(S,H);
+    %%
+    % T = 1000; % time series length
+    fprintf('Time series length T = %d.\n',T)
+
+    % Metropolis-Hastings for the parameters
+    M = 10000; % number of draws 
+    BurnIn = 1000;
+
+    x_gam = (0:0.00001:50)'+0.00001;
+    GamMat = gamma(x_gam);
+
+    cont = MitISEM_Control;
+    cont.mit.CV_max = 1; %2?
+    cont.mit.iter_max = 10;
+    cont.mit.Hmax = 6;
+    cont.mit.dfnc = 5;
+    df = 5; % default df for a mit
+
+    if ~exist('II','var')
+        II = 10;
+    end
+    
+    %% various display options
+    cont.disp = false;
+
+    v_new = ver('symbolic');
+    v_new = v_new.Release;
+    if strcmp(v_new,'(R2014a)')
+        fn_hist = @(xx) hist(xx,20);
+    else
+        fn_hist = @(xx) histogram(xx,20);
+    end
+
+    plot_on = false;
+    save_on = true;
+
+    options = optimset('Display','off');
+    % w = warning('query','last');
+    % id = w.identifier;
+    id = 'optim:fminunc:SwitchingMethod';
+    warning('off',id);
 
     %% simulated quantiles: 
     % true model, posterior, censored posterior 10%, partially censored posterior 10%, 
@@ -67,6 +111,13 @@ function PCP_agarch11_MC_fun(T, sigma2, S, II)
     VaR_5_post_C0 = zeros(S,H);
     VaR_5_post_PC0 = zeros(S,H);
 
+    VaR_05 = zeros(S,H);
+    VaR_05_post = zeros(S,H);
+    VaR_05_post_C = zeros(S,H);
+    VaR_05_post_PC = zeros(S,H);
+    VaR_05_post_C0 = zeros(S,H);
+    VaR_05_post_PC0 = zeros(S,H);
+    
     %% simulated parameters:
     % true model, posterior, censored posterior 10%, partially censored posterior 10%, 
     % censored posterior at 0, partially censored posterior at 0
@@ -105,46 +156,6 @@ function PCP_agarch11_MC_fun(T, sigma2, S, II)
     
     SDD = zeros(S,1);
 
-    %%
-    % T = 1000; % time series length
-    fprintf('Time series length T = %d.\n',T)
-
-    % Metropolis-Hastings for the parameters
-    M = 10000; % number of draws 
-    BurnIn = 1000;
-
-    x_gam = (0:0.00001:50)'+0.00001;
-    GamMat = gamma(x_gam);
-
-    cont = MitISEM_Control;
-    cont.mit.CV_max = 1; %2?
-    cont.mit.iter_max = 10;
-    cont.mit.Hmax = 6;
-    cont.mit.dfnc = 5;
-    df = 5; % default df for a mit
-
-    if (nargin == 3)
-        II = 10;
-    end
-    %% various display options
-    cont.disp = true; %false;
-
-    v_new = ver('symbolic');
-    v_new = v_new.Release;
-    if strcmp(v_new,'(R2014a)')
-        fn_hist = @(xx) hist(xx,20);
-    else
-        fn_hist = @(xx) histogram(xx,20);
-    end
-
-    plot_on = false;
-    save_on = true;
-
-    options = optimset('Display','off');
-    % w = warning('query','last');
-    % id = w.identifier;
-    id = 'optim:fminunc:SwitchingMethod';
-    warning('off',id);
 
     %% MC Simulations
     tic
@@ -154,22 +165,30 @@ function PCP_agarch11_MC_fun(T, sigma2, S, II)
         sdd = sdd + 1;
         %     if (mod(s,10)==0)
                 fprintf(['\n',model, ' simulation no. %i\n'],s)
+                fprintf('Time series length T = %d.\n',T)              
         %     end
         try
             if varc
-                results = PCP_agarch11_run_varc(sdd, c, sigma1, sigma2, kappa, omega, alpha, beta, p_bar1, p_bar, T, H, M, BurnIn, mu_init, df, cont, options, partition, II, GamMat);
+                results = PCP_agarch11_run_varc(sdd, c, sigma1, sigma2, kappa,...
+                    omega, alpha, beta, p_bar0, p_bar1, p_bar, T, H, ...
+                    M, BurnIn, mu_init, df, cont, options, partition, II, GamMat);
             else
-                results = PCP_agarch11_run(sdd, c, sigma1, sigma2, kappa, omega, alpha, beta, p_bar1, p_bar, T, H, M, BurnIn, mu_init, df, cont, options, partition, II, GamMat);
+                results = PCP_agarch11_run(sdd, c, sigma1, sigma2, kappa, omega, ...
+                    alpha, beta, p_bar0, p_bar1, p_bar, T, H, M, BurnIn, ...
+                    mu_init, df, cont, options, partition, II, GamMat);
             end
             s = s+1;
             SDD(s,:) = sdd;
  
             y = results.y;
+            
             q1(s,:) = results.q1;
             q5(s,:) = results.q5;   
+            q05(s,:) = results.q05;
 
             VaR_1(s,:) = results.VaR_1;
             VaR_5(s,:) = results.VaR_5;
+            VaR_05(s,:) = results.VaR_05;
 
             mit{s,1} = results.mit;
             CV{s,1} = results.CV;
@@ -180,6 +199,7 @@ function PCP_agarch11_MC_fun(T, sigma2, S, II)
             std_draw(s,:) =  results.std_draw;
             VaR_1_post(s,:) = results.VaR_1_post; 
             VaR_5_post(s,:) = results.VaR_5_post;
+            VaR_05_post(s,:) = results.VaR_05_post;
 
             mit_C{s,1} = results.mit_C;
             CV_C{s,1} = results.CV_C;        
@@ -190,6 +210,7 @@ function PCP_agarch11_MC_fun(T, sigma2, S, II)
             std_draw_C(s,:) =  results.std_draw_C;
             VaR_1_post_C(s,:) = results.VaR_1_post_C; 
             VaR_5_post_C(s,:) = results.VaR_5_post_C; 
+            VaR_05_post_C(s,:) = results.VaR_05_post_C; 
 
             draw_PC = results.draw_PC;
             accept_PC(s,1) = results.accept_PC;
@@ -198,6 +219,7 @@ function PCP_agarch11_MC_fun(T, sigma2, S, II)
             std_draw_PC(s,:) =  results.std_draw_PC;
             VaR_1_post_PC(s,:) = results.VaR_1_post_PC; 
             VaR_5_post_PC(s,:) = results.VaR_5_post_PC; 
+            VaR_05_post_PC(s,:) = results.VaR_05_post_PC; 
             
             if ~varc
                 mit_C0{s,1} = results.mit_C0;
@@ -209,6 +231,7 @@ function PCP_agarch11_MC_fun(T, sigma2, S, II)
                 std_draw_C0(s,:) =  results.std_draw_C0;
                 VaR_1_post_C0(s,:) = results.VaR_1_post_C0; 
                 VaR_5_post_C0(s,:) = results.VaR_5_post_C0; 
+                VaR_05_post_C0(s,:) = results.VaR_05_post_C0; 
 
                 draw_PC0 = results.draw_PC0;
                 accept_PC0(s,1) = results.accept_PC0;
@@ -216,7 +239,28 @@ function PCP_agarch11_MC_fun(T, sigma2, S, II)
                 median_draw_PC0(s,:) = results.median_draw_PC0;
                 std_draw_PC0(s,:) =  results.std_draw_PC0;
                 VaR_1_post_PC0(s,:) = results.VaR_1_post_PC0; 
-                VaR_5_post_PC0(s,:) = results.VaR_5_post_PC0;                 
+                VaR_5_post_PC0(s,:) = results.VaR_5_post_PC0;  
+                VaR_05_post_PC0(s,:) = results.VaR_05_post_PC0;  
+            else
+                mit_C0{s,1} = results.mit_Cm;
+                CV_C0{s,1} = results.CV_Cm;        
+                draw_C0 = results.draw_Cm;
+                accept_C0(s,1) = results.accept_Cm;
+                mean_draw_C0(s,:) = results.mean_draw_Cm;
+                median_draw_C0(s,:) = results.median_draw_Cm;
+                std_draw_C0(s,:) =  results.std_draw_Cm;
+                VaR_1_post_C0(s,:) = results.VaR_1_post_Cm; 
+                VaR_5_post_C0(s,:) = results.VaR_5_post_Cm; 
+                VaR_05_post_C0(s,:) = results.VaR_05_post_Cm; 
+
+                draw_PC0 = results.draw_PCm;
+                accept_PC0(s,1) = results.accept_PCm;
+                mean_draw_PC0(s,:) = results.mean_draw_PCm;
+                median_draw_PC0(s,:) = results.median_draw_PCm;
+                std_draw_PC0(s,:) =  results.std_draw_PCm;
+                VaR_1_post_PC0(s,:) = results.VaR_1_post_PCm; 
+                VaR_5_post_PC0(s,:) = results.VaR_5_post_PCm;                 
+                VaR_05_post_PC0(s,:) = results.VaR_05_post_PCm;                 
             end
         end
     end
@@ -226,19 +270,24 @@ function PCP_agarch11_MC_fun(T, sigma2, S, II)
     MSE_1_post = mean((VaR_1_post - q1).^2,2);
     MSE_1_post_C = mean((VaR_1_post_C - q1).^2,2);
     MSE_1_post_PC = mean((VaR_1_post_PC - q1).^2,2);
-    if ~varc
-        MSE_1_post_C0 = mean((VaR_1_post_C0 - q1).^2,2);
-        MSE_1_post_PC0 = mean((VaR_1_post_PC0 - q1).^2,2);
-    end
+    MSE_1_post_C0 = mean((VaR_1_post_C0 - q1).^2,2);
+    MSE_1_post_PC0 = mean((VaR_1_post_PC0 - q1).^2,2);
+
     
     MSE_5 = mean((VaR_5 - q5).^2,2);
     MSE_5_post = mean((VaR_5_post - q5).^2,2);
     MSE_5_post_C = mean((VaR_5_post_C - q5).^2,2);
     MSE_5_post_PC = mean((VaR_5_post_PC - q5).^2,2);
-    if ~varc    
-        MSE_5_post_C0 = mean((VaR_5_post_C0 - q5).^2,2);
-        MSE_5_post_PC0 = mean((VaR_5_post_PC0 - q5).^2,2);
-    end
+    MSE_5_post_C0 = mean((VaR_5_post_C0 - q5).^2,2);
+    MSE_5_post_PC0 = mean((VaR_5_post_PC0 - q5).^2,2);
+
+    MSE_05 = mean((VaR_05 - q05).^2,2);
+    MSE_05_post = mean((VaR_05_post - q05).^2,2);
+    MSE_05_post_C = mean((VaR_05_post_C - q05).^2,2);
+    MSE_05_post_PC = mean((VaR_05_post_PC - q05).^2,2);
+    MSE_05_post_C0 = mean((VaR_05_post_C0 - q05).^2,2);
+    MSE_05_post_PC0 = mean((VaR_05_post_PC0 - q05).^2,2);
+      
     time_total = toc;
 
     if save_on
@@ -246,35 +295,23 @@ function PCP_agarch11_MC_fun(T, sigma2, S, II)
             name = ['results/',model,'/',model,'_',num2str(sigma1),'_',...
                 num2str(sigma2),...
                 '_T',num2str(T),'_H',num2str(H),'_II',num2str(II)...
-                '_PCP0_MC_',v_new,'_varc.mat'];
+                '_PCP0_MC_',v_new,'_varc_low.mat'];
         else
             if (beta == 0.8)
                 name = ['results/',model,'/',model,'_',num2str(sigma1),'_',...
                 num2str(sigma2),'_T',num2str(T),'_H',num2str(H),...
-                '_II',num2str(II),'_PCP0_MC_',v_new,'.mat'];
+                '_II',num2str(II),'_PCP0_MC_',v_new,'_low.mat'];
             else
                 name = ['results/',model,'/',model,'_',num2str(sigma1),'_',...
                 num2str(sigma2),'_T',num2str(T),'_H',num2str(H),...
-                '_II',num2str(II),sprintf('_beta_%3.1f',beta),'_PCP0_MC_',v_new,'.mat'];
+                '_II',num2str(II),sprintf('_beta_%3.1f',beta),'_PCP0_MC_',v_new,'_low.mat'];
             end
         end
         
-        if varc
-            save(name,...
+        save(name,...
             'time_total','SDD',...
-            'y','draw','draw_C','draw_PC','param_true','q1','q5',...
-            'mean_draw','mean_draw_C','mean_draw_PC',...
-            'std_draw','std_draw_C','std_draw_PC',...
-            'accept','accept_C','accept_PC',...
-            'II','mit','CV','mit_C','CV_C',...
-            'VaR_1','VaR_1_post','VaR_1_post_C','VaR_1_post_PC',...
-            'VaR_5','VaR_5_post','VaR_5_post_C','VaR_5_post_PC',...
-            'MSE_1','MSE_1_post','MSE_1_post_C','MSE_1_post_PC',...
-            'MSE_5','MSE_5_post','MSE_5_post_C','MSE_5_post_PC')
-        else
-            save(name,...
-            'time_total','SDD',...
-            'y','draw','draw_C','draw_PC','draw_C0','draw_PC0','param_true','q1','q5',...
+            'y','draw','draw_C','draw_PC','draw_C0','draw_PC0','param_true',...
+            'q1','q5','q05',...
             'mean_draw','mean_draw_C','mean_draw_PC','mean_draw_C0','mean_draw_PC0',...
             'median_draw','median_draw_C','median_draw_PC','median_draw_C0','median_draw_PC0',...
             'std_draw','std_draw_C','std_draw_PC','std_draw_C0','std_draw_PC0',...
@@ -282,8 +319,9 @@ function PCP_agarch11_MC_fun(T, sigma2, S, II)
             'II','mit','CV','mit_C','CV_C','mit_C0','CV_C0',...
             'VaR_1','VaR_1_post','VaR_1_post_C','VaR_1_post_PC','VaR_1_post_C0','VaR_1_post_PC0',...
             'VaR_5','VaR_5_post','VaR_5_post_C','VaR_5_post_PC','VaR_5_post_C0','VaR_5_post_PC0',...
+            'VaR_05','VaR_05_post','VaR_05_post_C','VaR_05_post_PC','VaR_05_post_C0','VaR_05_post_PC0',...
             'MSE_1','MSE_1_post','MSE_1_post_C','MSE_1_post_PC','MSE_1_post_C0','MSE_1_post_PC0',...
-            'MSE_5','MSE_5_post','MSE_5_post_C','MSE_5_post_PC','MSE_5_post_C0','MSE_5_post_PC0')
-        end
+            'MSE_5','MSE_5_post','MSE_5_post_C','MSE_5_post_PC','MSE_5_post_C0','MSE_5_post_PC0',...
+            'MSE_05','MSE_05_post','MSE_05_post_C','MSE_05_post_PC','MSE_05_post_C0','MSE_05_post_PC0');        
     end
 end

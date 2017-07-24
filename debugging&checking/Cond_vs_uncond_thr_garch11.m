@@ -83,6 +83,7 @@ for s = 1:S
     eps(~ind) = c + sigma2.*eps(~ind);
     eps = eps/sqrt(kappa);  
     y = zeros(T+H,1);
+    y_S = var(y(1:T));
     h_true = zeros(T+H,1);
 
     for ii = 1:T+H

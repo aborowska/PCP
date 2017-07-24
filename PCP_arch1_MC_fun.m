@@ -52,7 +52,9 @@ function PCP_arch1_MC_fun(T, sigma2, S, II)
 
     x_gam = (0:0.00001:50)'+0.00001;
     GamMat = gamma(x_gam);
-
+%     LGamMat = log(GamMat);
+%     logGamMat = gammaln(x_gam);
+    
     cont = MitISEM_Control;
     cont.mit.CV_max = 1; %2?
     cont.mit.iter_max = 10;
@@ -144,6 +146,7 @@ function PCP_arch1_MC_fun(T, sigma2, S, II)
         sdd = sdd + 1;
         %     if (mod(s,10)==0)
                 fprintf(['\n',model, ' simulation no. %i\n'],s)
+                fprintf('Time series length T = %d.\n',T)                
         %     end
         try
             if varc            

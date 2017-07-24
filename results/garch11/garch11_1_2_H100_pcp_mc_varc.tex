@@ -1,0 +1,35 @@
+{ \renewcommand{\arraystretch}{1.2} 
+\begin{sidewaystable} 
+\center 
+\begin{tabular}{cc cc cccc cccc} 
+Value && True & Posterior & CP0  & PCP0 & CP10\%  & PCP10\% &CP var ah & PCP var ah & CP var mle & PCP var mle \\ \hline 
+\hline 
+\multicolumn{12}{c}{$T =1000$}  \\ 
+\hline 
+VaR 0.5\% && 0.0276 & 0.1600 &    NaN &    NaN &    NaN &    NaN &0.0572 & 0.0719 & 0.1119 & 0.1826 \\ 
+no. MSE>1 && 0 & 0 & 0 & 0 & 0 & 0 &50 & 44 & 50 & 41 \\[1ex] 
+VaR 1\% && 0.0254 & 0.1092 &    NaN &    NaN &    NaN &    NaN &0.0452 & 0.0611 & 0.0951 & 0.1664 \\ 
+no. MSE>1 && 0 & 0 & 0 & 0 & 0 & 0 &50 & 46 & 50 & 48 \\[1ex] 
+VaR 5\% && 0.0233 & 0.0237 &    NaN &    NaN &    NaN &    NaN &0.0254 & 0.0326 & 0.0554 & 0.0531 \\ 
+no. MSE>1 && 0 & 0 & 0 & 0 & 0 & 0 &50 & 50 & 50 & 49 \\[1ex] 
+\hline 
+\multicolumn{12}{c}{$T =2500$}  \\ 
+\hline 
+VaR 0.5\% && 0.0281 & 0.1566 &    NaN &    NaN &    NaN &    NaN &0.0334 & 0.0485 & 0.0719 & 0.1356 \\ 
+no. MSE>1 && 0 & 0 & 0 & 0 & 0 & 0 &50 & 49 & 50 & 48 \\[1ex] 
+VaR 1\% && 0.0256 & 0.1062 &    NaN &    NaN &    NaN &    NaN &0.0266 & 0.0366 & 0.0618 & 0.0840 \\ 
+no. MSE>1 && 0 & 0 & 0 & 0 & 0 & 0 &50 & 49 & 48 & 47 \\[1ex] 
+VaR 5\% && 0.0233 & 0.0197 &    NaN &    NaN &    NaN &    NaN &0.0168 & 0.0251 & 0.0417 & 0.0463 \\ 
+no. MSE>1 && 0 & 0 & 0 & 0 & 0 & 0 &50 & 50 & 48 & 50 \\[1ex] 
+\hline 
+\multicolumn{12}{l}{\footnotesize{CP: Censored posterior.}}  \\ 
+\multicolumn{12}{l}{\footnotesize{PCP: Partially censored posterior.}} \\ 
+\multicolumn{12}{l}{\footnotesize{(P)CP0: Censoring with threshold 0.}} \\ 
+\multicolumn{12}{l}{\footnotesize{(P)CP10\%: Censoring with threshold 10\% sample quantile.}}  \\ 
+\multicolumn{12}{l}{\footnotesize{(P)CP var ad: Time Varying Censoring, ad hoc method.}} \\ 
+\multicolumn{12}{l}{\footnotesize{(P)CP var mle: Time Varying Censoring, MLE based method.}}  \\ 
+\end{tabular}
+ \caption{MSEs for VaR prediction for standard posterior, censored posterior and partially censored posterior (the latter two with two time-constant and two time-varying thresholds) for the garch11 zero mean split normal model with $\sigma_{1} = 1$ and $\sigma_{2} = 2$. For the censored and the partially censored posterior the focus is on the left tail. Average MSEs (over 50 simulations) averaged over out-of-sample horizon of $H=100$. (Mean) standard errors in parentheses, (Mean) MSEs in brackets.} 
+\label{tab:garch11_pcp_var}  
+\end{sidewaystable}
+}

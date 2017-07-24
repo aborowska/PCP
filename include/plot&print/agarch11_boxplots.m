@@ -2,8 +2,14 @@ clear all
 close all
 
 save_on = false;
+varc = true;
 
-methods = {'Post.','CP0','PCP0','CP10%','PCP10%'};
+if varc 
+    methods = {'Post.','CP var mle','PCP var mle','CP var ah','PCP var ah'};
+else
+    methods = {'Post.','CP0','PCP0','CP10%','PCP10%'};
+end
+
 model = 'agarch11';
 v_new = '(R2015a)';
 II = 10;
@@ -12,7 +18,13 @@ sigma1 = 1;
 sigma2 = 2;
 H = 100;
 
-name = ['results/',model,'/',model,'_',num2str(sigma1),'_',num2str(sigma2),'_T',num2str(T),'_H',num2str(H),'_II',num2str(II),'_PCP0_MC_',v_new,'.mat'];
+v_new = '(R2017a)';
+
+if varc
+    name = ['results/',model,'/',model,'_',num2str(sigma1),'_',num2str(sigma2),'_T',num2str(T),'_H',num2str(H),'_II',num2str(II),'_PCP0_MC_',v_new,'_varc.mat'];
+else
+    name = ['results/',model,'/',model,'_',num2str(sigma1),'_',num2str(sigma2),'_T',num2str(T),'_H',num2str(H),'_II',num2str(II),'_PCP0_MC_',v_new,'.mat'];
+end
 load(name, '-regexp','^mean\w*')
 load(name, '-regexp','^std\w*')
 load(name, '-regexp','^q\w*')
@@ -21,32 +33,46 @@ load(name, '-regexp','^VaR\w*')
 %% Boxplots: MEAN DRAWS
 ff = figure(100);
 set(gcf,'units','normalized','outerposition',[0.05 0.05 0.9 0.9]);
+set(groot, 'defaultAxesTickLabelInterpreter','latex'); 
+set(groot, 'defaultLegendInterpreter','latex');
+
+
 subplot(2,3,1)
+set(gca,'TickLabelInterpreter','latex')
 boxplot([mean_draw(:,1),mean_draw_C0(:,1),mean_draw_PC0(:,1),mean_draw_C(:,1),mean_draw_PC(:,1)],...
     'labels' ,methods)
-xlabel('\mu')
+xlabel('\mu_1')
+% plotTickLatex2D
 
 subplot(2,3,2)
+set(gca,'TickLabelInterpreter','latex')
 boxplot([mean_draw(:,2),mean_draw_C0(:,2),mean_draw_PC0(:,2),mean_draw_C(:,2),mean_draw_PC(:,2)],...
     'labels' ,methods)
 % xlabel('\gamma')
 xlabel('\omega')
+% plotTickLatex2D
 
 subplot(2,3,3)
+set(gca,'TickLabelInterpreter','latex')
 boxplot([mean_draw(:,3),mean_draw_C0(:,3),mean_draw_PC0(:,3),mean_draw_C(:,3),mean_draw_PC(:,3)],...
     'labels' ,methods)
 % xlabel('\omega')
-xlabel('\mu2')
+xlabel('\mu_2')
+% plotTickLatex2D
 
 subplot(2,3,4)
+set(gca,'TickLabelInterpreter','latex')
 boxplot([mean_draw(:,4),mean_draw_C0(:,4),mean_draw_PC0(:,4),mean_draw_C(:,4),mean_draw_PC(:,4)],...
     'labels' ,methods)
 xlabel('\alpha')
+% plotTickLatex2D
 
 subplot(2,3,5)
 boxplot([mean_draw(:,5),mean_draw_C0(:,5),mean_draw_PC0(:,5),mean_draw_C(:,5),mean_draw_PC(:,5)],...
     'labels' ,methods)
 xlabel('\beta')
+set(gca,'TickLabelInterpreter','latex')
+% plotTickLatex2D
 
 
 subplot(2,3,6)
@@ -54,6 +80,9 @@ boxplot([mean_draw(:,5)+mean_draw(:,4),mean_draw_C0(:,5)+mean_draw_C0(:,4),mean_
     mean_draw_C(:,5)+ mean_draw_C(:,4),mean_draw_PC(:,5)+mean_draw_PC(:,4)],...
     'labels' ,methods)
 xlabel('\alpha + \beta')
+set(gca,'TickLabelInterpreter','latex')
+% plotTickLatex2D
+
 suptitle([model,': Mean draws'])
 
 if save_on 

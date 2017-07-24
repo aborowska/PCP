@@ -1,8 +1,59 @@
+addpath(genpath('include/'));
+options = optimset('Display','off');
+% w = warning('query','last');
+% id = w.identifier;
+id = 'optim:fminunc:SwitchingMethod';
+warning('off',id);
+% s = RandStream('mt19937ar','Seed',1);
+% RandStream.setGlobalStream(s); 
+
+
+% clear all
 % P(y_t>=threshold|y_1,...,y_(t-1)) = 1 - P(y_t<threshold|y_1,...,y_(t-1))
 
 % threshold_t 
 % P(y_t>=threshold_t|y_1,...,y_(t-1)) = 1 - P(y_t<threshold_t|y_1,...,y_(t-1))
-  
+model = 'garch11';
+fprintf('Model: %s.\n',model)
+parameters = {'$\\mu$','$\\sigma$','$\\phi$'};
+
+omega = 1;
+alpha = 0.1;
+beta = 0.8;
+
+sigma1 = 1;
+sigma2 = 2;    
+c = (sigma2 - sigma1)/sqrt(2*pi);
+kappa = 0.5*(sigma1^2 + sigma2^2 - ((sigma2-sigma1)^2)/pi); % var of eps
+sigma1_k = sigma1/sqrt(kappa);
+sigma2_k = sigma2/sqrt(kappa);
+
+mu_init = [0, 1, 0.05, 0.85];
+S = 1;
+H = 0;
+T = 2500;
+      
+eps = randn(T+H,1);
+ind = (eps>0);
+eps(ind) = c + sigma1.*eps(ind);
+eps(~ind) = c + sigma2.*eps(~ind);
+eps = eps/sqrt(kappa);  
+y = zeros(T+H,1);
+y_S = var(y(1:T));
+h_true = zeros(T+H,1);
+
+for ii = 1:T+H
+    if (ii == 1)
+        h_true(ii,1) = omega;
+    else
+        h_true(ii,1) = omega*(1-alpha-beta) + alpha*(y(ii-1,1))^2 + beta*h_true(ii-1,1);
+    end
+    y(ii,1) = sqrt(h_true(ii,1))*eps(ii,1);
+end  
+
+
+
+%% MEX checking
 thr_const = sort(y(1:T));
 thr_const = thr_const(0.5*T);
 threshold = 0.5; %<---------- HiGhER?
@@ -31,6 +82,7 @@ THR_cond(~cond) = NaN;
 y_cond = y;
 y_cond(~cond) = NaN;
 
+%% Plots  MLE based time varying vs constant threshold 
 figure(1)
 set(gcf,'units','normalized','outerposition',[0.0 0.0 1.0 1.0]);
 hold on
@@ -59,24 +111,43 @@ title('zoom in: garch(1,1), sigma2=2, MLE based time varying vs constant thresho
 legend('y','y censored','censoring condition','time constant thres.',...
     'time var. thres. theor.','time var. thres. applied')
 
+%% Time Varying threshold 
+kernel_init = @(xx) - posterior_garch11_mex(xx, y(1:T,1), y_S)/T;    
+mu_MLE = fminunc(kernel_init,mu_init,options);
+
 MUS_CM = zeros(100,4);
 for ii = 1:100
     kernel_init = @(xx) - C_posterior_garch11_varc_mle_mex(xx, y(1:T,1), mu_MLE, norminv(ii/100), y_S)/T;    
-    MUS_CM(ii,:) = fminunc(kernel_init,mu_init,options);
+    MUS_CM(ii,:) = fminunc(kernel_init,mu_MLE,options);
 end
 
-figure(444)
-set(gcf,'units','normalized','outerposition',[0.0 0.0 1.0 1.0]);
+ff=figure(444)
+set(gcf,'units','normalized','outerposition',[0.2 0.2 0.6 0.7]);
+set(groot, 'defaultAxesTickLabelInterpreter','latex'); 
+set(groot, 'defaultLegendInterpreter','latex');
+
+
 param = {'\mu','\omega','\alpha','\beta'};
 for ii=1:4
     subplot(2,2,ii)
     plot(0.01:0.01:1,MUS_CM(:,ii))
-    xlabel('censoring quantile')
+    xlabel('censoring quantile','Interpreter','latex')
     title(param{ii})
 end
-suptitle('MLEs for the (regular) MLE based time varying threshold censored likelihoods as a function of quantile for censoring')
+suptitle('MAP (Maximum A Posteriori) Estimates for a time-varying threshold CP as a function of quantile (threshold) for censoring')
 
-
+name = ['figures/',model,'/',model,'_',num2str(sigma1),'_',num2str(sigma2),...
+    '_time_var_threshold_MLE_q_01-01-10.eps'];
+set(gcf,'PaperPositionMode','auto');
+print_fail = 1;
+while print_fail 
+    try                 
+        print(ff,name,'-depsc','-r0')
+        print_fail = 0;
+    catch
+        print_fail = 1;
+    end
+end
 %%
 
 threshold = 0.1; %<---------- HiGhER?

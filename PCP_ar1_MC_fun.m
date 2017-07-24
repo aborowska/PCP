@@ -50,7 +50,7 @@ function PCP_ar1_MC_fun(T, sigma2, S, II)
     cont.mit.Hmax = 6;
     cont.mit.dfnc = 5;
     
-    if (nargin == 2)
+    if ~exist('II','var')
         II = 10;
     end
     
@@ -203,6 +203,22 @@ function PCP_ar1_MC_fun(T, sigma2, S, II)
                 std_draw_PC0(s,:) =  results.std_draw_PC0;
                 VaR_1_post_PC0(s,:) = results.VaR_1_post_PC0; 
                 VaR_5_post_PC0(s,:) = results.VaR_5_post_PC0; 
+            else
+                mit_Cm{s,1} = results.mit_Cm;  
+                CV_Cm{s,1} = results.CV_Cm;
+                draw_Cm = results.draw_Cm;
+                accept_Cm(s,1) = results.accept_Cm;
+                mean_draw_Cm(s,:) = results.mean_draw_Cm;
+                std_draw_Cm(s,:) =  results.std_draw_Cm;
+                VaR_1_post_Cm(s,:) = results.VaR_1_post_Cm; 
+                VaR_5_post_Cm(s,:) = results.VaR_5_post_Cm; 
+
+                draw_PCm = results.draw_PCm;
+                accept_PCm(s,1) = results.accept_PCm;
+                mean_draw_PCm(s,:) = results.mean_draw_PCm;
+                std_draw_PCm(s,:) =  results.std_draw_PCm;
+                VaR_1_post_PCm(s,:) = results.VaR_1_post_PCm; 
+                VaR_5_post_PCm(s,:) = results.VaR_5_post_PCm; 
             end
             if threshold_c
                 mit_Cc{s,1} = results.mit_Cc;
@@ -232,6 +248,9 @@ function PCP_ar1_MC_fun(T, sigma2, S, II)
     if ~varc
         MSE_1_post_C0 = mean((VaR_1_post_C0 - q1).^2,2);
         MSE_1_post_PC0 = mean((VaR_1_post_PC0 - q1).^2,2);
+    else
+        MSE_1_post_Cm = mean((VaR_1_post_Cm - q1).^2,2);
+        MSE_1_post_PCm = mean((VaR_1_post_PCm - q1).^2,2);        
     end
     
     MSE_5 = mean((VaR_5 - q5).^2,2);
@@ -241,6 +260,9 @@ function PCP_ar1_MC_fun(T, sigma2, S, II)
     if ~varc
         MSE_5_post_C0 = mean((VaR_5_post_C0 - q5).^2,2);
         MSE_5_post_PC0 = mean((VaR_5_post_PC0 - q5).^2,2);
+    else
+        MSE_5_post_Cm = mean((VaR_5_post_Cm - q5).^2,2);
+        MSE_5_post_PCm = mean((VaR_5_post_PCm - q5).^2,2);        
     end
     
     if threshold_c
@@ -277,15 +299,15 @@ function PCP_ar1_MC_fun(T, sigma2, S, II)
         elseif varc
             save(name,...
             'time_total',...
-            'y','draw','draw_C','draw_PC','param_true','q1','q5',...
-            'mean_draw','mean_draw_C','mean_draw_PC',...
-            'std_draw','std_draw_C','std_draw_PC',...
-            'accept','accept_C','accept_PC',...
-            'II','mit','CV','mit_C','CV_C',...
-            'VaR_1','VaR_1_post','VaR_1_post_C','VaR_1_post_PC',...
-            'VaR_5','VaR_5_post','VaR_5_post_C','VaR_5_post_PC',...
-            'MSE_1','MSE_1_post','MSE_1_post_C','MSE_1_post_PC',...
-            'MSE_5','MSE_5_post','MSE_5_post_C','MSE_5_post_PC')
+            'y','draw','draw_C','draw_PC','draw_Cm','draw_PCm','param_true','q1','q5',...
+            'mean_draw','mean_draw_C','mean_draw_PC','mean_draw_Cm','mean_draw_PCm',...
+            'std_draw','std_draw_C','std_draw_PC','std_draw_Cm','std_draw_PCm',...
+            'accept','accept_C','accept_PC','accept_Cm','accept_PCm',...
+            'II','mit','CV','mit_C','CV_C','mit_Cm','CV_Cm',...
+            'VaR_1','VaR_1_post','VaR_1_post_C','VaR_1_post_PC','VaR_1_post_Cm','VaR_1_post_PCm',...
+            'VaR_5','VaR_5_post','VaR_5_post_C','VaR_5_post_PC','VaR_5_post_Cm','VaR_5_post_PCm',...
+            'MSE_1','MSE_1_post','MSE_1_post_C','MSE_1_post_PC','MSE_1_post_Cm','MSE_1_post_PCm',...
+            'MSE_5','MSE_5_post','MSE_5_post_C','MSE_5_post_PC','MSE_5_post_Cm','MSE_5_post_PCm')
         else
             save(name,...
             'time_total',...
