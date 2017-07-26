@@ -150,7 +150,7 @@ void posterior_garch11_mex(double *theta, double *y, double *y_S,
         }
         else
         {
-                d[i] = -mxGetInf();
+            d[i] = -mxGetInf();
         }    
      }
     

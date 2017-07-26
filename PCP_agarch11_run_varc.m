@@ -28,7 +28,12 @@ function results = PCP_agarch11_run_varc(sdd, c, sigma1, sigma2, kappa, omega, a
     q05 = norminv(p_bar0, c, sigma2_k*sqrt(h_true(T+1:T+H)))';
     q1 = norminv(p_bar1, c, sigma2_k*sqrt(h_true(T+1:T+H)))';
     q5 = norminv(p_bar, c, sigma2_k*sqrt(h_true(T+1:T+H)))'; 
-
+    
+    % true ESs
+    cdf05 = c - sigma2_k*sqrt(h_true(T+1:T+H))'*normpdf(norminv(1-p_bar0))/(p_bar0);
+    cdf1 = c - sigma2_k*sqrt(h_true(T+1:T+H))'*normpdf(norminv(1-p_bar1))/(p_bar1);
+    cdf5 = c - sigma2_k*sqrt(h_true(T+1:T+H))'*normpdf(norminv(1-p_bar))/(p_bar); 
+    
     % MC VaRs under the true model
     eps_sort = randn(M,H);
     ind = (eps_sort>0);
@@ -38,10 +43,15 @@ function results = PCP_agarch11_run_varc(sdd, c, sigma1, sigma2, kappa, omega, a
 
     y_sort = bsxfun(@times,eps_sort,sqrt(h_true(T+1:T+H,1))');
     y_sort = sort(y_sort);
+    
     VaR_05 = y_sort(p_bar0*M,:); 
     VaR_1 = y_sort(p_bar1*M,:); 
     VaR_5 = y_sort(p_bar*M,:); 
 
+    ES_1 = mean(y_sort(1:p_bar1*M,:)); 
+    ES_5 = mean(y_sort(1:p_bar*M,:)); 
+    ES_05 = mean(y_sort(1:p_bar0*M,:));     
+    
     %% Misspecified model: GARCH(1,1) normal 
     %% Uncensored Posterior
     fprintf('*** Uncensored Posterior ***\n');
@@ -73,9 +83,15 @@ function results = PCP_agarch11_run_varc(sdd, c, sigma1, sigma2, kappa, omega, a
     y_post = randn(M,H).*sqrt(h_post);
     y_post = bsxfun(@plus,y_post,draw(:,1));
     y_post = sort(y_post);
+    
     VaR_05_post = y_post(p_bar0*M,:); 
     VaR_1_post = y_post(p_bar1*M,:); 
     VaR_5_post = y_post(p_bar*M,:); 
+ 
+    ES_1_post = mean(y_post(1:p_bar1*M,:)); 
+    ES_5_post = mean(y_post(1:p_bar*M,:)); 
+    ES_05_post = mean(y_post(1:p_bar0*M,:));    
+    
     mean_draw = mean(draw);
     median_draw = median(draw);
     std_draw = std(draw);
@@ -91,74 +107,81 @@ function results = PCP_agarch11_run_varc(sdd, c, sigma1, sigma2, kappa, omega, a
     [mu_C,~,~,~,~,Sigma_C] = fminunc(kernel_init,mu_init,options);
 
 %     cont.mit.CV_tol = 0.3; 
-    cont.mit.CV_max = 1.5;
-    CV_C = cont.mit.CV_old;
-    while (CV_C(end) >= 2)
+    cont.mit.CV_max = 1.5; %1.9;
+    CV_Cah = cont.mit.CV_old;
+    while (CV_Cah(end) >= 2)
         try
-            [mu_C,~,~,~,~,Sigma_C] = fminunc(kernel_init,mu_init,options);
-            Sigma_C = inv(T*Sigma_C);
-            draw_C = rmvt(mu_C,Sigma_C,df,M+BurnIn);
-            mit_C = struct('mu',mu_C,'Sigma',reshape(Sigma_C,1,length(mu_C)^2),'df', df, 'p', 1);
-            [mit_C, CV_C] = MitISEM_new2(mit_C, kernel, mu_init, cont, GamMat);   
-            if CV_C(end)>2
-                [mit_C, CV_C] = MitISEM_new2(mit_C, kernel, mu_init, cont, GamMat);   
+            [mu_Cah,~,~,~,~,Sigma_Cah] = fminunc(kernel_init,mu_init,options);
+            Sigma_Cah = inv(T*Sigma_Cah);
+            draw_Cah = rmvt(mu_Cah,Sigma_Cah,df,M+BurnIn);
+            mit_Cah = struct('mu',mu_Cah,'Sigma',reshape(Sigma_Cah,1,length(mu_Cah)^2),'df', df, 'p', 1);
+            [mit_Cah, CV_Cah] = MitISEM_new2(mit_Cah, kernel, mu_init, cont, GamMat);   
+            if CV_Cah(end)>2
+                [mit_Cah, CV_Cah] = MitISEM_new2(mit_Cah, kernel, mu_init, cont, GamMat);   
             end
-            [draw_C, lnk_C] = fn_rmvgt_robust(M+BurnIn, mit_C, kernel, false);
-            lnd_C = dmvgt(draw_C, mit_C, true, GamMat);    
+            [draw_Cah, lnk_Cah] = fn_rmvgt_robust(M+BurnIn, mit_Cah, kernel, false);
+            lnd_Cah = dmvgt(draw_Cah, mit_Cah, true, GamMat);    
         catch
-            mu_C = fminunc(kernel_init,mu_init,options);
-            mit_C = struct('mu',mu_C,'Sigma',reshape(Sigma,1,length(mu_C)^2),'df', df, 'p', 1);
-            [mit_C, CV_C] = MitISEM_new2(mit_C, kernel, mu_init, cont, GamMat);   
-            if CV_C(end)>2
-                [mit_C, CV_C] = MitISEM_new2(mit_C, kernel, mu_init, cont, GamMat);   
+            [mu_Cah,~,~,~,~,Sigma_Cah] = fminunc(kernel_init,mu_init,options);
+            mit_Cah = struct('mu',mu_Cah,'Sigma',reshape(Sigma_Cah,1,length(mu_Cah)^2),'df', df, 'p', 1);
+            [mit_Cah, CV_Cah] = MitISEM_new2(mit_Cah, kernel, mu_init, cont, GamMat);   
+            if CV_Cah(end)>2
+                [mit_Cah, CV_Cah] = MitISEM_new2(mit_Cah, kernel, mu_init, cont, GamMat);   
             end
-            [draw_C, lnk_C] = fn_rmvgt_robust(M+BurnIn, mit_C, kernel, false);
-            lnd_C = dmvgt(draw_C, mit_C, true, GamMat);    
+            [draw_Cah, lnk_Cah] = fn_rmvgt_robust(M+BurnIn, mit_Cah, kernel, false);
+            lnd_Cah = dmvgt(draw_Cah, mit_Cah, true, GamMat);    
         end 
     end
+    lnw_Cah = lnk_Cah - lnd_Cah;
+    lnw_Cah = lnw_Cah - max(lnw_Cah);
+    [ind, a] = fn_MH(lnw_Cah);
+    draw_Cah = draw_Cah(ind,:);
+    accept_Cah = a/(M+BurnIn);
+    draw_Cah = draw_Cah(BurnIn+1:BurnIn+M,:);
 
-    lnw_C = lnk_C - lnd_C;
-    lnw_C = lnw_C - max(lnw_C);
-    [ind, a] = fn_MH(lnw_C);
-    draw_C = draw_C(ind,:);
-    accept_C = a/(M+BurnIn);
-    draw_C = draw_C(BurnIn+1:BurnIn+M,:);
+    h_post_Cah = volatility_agarch11(draw_Cah,y,y_S,H);
+    y_post_Cah = randn(M,H).*sqrt(h_post_Cah);
+    y_post_Cah = bsxfun(@plus,y_post_Cah,draw_Cah(:,1));
+    y_post_Cah = sort(y_post_Cah);
 
-    h_post_C = volatility_agarch11(draw_C,y,y_S,H);
-    y_post_C = randn(M,H).*sqrt(h_post_C);
-    y_post_C = bsxfun(@plus,y_post_C,draw_C(:,1));
-    y_post_C = sort(y_post_C);
+    VaR_1_post_Cah = y_post_Cah(p_bar1*M,:); 
+    VaR_5_post_Cah = y_post_Cah(p_bar*M,:); 
+    VaR_05_post_Cah = y_post_Cah(p_bar0*M,:); 
 
-    VaR_05_post_C = y_post_C(p_bar0*M,:); 
-    VaR_1_post_C = y_post_C(p_bar1*M,:); 
-    VaR_5_post_C = y_post_C(p_bar*M,:); 
-    mean_draw_C = mean(draw_C);
-    median_draw_C = median(draw_C);
-    std_draw_C = std(draw_C);
+    ES_1_post_Cah = mean(y_post_Cah(1:p_bar1*M,:)); 
+    ES_5_post_Cah = mean(y_post_Cah(1:p_bar*M,:)); 
+    ES_05_post_Cah = mean(y_post_Cah(1:p_bar0*M,:)); 
+    
+    mean_draw_Cah = mean(draw_Cah);
+    median_draw_Cah = median(draw_Cah);
+    std_draw_Cah = std(draw_Cah);
 
     %% PARTIALLY CENSORED: keep alpha and beta uncensored, then censor mu and sigma
     fprintf('*** Partially Censored Posterior,  time varying threshold, THR = %3.2f ***\n',threshold);
-    % mit_C: joint candidate for the joint censored posterior    
+    % mit_Cah: joint candidate for the joint censored posterior    
     draw_short = draw((1:II:M)',:); % thinning - to get hight quality rhos
-    thinning = 1;
-    [draw_PC, a_PC, lnw_PC] = sim_cond_mit_MH_outloop(mit_C, draw_short, partition, II, BurnIn, kernel, GamMat, cont.disp, thinning);
-    accept_PC = mean(a_PC); 
-    ind_fin = isfinite(lnw_PC);
+    [draw_PCah, a_PCah, lnw_PCah] = sim_cond_mit_MH_outloop(mit_Cah, draw_short, partition, II, BurnIn, kernel, GamMat, cont.disp);
+    accept_PCah = mean(a_PCah); 
+    ind_fin = isfinite(lnw_PCah);
     M_fin = sum(ind_fin);
-    draw_PC = draw_PC(ind_fin,:) ;  
+    draw_PCah = draw_PCah(ind_fin,:) ;  
 
-    mean_draw_PC = mean(draw_PC);
-    median_draw_PC = median(draw_PC);
-    std_draw_PC = std(draw_PC);
+    mean_draw_PCah = mean(draw_PCah);
+    median_draw_PCah = median(draw_PCah);
+    std_draw_PCah = std(draw_PCah);
 
-    h_post_PC = volatility_agarch11(draw_PC,y,y_S,H);
-    y_post_PC = randn(M_fin,H).*sqrt(h_post_PC);
-    y_post_PC = bsxfun(@plus,y_post_PC,draw_PC(:,1));
-    y_post_PC = sort(y_post_PC);
+    h_post_PCah = volatility_agarch11(draw_PCah,y,y_S,H);
+    y_post_PCah = randn(M_fin,H).*sqrt(h_post_PCah);
+    y_post_PCah = bsxfun(@plus,y_post_PCah,draw_PCah(:,1));
+    y_post_PCah = sort(y_post_PCah);
     
-    VaR_05_post_PC = y_post_PC(round(p_bar0*M_fin),:); 
-    VaR_1_post_PC = y_post_PC(round(p_bar1*M_fin),:); 
-    VaR_5_post_PC = y_post_PC(round(p_bar*M_fin),:); 
+    VaR_1_post_PCah = y_post_PCah(round(p_bar1*M_fin),:); 
+    VaR_5_post_PCah = y_post_PCah(round(p_bar*M_fin),:); 
+    VaR_05_post_PCah = y_post_PCah(round(p_bar0*M_fin),:); 
+ 
+    ES_1_post_PCah = mean(y_post_PCah(1:round(p_bar1*M_fin),:)); 
+    ES_5_post_PCah = mean(y_post_PCah(1:round(p_bar*M_fin),:)); 
+    ES_05_post_PCah = mean(y_post_PCah(1:round(p_bar0*M_fin),:));   
 
    %% CENSORED MLE PARAMETERS    
     threshold = 0.1; %<---------- HiGhER?
@@ -218,7 +241,12 @@ function results = PCP_agarch11_run_varc(sdd, c, sigma1, sigma2, kappa, omega, a
     
     VaR_05_post_Cm = y_post_Cm(round(p_bar0*M_fin),:);     
     VaR_1_post_Cm = y_post_Cm(round(p_bar1*M_fin),:); 
-    VaR_5_post_Cm = y_post_Cm(round(p_bar*M_fin),:); 
+    VaR_5_post_Cm = y_post_Cm(round(p_bar*M_fin),:);
+    
+    ES_1_post_Cm = mean(y_post_Cm(1:p_bar1*M,:)); 
+    ES_5_post_Cm = mean(y_post_Cm(1:p_bar*M,:)); 
+    ES_05_post_Cm = mean(y_post_Cm(1:p_bar0*M,:));  
+    
     mean_draw_Cm = mean(draw_Cm);
     median_draw_Cm = median(draw_Cm);
     std_draw_Cm = std(draw_Cm);
@@ -245,18 +273,24 @@ function results = PCP_agarch11_run_varc(sdd, c, sigma1, sigma2, kappa, omega, a
     VaR_05_post_PCm = y_post_PCm(round(p_bar0*M_fin),:); 
     VaR_1_post_PCm = y_post_PCm(round(p_bar1*M_fin),:); 
     VaR_5_post_PCm = y_post_PCm(round(p_bar*M_fin),:); 
-   
-   %% Results
-   results = struct('y',y,'draw',draw,'draw_C',draw_C,'draw_PC',draw_PC,'draw_Cm',draw_Cm,'draw_PCm',draw_PCm,...
-        'q1',q1,'q5',q5,'q05',q05,...
-        'mean_draw',mean_draw,'mean_draw_C',mean_draw_C,'mean_draw_PC',mean_draw_PC,'mean_draw_Cm',mean_draw_Cm,'mean_draw_PCm',mean_draw_PCm,...
-        'median_draw',median_draw,'median_draw_C',median_draw_C,'median_draw_PC',median_draw_PC,'median_draw_Cm',median_draw_Cm,'median_draw_PCm',median_draw_PCm,...
-        'std_draw',std_draw,'std_draw_C',std_draw_C,'std_draw_PC',std_draw_PC,'std_draw_Cm',std_draw_Cm,'std_draw_PCm',std_draw_PCm,...
-        'accept',accept,'accept_C',accept_C,'accept_PC',accept_PC,'accept_Cm',accept_Cm,'accept_PCm',accept_PCm,...
-        'mit',mit,'CV',CV,'mit_C',mit_C,'CV_C',CV_C,'mit_Cm',mit_Cm,'CV_Cm',CV_Cm,...
-        'VaR_1',VaR_1,'VaR_1_post',VaR_1_post,'VaR_1_post_C',VaR_1_post_C,'VaR_1_post_PC',VaR_1_post_PC,'VaR_1_post_Cm',VaR_1_post_Cm,'VaR_1_post_PCm',VaR_1_post_PCm,...
-        'VaR_5',VaR_5,'VaR_5_post',VaR_5_post,'VaR_5_post_C',VaR_5_post_C,'VaR_5_post_PC',VaR_5_post_PC,'VaR_5_post_Cm',VaR_5_post_Cm,'VaR_5_post_PCm',VaR_5_post_PCm,...
-        'VaR_05',VaR_05,'VaR_05_post',VaR_05_post,'VaR_05_post_C',VaR_05_post_C,'VaR_05_post_PC',VaR_05_post_PC,'VaR_05_post_Cm',VaR_05_post_Cm,'VaR_05_post_PCm',VaR_05_post_PCm);
 
+    ES_1_post_PCm = mean(y_post_PCm(1:round(p_bar1*M_fin),:)); 
+    ES_5_post_PCm = mean(y_post_PCm(1:round(p_bar*M_fin),:)); 
+    ES_05_post_PCm = mean(y_post_PCm(1:round(p_bar0*M_fin),:));     
+    
+     %% Results
+     results = struct('y',y,'draw',draw,'draw_Cah',draw_Cah,'draw_PCah',draw_PCah,'draw_Cm',draw_Cm,'draw_PCm',draw_PCm,...
+        'q1',q1,'q5',q5,'q05',q05,'cdf1',cdf1,'cdf5',cdf5,'cdf05',cdf05,...
+        'mean_draw',mean_draw,'mean_draw_Cah',mean_draw_Cah,'mean_draw_PCah',mean_draw_PCah,'mean_draw_Cm',mean_draw_Cm,'mean_draw_PCm',mean_draw_PCm,...
+        'median_draw',median_draw,'median_draw_Cah',median_draw_Cah,'median_draw_PCah',median_draw_PCah,'median_draw_Cm',median_draw_Cm,'median_draw_PCm',median_draw_PCm,...
+        'std_draw',std_draw,'std_draw_Cah',std_draw_Cah,'std_draw_PCah',std_draw_PCah,'std_draw_Cm',std_draw_Cm,'std_draw_PCm',std_draw_PCm,...
+        'accept',accept,'accept_Cah',accept_Cah,'accept_PCah',accept_PCah,'accept_Cm',accept_Cm,'accept_PCm',accept_PCm,...
+        'mit',mit,'CV',CV,'mit_Cah',mit_Cah,'CV_Cah',CV_Cah,'mit_Cm',mit_Cm,'CV_Cm',CV_Cm,...
+        'VaR_1',VaR_1,'VaR_1_post',VaR_1_post,'VaR_1_post_Cah',VaR_1_post_Cah,'VaR_1_post_PCah',VaR_1_post_PCah,'VaR_1_post_Cm',VaR_1_post_Cm,'VaR_1_post_PCm',VaR_1_post_PCm,...
+        'VaR_5',VaR_5,'VaR_5_post',VaR_5_post,'VaR_5_post_Cah',VaR_5_post_Cah,'VaR_5_post_PCah',VaR_5_post_PCah,'VaR_5_post_Cm',VaR_5_post_Cm,'VaR_5_post_PCm',VaR_5_post_PCm,...
+        'VaR_05',VaR_05,'VaR_05_post',VaR_05_post,'VaR_05_post_Cah',VaR_05_post_Cah,'VaR_05_post_PCah',VaR_05_post_PCah,'VaR_05_post_Cm',VaR_05_post_Cm,'VaR_05_post_PCm',VaR_05_post_PCm,...
+        'ES_1',ES_1,'ES_1_post',ES_1_post,'ES_1_post_Cah',ES_1_post_Cah,'ES_1_post_PCah',ES_1_post_PCah,'ES_1_post_Cm',ES_1_post_Cm,'ES_1_post_PCm',ES_1_post_PCm,...
+        'ES_5',ES_5,'ES_5_post',ES_5_post,'ES_5_post_Cah',ES_5_post_Cah,'ES_5_post_PCah',ES_5_post_PCah,'ES_5_post_Cm',ES_5_post_Cm,'ES_5_post_PCm',ES_5_post_PCm,...
+        'ES_05',ES_05,'ES_05_post',ES_05_post,'ES_05_post_Cah',ES_05_post_Cah,'ES_05_post_PCah',ES_05_post_PCah,'ES_05_post_Cm',ES_05_post_Cm,'ES_05_post_PCm',ES_05_post_PCm);
 
 end

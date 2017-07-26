@@ -48,7 +48,7 @@ function [draw_partial, accept, lnw] = sim_cond_mit_MH_outloop(mit, draw, partit
     d_marg_tot = dmvgt(draw_marg, mit_marg, true, GamMat); % total probability (on the whole mixture)
     d_marg = zeros(N,H);
     for h = 1:H
-       d_marg(:,h) = log(mit_marg.p(h)) + dmvgt_mex(draw_marg, mit_marg.mu(h), mit_marg.Sigma(h,:), mit_marg.df(h), 1, GamMat, double(1));
+       d_marg(:,h) = log(mit_marg.p(h)) + dmvgt_mex(draw_marg, mit_marg.mu(h,:), mit_marg.Sigma(h,:), mit_marg.df(h), 1, GamMat, double(1));
     end
     d_marg = bsxfun(@minus, d_marg, d_marg_tot); % normalise by the total probability
     d_marg = exp(d_marg);

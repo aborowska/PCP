@@ -2,4 +2,59 @@
 \begin{sidewaystable} 
 \center 
 \begin{tabular}{cc cc cccc cccc} 
-Value & & True/MC$^*$ & Posterior & CP0  & PCP0 & CP10\%  & PCP10\% &CP var ah & PCP var ah & CP var mle & PCP var mle \\ \hline 
+Value && True & Posterior & CP0  & PCP0 & CP10\%  & PCP10\% &CP var ah & PCP var ah & CP var mle & PCP var mle \\ \hline 
+\hline 
+\multicolumn{12}{c}{$T =1000$}  \\ 
+\hline 
+VaR 0.5\% && 0.0278 & 0.1420 & 8.5607 & 36.1002 & 0.1368 & 23.7391 &0.0876 & 0.0635 & 0.1439 & 27.1403 \\ 
+VaR 0.5\% corr && 0.0278 & 0.1420 &    NaN & 0.1560 & 0.1368 & 0.1955 &0.0876 & 0.0635 & 0.1439 & 0.1678 \\ 
+no. MSE>1 && 0 & 0 & 50 & 7 & 0 & 15 &0 & 0 & 0 & 20 \\[1ex] 
+ES 0.5\% && 0.0276 & 0.2177 & 11.1101 & 80.8680 & 0.1796 & 66.0187 &0.1117 & 0.1978 & 0.1879 & 75.9774 \\ 
+ES 0.5\% corr && 0.0276 & 0.2177 &    NaN & 0.2251 & 0.1796 & 0.1779 &0.1117 & 0.0840 & 0.1879 & 0.2839 \\ 
+no. MSE>1 && 0 & 0 & 50 & 12 & 0 & 21 &0 & 3 & 0 & 21 \\[1.5ex] 
+VaR 1\% && 0.0257 & 0.0964 & 0.0972 & 19.0649 & 0.1074 & 9.2393 &0.0718 & 0.0453 & 0.1131 & 10.7650 \\ 
+VaR 1\% corr && 0.0257 & 0.0964 & 0.0972 & 0.1092 & 0.1074 & 0.1687 &0.0718 & 0.0453 & 0.1131 & 0.2132 \\ 
+no. MSE>1 && 0 & 0 & 0 & 7 & 0 & 11 &0 & 0 & 0 & 15 \\[1ex] 
+ES 1\% && 0.0256 & 0.1628 & 9.2479 & 48.3594 & 0.1460 & 35.3135 &0.0929 & 0.1055 & 0.1529 & 40.4229 \\ 
+ES 1\% corr && 0.0256 & 0.1628 &    NaN & 0.1704 & 0.1460 & 0.1914 &0.0929 & 0.0771 & 0.1529 & 0.2133 \\ 
+no. MSE>1 && 0 & 0 & 50 & 11 & 0 & 18 &0 & 1 & 0 & 20 \\[1.5ex] 
+VaR 5\% && 0.0235 & 0.0202 & 0.0581 & 2.9569 & 0.0586 & 0.1278 &0.0456 & 0.0270 & 0.0613 & 0.1907 \\ 
+VaR 5\% corr && 0.0235 & 0.0202 & 0.0581 & 0.0583 & 0.0586 & 0.0851 &0.0456 & 0.0270 & 0.0613 & 0.0939 \\ 
+no. MSE>1 && 0 & 0 & 0 & 5 & 0 & 1 &0 & 0 & 0 & 2 \\[1ex] 
+ES 5\% && 0.0235 & 0.0580 & 5.1292 & 11.8450 & 0.0851 & 4.0592 &0.0584 & 0.0386 & 0.0893 & 4.9731 \\ 
+ES 5\% corr && 0.0235 & 0.0580 &    NaN & 0.1251 & 0.0851 & 0.1443 &0.0584 & 0.0386 & 0.0893 & 0.2001 \\ 
+no. MSE>1 && 0 & 0 & 50 & 6 & 0 & 10 &0 & 0 & 0 & 14 \\[1ex] 
+\hline 
+\multicolumn{12}{c}{$T =2500$}  \\ 
+\hline 
+VaR 0.5\% && 0.0278 & 0.1627 & 8.8848 & 21.9063 & 0.0772 & 2.2528 &0.0520 & 0.0548 & 0.0758 & 1.8052 \\ 
+VaR 0.5\% corr && 0.0278 & 0.1627 &    NaN & 0.1279 & 0.0772 & 0.1386 &0.0520 & 0.0548 & 0.0758 & 0.1843 \\ 
+no. MSE>1 && 0 & 0 & 50 & 2 & 0 & 7 &0 & 0 & 0 & 7 \\[1ex] 
+ES 0.5\% && 0.0278 & 0.2509 & 11.5230 & 30.2522 & 0.0944 & 11.4670 &0.0723 & 0.0822 & 0.0925 & 8.1503 \\ 
+ES 0.5\% corr && 0.0278 & 0.2509 &    NaN & 0.1210 & 0.0944 & 0.1616 &0.0723 & 0.0822 & 0.0925 & 0.1810 \\ 
+no. MSE>1 && 0 & 0 & 50 & 8 & 0 & 12 &0 & 0 & 0 & 15 \\[1.5ex] 
+VaR 1\% && 0.0255 & 0.1101 & 0.0517 & 10.2183 & 0.0627 & 0.5742 &0.0406 & 0.0405 & 0.0621 & 0.5689 \\ 
+VaR 1\% corr && 0.0255 & 0.1101 & 0.0517 & 0.0808 & 0.0627 & 0.1460 &0.0406 & 0.0405 & 0.0621 & 0.1491 \\ 
+no. MSE>1 && 0 & 0 & 0 & 2 & 0 & 3 &0 & 0 & 0 & 3 \\[1ex] 
+ES 1\% && 0.0255 & 0.1871 & 9.5960 & 19.6723 & 0.0791 & 4.7521 &0.0569 & 0.0619 & 0.0779 & 3.5486 \\ 
+ES 1\% corr && 0.0255 & 0.1871 &    NaN & 0.1436 & 0.0791 & 0.1596 &0.0569 & 0.0619 & 0.0779 & 0.2032 \\ 
+no. MSE>1 && 0 & 0 & 50 & 4 & 0 & 9 &0 & 0 & 0 & 10 \\[1.5ex] 
+VaR 5\% && 0.0232 & 0.0212 & 0.0355 & 1.3473 & 0.0377 & 0.0483 &0.0246 & 0.0208 & 0.0386 & 0.0472 \\ 
+VaR 5\% corr && 0.0232 & 0.0212 & 0.0355 & 0.0385 & 0.0377 & 0.0483 &0.0246 & 0.0208 & 0.0386 & 0.0472 \\ 
+no. MSE>1 && 0 & 0 & 0 & 1 & 0 & 0 &0 & 0 & 0 & 0 \\[1ex] 
+ES 5\% && 0.0233 & 0.0660 & 5.3321 & 5.2735 & 0.0503 & 0.3781 &0.0311 & 0.0295 & 0.0507 & 0.3603 \\ 
+ES 5\% corr && 0.0233 & 0.0660 &    NaN & 0.0687 & 0.0503 & 0.1006 &0.0311 & 0.0295 & 0.0507 & 0.1177 \\ 
+no. MSE>1 && 0 & 0 & 50 & 2 & 0 & 5 &0 & 0 & 0 & 4 \\[1ex] 
+\hline 
+\multicolumn{12}{l}{\footnotesize{corr: corrected for outliers, average over MSE<1.}}  \\ 
+\multicolumn{12}{l}{\footnotesize{CP: Censored posterior.}}  \\ 
+\multicolumn{12}{l}{\footnotesize{PCP: Partially censored posterior.}} \\ 
+\multicolumn{12}{l}{\footnotesize{(P)CP0: Censoring with threshold 0.}} \\ 
+\multicolumn{12}{l}{\footnotesize{(P)CP10\%: Censoring with threshold 10\% sample quantile.}}  \\ 
+\multicolumn{12}{l}{\footnotesize{(P)CP var ad: Time Varying Censoring, ad hoc method.}} \\ 
+\multicolumn{12}{l}{\footnotesize{(P)CP var mle: Time Varying Censoring, MLE based method.}}  \\ 
+\end{tabular}
+ \caption{MSEs for VaR and ES prediction for standard posterior, censored posterior and partially censored posterior (the latter two with two time-constant and two time-varying thresholds) for the agarch11 zero mean split normal model with $\sigma_{1} = 1$ and $\sigma_{2} = 2$. For the censored and the partially censored posterior the focus is on the left tail. Average MSEs (over 50 simulations) averaged over out-of-sample horizon of $H=100$. (Mean) standard errors in parentheses, (Mean) MSEs in brackets.} 
+\label{tab:agarch11_pcp_var}  
+\end{sidewaystable}
+}

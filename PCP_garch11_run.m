@@ -34,7 +34,12 @@ function results = PCP_garch11_run(sdd, c, sigma1, sigma2, kappa,...
     q05 = norminv(p_bar0, c, sigma2_k*sqrt(h_true(T+1:T+H)))';
     q1 = norminv(p_bar1, c, sigma2_k*sqrt(h_true(T+1:T+H)))';
     q5 = norminv(p_bar, c, sigma2_k*sqrt(h_true(T+1:T+H)))'; 
-
+   
+    % true ESs
+    cdf05 = c - sigma2_k*sqrt(h_true(T+1:T+H))'*normpdf(norminv(1-p_bar0))/(p_bar0);
+    cdf1 = c - sigma2_k*sqrt(h_true(T+1:T+H))'*normpdf(norminv(1-p_bar1))/(p_bar1);
+    cdf5 = c - sigma2_k*sqrt(h_true(T+1:T+H))'*normpdf(norminv(1-p_bar))/(p_bar);    
+    
     % MC VaRs under the true model
     eps_sort = randn(M,H);
     ind = (eps_sort>0);
@@ -44,10 +49,15 @@ function results = PCP_garch11_run(sdd, c, sigma1, sigma2, kappa,...
 
     y_sort = bsxfun(@times,eps_sort,sqrt(h_true(T+1:T+H,1))');
     y_sort = sort(y_sort);
+    
     VaR_1 = y_sort(p_bar1*M,:); 
     VaR_5 = y_sort(p_bar*M,:); 
     VaR_05 = y_sort(p_bar0*M,:); 
 
+    ES_1 = mean(y_sort(1:p_bar1*M,:)); 
+    ES_5 = mean(y_sort(1:p_bar*M,:)); 
+    ES_05 = mean(y_sort(1:p_bar0*M,:));     
+    
     %% Misspecified model: GARCH(1,1) normal 
     %% Uncensored Posterior
     fprintf('*** Uncensored Posterior ***\n');
@@ -86,6 +96,10 @@ function results = PCP_garch11_run(sdd, c, sigma1, sigma2, kappa,...
     VaR_5_post = y_post(p_bar*M,:); 
     VaR_05_post = y_post(p_bar0*M,:); 
 
+    ES_1_post = mean(y_post(1:p_bar1*M,:)); 
+    ES_5_post = mean(y_post(1:p_bar*M,:)); 
+    ES_05_post = mean(y_post(1:p_bar0*M,:)); 
+    
     mean_draw = mean(draw);
     median_draw = median(draw);
     std_draw = std(draw);
@@ -114,8 +128,8 @@ function results = PCP_garch11_run(sdd, c, sigma1, sigma2, kappa,...
             [draw_C, lnk_C] = fn_rmvgt_robust(M+BurnIn, mit_C, kernel, false);
             lnd_C = dmvgt(draw_C, mit_C, true, GamMat);    
         catch
-            mu_C = fminunc(kernel_init,mu_init,options);
-            mit_C = struct('mu',mu_C,'Sigma',reshape(Sigma,1,length(mu_C)^2),'df', df, 'p', 1);
+            [mu_C,~,~,~,~,Sigma_C] = fminunc(kernel_init,mu_init,options);
+            mit_C = struct('mu',mu_C,'Sigma',reshape(Sigma_C,1,length(mu_C)^2),'df', df, 'p', 1);
             [mit_C, CV_C] = MitISEM_new2(mit_C, kernel, mu_init, cont, GamMat);   
             if CV_C(end)>2
                 [mit_C, CV_C] = MitISEM_new2(mit_C, kernel, mu_init, cont, GamMat);   
@@ -139,6 +153,10 @@ function results = PCP_garch11_run(sdd, c, sigma1, sigma2, kappa,...
     VaR_1_post_C = y_post_C(p_bar1*M,:); 
     VaR_5_post_C = y_post_C(p_bar*M,:); 
     VaR_05_post_C = y_post_C(p_bar0*M,:); 
+
+    ES_1_post_C = mean(y_post_C(1:p_bar1*M,:)); 
+    ES_5_post_C = mean(y_post_C(1:p_bar*M,:)); 
+    ES_05_post_C = mean(y_post_C(1:p_bar0*M,:)); 
     
     mean_draw_C = mean(draw_C);
     median_draw_C = median(draw_C);
@@ -153,10 +171,10 @@ function results = PCP_garch11_run(sdd, c, sigma1, sigma2, kappa,...
 %     [draw_PC, a_PC] = sim_cond_mit_MH(mit_C, draw_short, partition, II, BurnIn, kernel, GamMat);
     [draw_PC, a_PC, lnw_PC] = sim_cond_mit_MH_outloop(mit_C, draw_short, partition, II, BurnIn, kernel, GamMat, cont.disp);
     accept_PC = mean(a_PC); 
-    ind_fin = isfinite(lnw_PC);
-    M_fin = sum(ind_fin);
-    draw_PC = draw_PC(ind_fin,:) ;  
-
+%     ind_fin = isfinite(lnw_PC);
+%     M_fin = sum(ind_fin);
+%     draw_PC = draw_PC(ind_fin,:) ;  
+M_fin = M;
     mean_draw_PC = mean(draw_PC);
     median_draw_PC = median(draw_PC);
     std_draw_PC = std(draw_PC);
@@ -171,6 +189,10 @@ function results = PCP_garch11_run(sdd, c, sigma1, sigma2, kappa,...
     VaR_5_post_PC = y_post_PC(round(p_bar*M_fin),:); 
     VaR_05_post_PC = y_post_PC(round(p_bar0*M_fin),:); 
 
+    ES_1_post_PC = mean(y_post_PC(1:round(p_bar1*M_fin),:)); 
+    ES_5_post_PC = mean(y_post_PC(1:round(p_bar*M_fin),:)); 
+    ES_05_post_PC = mean(y_post_PC(1:round(p_bar0*M_fin),:));
+    
     %% Threshold = 0
     threshold0 = 0;
     %% CENSORED
@@ -220,6 +242,10 @@ function results = PCP_garch11_run(sdd, c, sigma1, sigma2, kappa,...
     VaR_1_post_C0 = y_post_C0(p_bar1*M,:); 
     VaR_5_post_C0 = y_post_C0(p_bar*M,:); 
     VaR_05_post_C0 = y_post_C0(p_bar0*M,:); 
+
+    ES_1_post_C0 = mean(y_post_C0(1:p_bar1*M,:)); 
+    ES_5_post_C0 = mean(y_post_C0(1:p_bar*M,:)); 
+    ES_05_post_C0 = mean(y_post_C0(1:p_bar0*M,:)); 
     
     %% PARTIAL CENSORING: keep alpha and beta uncensored, then censor mu and sigma
     fprintf('*** Partially Censored Posterior, threshold 0 ***\n');
@@ -227,10 +253,10 @@ function results = PCP_garch11_run(sdd, c, sigma1, sigma2, kappa,...
 %     [draw_PC0, a_PC0] = sim_cond_mit_MH(mit_C0, draw_short, partition, M_short, BurnIn, kernel, GamMat);
     [draw_PC0, a_PC0, lnw_PC0] = sim_cond_mit_MH_outloop(mit_C0, draw_short, partition, II, BurnIn, kernel, GamMat, cont.disp);
     accept_PC0 = mean(a_PC0);
-    ind_fin = isfinite(lnw_PC0);
-    M_fin = sum(ind_fin);
-    draw_PC0 = draw_PC0(ind_fin,:);
-    
+%     ind_fin = isfinite(lnw_PC0);
+%     M_fin = sum(ind_fin);
+%     draw_PC0 = draw_PC0(ind_fin,:);
+M_fin = M;    
     mean_draw_PC0 = mean(draw_PC0);
     median_draw_PC0 = median(draw_PC0);
     std_draw_PC0 = std(draw_PC0);    
@@ -243,9 +269,14 @@ function results = PCP_garch11_run(sdd, c, sigma1, sigma2, kappa,...
     VaR_1_post_PC0 = y_post_PC0(round(p_bar1*M_fin),:); 
     VaR_5_post_PC0 = y_post_PC0(round(p_bar*M_fin),:); 
     VaR_05_post_PC0 = y_post_PC0(round(p_bar0*M_fin),:); 
-      
+  
+    ES_1_post_PC0 = mean(y_post_PC0(1:round(p_bar1*M_fin),:)); 
+    ES_5_post_PC0 = mean(y_post_PC0(1:round(p_bar*M_fin),:)); 
+    ES_05_post_PC0 = mean(y_post_PC0(1:round(p_bar0*M_fin),:)); 
+    
+    %% Results   
     results = struct('y',y,'draw',draw,'draw_C',draw_C,'draw_PC',draw_PC,'draw_C0',draw_C0,'draw_PC0',draw_PC0,...
-        'q1',q1,'q5',q5,'q05',q05,...
+        'q1',q1,'q5',q5,'q05',q05,'cdf1',cdf1,'cdf5',cdf5,'cdf05',cdf05,...
     'mean_draw',mean_draw,'mean_draw_C',mean_draw_C,'mean_draw_PC',mean_draw_PC,'mean_draw_C0',mean_draw_C0,'mean_draw_PC0',mean_draw_PC0,...
     'median_draw',median_draw,'median_draw_C',median_draw_C,'median_draw_PC',median_draw_PC,'median_draw_C0',median_draw_C0,'median_draw_PC0',median_draw_PC0,...
     'std_draw',std_draw,'std_draw_C',std_draw_C,'std_draw_PC',std_draw_PC,'std_draw_C0',std_draw_C0,'std_draw_PC0',std_draw_PC0,...
@@ -253,6 +284,8 @@ function results = PCP_garch11_run(sdd, c, sigma1, sigma2, kappa,...
     'mit',mit,'CV',CV,'mit_C',mit_C,'CV_C',CV_C,'mit_C0',mit_C0,'CV_C0',CV_C0,...
     'VaR_1',VaR_1,'VaR_1_post',VaR_1_post,'VaR_1_post_C',VaR_1_post_C,'VaR_1_post_PC',VaR_1_post_PC,'VaR_1_post_C0',VaR_1_post_C0,'VaR_1_post_PC0',VaR_1_post_PC0,...
     'VaR_5',VaR_5,'VaR_5_post',VaR_5_post,'VaR_5_post_C',VaR_5_post_C,'VaR_5_post_PC',VaR_5_post_PC,'VaR_5_post_C0',VaR_5_post_C0,'VaR_5_post_PC0',VaR_5_post_PC0,...
-    'VaR_05',VaR_05,'VaR_05_post',VaR_05_post,'VaR_05_post_C',VaR_05_post_C,'VaR_05_post_PC',VaR_05_post_PC,'VaR_05_post_C0',VaR_05_post_C0,'VaR_05_post_PC0',VaR_05_post_PC0);
-
+    'VaR_05',VaR_05,'VaR_05_post',VaR_05_post,'VaR_05_post_C',VaR_05_post_C,'VaR_05_post_PC',VaR_05_post_PC,'VaR_05_post_C0',VaR_05_post_C0,'VaR_05_post_PC0',VaR_05_post_PC0,...
+    'ES_1',ES_1,'ES_1_post',ES_1_post,'ES_1_post_C',ES_1_post_C,'ES_1_post_PC',ES_1_post_PC,'ES_1_post_C0',ES_1_post_C0,'ES_1_post_PC0',ES_1_post_PC0,...
+    'ES_5',ES_5,'ES_5_post',ES_5_post,'ES_5_post_C',ES_5_post_C,'ES_5_post_PC',ES_5_post_PC,'ES_5_post_C0',ES_5_post_C0,'ES_5_post_PC0',ES_5_post_PC0,...
+    'ES_05',ES_05,'ES_05_post',ES_05_post,'ES_05_post_C',ES_05_post_C,'ES_05_post_PC',ES_05_post_PC,'ES_05_post_C0',ES_05_post_C0,'ES_05_post_PC0',ES_05_post_PC0);
 end

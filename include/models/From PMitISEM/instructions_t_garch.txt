@@ -1,0 +1,8 @@
+hyper = 0.01; 
+kernel = @(xx) posterior_t_garch_noS_hyper_mex(xx, y, S, GamMat, hyper);
+
+[y_H, ~, h_H] = predict_t_garch_noS(theta(:,1:5), y_last,h_last, H);  
+predict_t_garch_noS(theta, y_T, h_T, H)
+
+
+h_last = volatility_t_garch_noS_mex(theta(:,1:5), data, S);

@@ -28,7 +28,12 @@ function results = PCP_agarch11_run(sdd, c, sigma1, sigma2, kappa, omega, alpha,
     q05 = norminv(p_bar0, c, sigma2_k*sqrt(h_true(T+1:T+H)))';
     q1 = norminv(p_bar1, c, sigma2_k*sqrt(h_true(T+1:T+H)))';
     q5 = norminv(p_bar, c, sigma2_k*sqrt(h_true(T+1:T+H)))'; 
-
+    
+    % true ESs
+    cdf05 = c - sigma2_k*sqrt(h_true(T+1:T+H))'*normpdf(norminv(1-p_bar0))/(p_bar0);
+    cdf1 = c - sigma2_k*sqrt(h_true(T+1:T+H))'*normpdf(norminv(1-p_bar1))/(p_bar1);
+    cdf5 = c - sigma2_k*sqrt(h_true(T+1:T+H))'*normpdf(norminv(1-p_bar))/(p_bar); 
+    
     % MC VaRs under the true model
     eps_sort = randn(M,H);
     ind = (eps_sort>0);
@@ -43,6 +48,10 @@ function results = PCP_agarch11_run(sdd, c, sigma1, sigma2, kappa, omega, alpha,
     VaR_1 = y_sort(p_bar1*M,:); 
     VaR_5 = y_sort(p_bar*M,:); 
 
+    ES_1 = mean(y_sort(1:p_bar1*M,:)); 
+    ES_5 = mean(y_sort(1:p_bar*M,:)); 
+    ES_05 = mean(y_sort(1:p_bar0*M,:));      
+    
     %% Misspecified model: GARCH(1,1) normal 
     %% Uncensored Posterior
     fprintf('*** Uncensored Posterior ***\n');
@@ -78,6 +87,11 @@ function results = PCP_agarch11_run(sdd, c, sigma1, sigma2, kappa, omega, alpha,
     VaR_05_post = y_post(p_bar0*M,:); 
     VaR_1_post = y_post(p_bar1*M,:); 
     VaR_5_post = y_post(p_bar*M,:); 
+
+    ES_1_post = mean(y_post(1:p_bar1*M,:)); 
+    ES_5_post = mean(y_post(1:p_bar*M,:)); 
+    ES_05_post = mean(y_post(1:p_bar0*M,:)); 
+    
     mean_draw = mean(draw);
     median_draw = median(draw);
     std_draw = std(draw);
@@ -132,6 +146,11 @@ function results = PCP_agarch11_run(sdd, c, sigma1, sigma2, kappa, omega, alpha,
     VaR_05_post_C = y_post_C(p_bar0*M,:); 
     VaR_1_post_C = y_post_C(p_bar1*M,:); 
     VaR_5_post_C = y_post_C(p_bar*M,:); 
+
+    ES_1_post_C = mean(y_post_C(1:p_bar1*M,:)); 
+    ES_5_post_C = mean(y_post_C(1:p_bar*M,:)); 
+    ES_05_post_C = mean(y_post_C(1:p_bar0*M,:)); 
+        
     mean_draw_C = mean(draw_C);
     median_draw_C = median(draw_C);
     std_draw_C = std(draw_C);
@@ -162,6 +181,10 @@ thinning = 1;
     VaR_05_post_PC = y_post_PC(round(p_bar0*M_fin),:); 
     VaR_1_post_PC = y_post_PC(round(p_bar1*M_fin),:); 
     VaR_5_post_PC = y_post_PC(round(p_bar*M_fin),:); 
+
+    ES_1_post_PC = mean(y_post_PC(1:round(p_bar1*M_fin),:)); 
+    ES_5_post_PC = mean(y_post_PC(1:round(p_bar*M_fin),:)); 
+    ES_05_post_PC = mean(y_post_PC(1:round(p_bar0*M_fin),:));
 
     %% Threshold = 0
     threshold0 = 0;
@@ -212,6 +235,10 @@ thinning = 1;
     VaR_05_post_C0 = y_post_C0(p_bar0*M,:); 
     VaR_1_post_C0 = y_post_C0(p_bar1*M,:); 
     VaR_5_post_C0 = y_post_C0(p_bar*M,:); 
+
+    ES_1_post_C0 = mean(y_post_C0(1:p_bar1*M,:)); 
+    ES_5_post_C0 = mean(y_post_C0(1:p_bar*M,:)); 
+    ES_05_post_C0 = mean(y_post_C0(1:p_bar0*M,:));     
     
     %% PARTIAL CENSORING: keep alpha and beta uncensored, then censor mu and sigma
     fprintf('*** Partially Censored Posterior, threshold 0 ***\n');
@@ -235,9 +262,14 @@ thinning = 1;
     VaR_05_post_PC0 = y_post_PC0(round(p_bar0*M_fin),:);     
     VaR_1_post_PC0 = y_post_PC0(round(p_bar1*M_fin),:); 
     VaR_5_post_PC0 = y_post_PC0(round(p_bar*M_fin),:); 
-      
+  
+    ES_1_post_PC0 = mean(y_post_PC0(1:round(p_bar1*M_fin),:)); 
+    ES_5_post_PC0 = mean(y_post_PC0(1:round(p_bar*M_fin),:)); 
+    ES_05_post_PC0 = mean(y_post_PC0(1:round(p_bar0*M_fin),:)); 
+    
+    %% Results   
     results = struct('y',y,'draw',draw,'draw_C',draw_C,'draw_PC',draw_PC,'draw_C0',draw_C0,'draw_PC0',draw_PC0,...
-        'q1',q1,'q5',q5,'q05',q05,...
+        'q1',q1,'q5',q5,'q05',q05,'cdf1',cdf1,'cdf5',cdf5,'cdf05',cdf05,...
     'mean_draw',mean_draw,'mean_draw_C',mean_draw_C,'mean_draw_PC',mean_draw_PC,'mean_draw_C0',mean_draw_C0,'mean_draw_PC0',mean_draw_PC0,...
     'median_draw',median_draw,'median_draw_C',median_draw_C,'median_draw_PC',median_draw_PC,'median_draw_C0',median_draw_C0,'median_draw_PC0',median_draw_PC0,...
     'std_draw',std_draw,'std_draw_C',std_draw_C,'std_draw_PC',std_draw_PC,'std_draw_C0',std_draw_C0,'std_draw_PC0',std_draw_PC0,...
@@ -245,7 +277,8 @@ thinning = 1;
     'mit',mit,'CV',CV,'mit_C',mit_C,'CV_C',CV_C,'mit_C0',mit_C0,'CV_C0',CV_C0,...
     'VaR_1',VaR_1,'VaR_1_post',VaR_1_post,'VaR_1_post_C',VaR_1_post_C,'VaR_1_post_PC',VaR_1_post_PC,'VaR_1_post_C0',VaR_1_post_C0,'VaR_1_post_PC0',VaR_1_post_PC0,...
     'VaR_5',VaR_5,'VaR_5_post',VaR_5_post,'VaR_5_post_C',VaR_5_post_C,'VaR_5_post_PC',VaR_5_post_PC,'VaR_5_post_C0',VaR_5_post_C0,'VaR_5_post_PC0',VaR_5_post_PC0,...
-    'VaR_05',VaR_05,'VaR_05_post',VaR_05_post,'VaR_05_post_C',VaR_05_post_C,'VaR_05_post_PC',VaR_05_post_PC,'VaR_05_post_C0',VaR_05_post_C0,'VaR_05_post_PC0',VaR_05_post_PC0);
-
-
+    'VaR_05',VaR_05,'VaR_05_post',VaR_05_post,'VaR_05_post_C',VaR_05_post_C,'VaR_05_post_PC',VaR_05_post_PC,'VaR_05_post_C0',VaR_05_post_C0,'VaR_05_post_PC0',VaR_05_post_PC0,...
+    'ES_1',ES_1,'ES_1_post',ES_1_post,'ES_1_post_C',ES_1_post_C,'ES_1_post_PC',ES_1_post_PC,'ES_1_post_C0',ES_1_post_C0,'ES_1_post_PC0',ES_1_post_PC0,...
+    'ES_5',ES_5,'ES_5_post',ES_5_post,'ES_5_post_C',ES_5_post_C,'ES_5_post_PC',ES_5_post_PC,'ES_5_post_C0',ES_5_post_C0,'ES_5_post_PC0',ES_5_post_PC0,...
+    'ES_05',ES_05,'ES_05_post',ES_05_post,'ES_05_post_C',ES_05_post_C,'ES_05_post_PC',ES_05_post_PC,'ES_05_post_C0',ES_05_post_C0,'ES_05_post_PC0',ES_05_post_PC0);
 end
