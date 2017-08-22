@@ -1,4 +1,6 @@
-function results = PCP_ar1_run_varc(c, sigma1, sigma2, rho, p_bar1, p_bar, T, H, M, BurnIn, mu_init, df, cont, options, partition, II, GamMat)
+function results = PCP_ar1_run_varc(c, sigma1, sigma2, rho, ...
+    p_bar0, p_bar1, p_bar, T, H, M, BurnIn, mu_init, ...
+    df, cont, options, partition, II, GamMat)
 
     %% simple AR(1)
     eps = randn(T+H,1);
@@ -11,10 +13,17 @@ function results = PCP_ar1_run_varc(c, sigma1, sigma2, rho, p_bar1, p_bar, T, H,
     for ii = 2:T+H
         y(ii,1) = rho*y(ii-1,1) + eps(ii,1);
     end
+    
     % true VaRs
+    q05 = norminv(p_bar0,c+rho*y(T:(T+H-1),1),sigma2)';
     q1 = norminv(p_bar1,c+rho*y(T:(T+H-1),1),sigma2)';
     q5 = norminv(p_bar,c+rho*y(T:(T+H-1),1),sigma2)'; 
-     
+
+    % true ESs
+    cdf05 = c - sigma2*normpdf(norminv(1-p_bar0))/(p_bar0);
+    cdf1 = c - sigma2*normpdf(norminv(1-p_bar1))/(p_bar1);
+    cdf5 = c - sigma2*normpdf(norminv(1-p_bar))/(p_bar);    
+ 
     % MC VaRs under the true model
     eps_sort = randn(M,H);
     ind = (eps_sort>0);
@@ -23,8 +32,14 @@ function results = PCP_ar1_run_varc(c, sigma1, sigma2, rho, p_bar1, p_bar, T, H,
 
     y_sort = bsxfun(@plus,eps_sort,rho*y(T:(T+H-1),1)');
     y_sort = sort(y_sort);
+
     VaR_1 = y_sort(p_bar1*M,:); 
     VaR_5 = y_sort(p_bar*M,:); 
+    VaR_05 = y_sort(p_bar0*M,:);
+
+    ES_1 = mean(y_sort(1:p_bar1*M,:)); 
+    ES_5 = mean(y_sort(1:p_bar*M,:)); 
+    ES_05 = mean(y_sort(1:p_bar0*M,:)); 
 
     %% Misspecified model: AR1 normal with unknown mu and sigma
     %% UNCENSORED posterior
@@ -51,22 +66,26 @@ function results = PCP_ar1_run_varc(c, sigma1, sigma2, rho, p_bar1, p_bar, T, H,
     lnw = lnw(ind);
     accept = a/(M+BurnIn);
     draw = draw(BurnIn+1:BurnIn+M,:);    
- 
+    mean_draw = mean(draw);
+    std_draw = std(draw);
+    
     y_post = bsxfun(@times,randn(M,H),draw(:,2));
     y_post = bsxfun(@plus,y_post,draw(:,1));
     y_post = y_post + draw(:,3)*y(T:(T+H-1),1)';
     y_post = sort(y_post);
+
     VaR_1_post = y_post(p_bar1*M,:); 
     VaR_5_post = y_post(p_bar*M,:); 
-    mean_draw = mean(draw);
-    std_draw = std(draw);
+    VaR_05_post = y_post(p_bar0*M,:); 
+
+    ES_1_post = mean(y_post(1:p_bar1*M,:)); 
+    ES_5_post = mean(y_post(1:p_bar*M,:)); 
+    ES_05_post = mean(y_post(1:p_bar0*M,:));  
+
     
     %% Time varying threshold, THR = 1
-%     threshold = sort(y(1:T));
-%     threshold = threshold(2*p_bar*T);
-%     threshold = 1; %0.9;
     %% CENSORED
-    fprintf('*** Censored Posterior, time varying threshold, THR = 1 ***\n');
+    fprintf('*** Censored Posterior, ad hoc time varying threshold, THR = 1 ***\n');
 %     kernel_init = @(xx) - C_posterior_ar1_varc_mex(xx, y(1:T), threshold)/T; 
 %     kernel = @(xx) C_posterior_ar1_varc_mex(xx, y(1:T), threshold); 
 %     [mu_C,~,~,~,~,Sigma_C] = fminunc(kernel_init,mu_init,options);
@@ -75,8 +94,8 @@ function results = PCP_ar1_run_varc(c, sigma1, sigma2, rho, p_bar1, p_bar, T, H,
     threshold = 1;
     kernel_init = @(xx) - C_posterior_ar1_varc_noparam_mex(xx, y(1:T), threshold)/T; 
     kernel = @(xx) C_posterior_ar1_varc_noparam_mex(xx, y(1:T), threshold);     
-    [mu_C2,~,~,~,~,Sigma_C2] = fminunc(kernel_init,mu_init,options);
-    Sigma_C2 = inv(T*Sigma_C2);
+    [mu_Cah,~,~,~,~,Sigma_Cah] = fminunc(kernel_init,mu_init,options);
+    Sigma_Cah = inv(T*Sigma_Cah);
  
 %     fprintf('*** Censored Posterior, threshold = 0 ***\n');
 %     threshold0 = 0;
@@ -85,47 +104,61 @@ function results = PCP_ar1_run_varc(c, sigma1, sigma2, rho, p_bar1, p_bar, T, H,
 %     [mu_C0,~,~,~,~,Sigma_C0] = fminunc(kernel_init,mu_init,options);
     
     try
-        [mit_C, CV_C] = MitISEM_new(kernel_init, kernel, mu_init, cont, GamMat);   
+        [mit_Cah, CV_Cah] = MitISEM_new(kernel_init, kernel, mu_init, cont, GamMat);   
     catch
-        [mu_C,~,~,~,~,Sigma_C] = fminunc(kernel_init,mu_init,options);
-        Sigma_C = inv(T*Sigma_C);
-        mit_C = struct('mu',mu_C,'Sigma',reshape(Sigma_C,1,length(mu_C)^2),'df', df, 'p', 1);
-        CV_C = cont.mit.CV_old;
+%         [mu_Cah,~,~,~,~,Sigma_Cah] = fminunc(kernel_init,mu_init,options);
+%         Sigma_Cah = inv(T*Sigma_Cah);
+        mit_Cah = struct('mu',mu_Cah,'Sigma',reshape(Sigma_Cah,1,length(mu_Cah)^2),'df', df, 'p', 1);
+        CV_Cah = cont.mit.CV_old;
     end
-    [draw_C, lnk_C] = fn_rmvgt_robust(M+BurnIn, mit_C, kernel, false);
-    lnd_C = dmvgt(draw_C, mit_C, true, GamMat);     
-    lnw_C = lnk_C - lnd_C;
-    lnw_C = lnw_C - max(lnw_C);
-    [ind, a] = fn_MH(lnw_C);
-    draw_C = draw_C(ind,:);
-    accept_C = a/(M+BurnIn);
-    draw_C = draw_C(BurnIn+1:BurnIn+M,:);
-    mean_draw_C = mean(draw_C);
-    std_draw_C = std(draw_C);
+    [draw_Cah, lnk_Cah] = fn_rmvgt_robust(M+BurnIn, mit_Cah, kernel, false);
+    lnd_Cah = dmvgt(draw_Cah, mit_Cah, true, GamMat);     
+    lnw_Cah = lnk_Cah - lnd_Cah;
+    lnw_Cah = lnw_Cah - max(lnw_Cah);
+    [ind, a] = fn_MH(lnw_Cah);
+    draw_Cah = draw_Cah(ind,:);
+    accept_Cah = a/(M+BurnIn);
+    
+    draw_Cah = draw_Cah(BurnIn+1:BurnIn+M,:);
+    mean_draw_Cah = mean(draw_Cah);
+    std_draw_Cah = std(draw_Cah);
         
-    y_post_C = bsxfun(@times,randn(M,H),draw_C(:,2));
-    y_post_C = bsxfun(@plus,y_post_C,draw_C(:,1));
-    y_post_C = y_post_C + draw_C(:,3)*y(T:(T+H-1),1)';
-    y_post_C = sort(y_post_C);
-    VaR_1_post_C  = y_post_C(p_bar1*M,:); 
-    VaR_5_post_C  = y_post_C(p_bar*M,:); 
+    y_post_Cah = bsxfun(@times,randn(M,H),draw_Cah(:,2));
+    y_post_Cah = bsxfun(@plus,y_post_Cah,draw_Cah(:,1));
+    y_post_Cah = y_post_Cah + draw_Cah(:,3)*y(T:(T+H-1),1)';
+    y_post_Cah = sort(y_post_Cah);
+
+    VaR_1_post_Cah = y_post_Cah(p_bar1*M,:); 
+    VaR_5_post_Cah = y_post_Cah(p_bar*M,:); 
+    VaR_05_post_Cah = y_post_Cah(p_bar0*M,:); 
+
+    ES_1_post_Cah = mean(y_post_Cah(1:p_bar1*M,:)); 
+    ES_5_post_Cah = mean(y_post_Cah(1:p_bar*M,:)); 
+    ES_05_post_Cah = mean(y_post_Cah(1:p_bar0*M,:));     
     
     %% PARTIAL CENSORING: keep rho uncensored, then censor mu and sigma
-    fprintf('*** Partially Censored Posterior, time varying threshold, THR = 1 ***\n');
+    fprintf('*** Partially Censored Posterior, ad hoc time varying threshold, THR = 1 ***\n');
     % mit_C: joint candidate for the joint censored posterior
     % Short version
     draw_short = draw((1:II:M)',:); % thinning - to get hight quality rhos 
-    [draw_PC, a_PC] = sim_cond_mit_MH_outloop(mit_C, draw_short, partition, II, BurnIn, kernel, GamMat, cont.disp);
-    accept_PC = mean(a_PC);
-    mean_draw_PC = mean(draw_PC);
-    std_draw_PC = std(draw_PC);
+    [draw_PCah, a_PCah] = sim_cond_mit_MH_outloop(mit_Cah, draw_short,...
+        partition, II, BurnIn, kernel, GamMat, cont.disp);
+    accept_PCah = mean(a_PCah);
+    mean_draw_PCah = mean(draw_PCah);
+    std_draw_PCah = std(draw_PCah);
   
-    y_post_PC = bsxfun(@times,randn(M,H),draw_PC(:,2));
-    y_post_PC = bsxfun(@plus,y_post_PC,draw_PC(:,1));
-    y_post_PC = y_post_PC + draw_PC(:,3)*y(T:(T+H-1),1)';
-    y_post_PC = sort(y_post_PC);
-    VaR_1_post_PC  = y_post_PC(p_bar1*M,:); 
-    VaR_5_post_PC  = y_post_PC(p_bar*M,:); 
+    y_post_PCah = bsxfun(@times,randn(M,H),draw_PCah(:,2));
+    y_post_PCah = bsxfun(@plus,y_post_PCah,draw_PCah(:,1));
+    y_post_PCah = y_post_PCah + draw_PCah(:,3)*y(T:(T+H-1),1)';
+    y_post_PCah = sort(y_post_PCah);
+
+    VaR_1_post_PCah = y_post_PCah(round(p_bar1*M),:); 
+    VaR_5_post_PCah = y_post_PCah(round(p_bar*M),:); 
+    VaR_05_post_PCah = y_post_PCah(round(p_bar0*M),:); 
+ 
+    ES_1_post_PCah = mean(y_post_PCah(1:round(p_bar1*M),:)); 
+    ES_5_post_PCah = mean(y_post_PCah(1:round(p_bar*M),:)); 
+    ES_05_post_PCah = mean(y_post_PCah(1:round(p_bar0*M),:));   
 
     %% CENSORED MLE PARAMETERS    
     threshold = 0.1; %<---------- HiGhER?
@@ -161,8 +194,14 @@ function results = PCP_ar1_run_varc(c, sigma1, sigma2, rho, p_bar1, p_bar, T, H,
     y_post_Cm = bsxfun(@plus,y_post_Cm,draw_Cm(:,1));
     y_post_Cm = y_post_Cm + draw_Cm(:,3)*y(T:(T+H-1),1)';
     y_post_Cm = sort(y_post_Cm);
-    VaR_1_post_Cm  = y_post_Cm(p_bar1*M,:); 
-    VaR_5_post_Cm  = y_post_Cm(p_bar*M,:);
+
+    VaR_1_post_Cm = y_post_Cm(p_bar1*M,:); 
+    VaR_5_post_Cm = y_post_Cm(p_bar*M,:); 
+    VaR_05_post_Cm = y_post_Cm(p_bar0*M,:); 
+
+    ES_1_post_Cm = mean(y_post_Cm(1:p_bar1*M,:)); 
+    ES_5_post_Cm = mean(y_post_Cm(1:p_bar*M,:)); 
+    ES_05_post_Cm = mean(y_post_Cm(1:p_bar0*M,:));         
     
     
     %% PARTIAL CENSORING: keep rho uncensored, then censor mu and sigma
@@ -179,16 +218,26 @@ function results = PCP_ar1_run_varc(c, sigma1, sigma2, rho, p_bar1, p_bar, T, H,
     y_post_PCm = bsxfun(@plus,y_post_PCm,draw_PCm(:,1));
     y_post_PCm = y_post_PCm + draw_PCm(:,3)*y(T:(T+H-1),1)';
     y_post_PCm = sort(y_post_PCm);
-    VaR_1_post_PCm  = y_post_PCm(p_bar1*M,:); 
-    VaR_5_post_PCm  = y_post_PCm(p_bar*M,:);    
+
+    VaR_1_post_PCm = y_post_PCm(round(p_bar1*M),:); 
+    VaR_5_post_PCm = y_post_PCm(round(p_bar*M),:); 
+    VaR_05_post_PCm = y_post_PCm(round(p_bar0*M),:); 
+
+    ES_1_post_PCm = mean(y_post_PCm(1:round(p_bar1*M),:)); 
+    ES_5_post_PCm = mean(y_post_PCm(1:round(p_bar*M),:)); 
+    ES_05_post_PCm = mean(y_post_PCm(1:round(p_bar0*M),:)); 
     
     %% Results
-    results = struct('y',y,'draw',draw,'draw_C',draw_C,'draw_PC',draw_PC,'draw_Cm',draw_Cm,'draw_PCm',draw_PCm,...
-        'q1',q1,'q5',q5,...
-        'mean_draw',mean_draw,'mean_draw_C',mean_draw_C,'mean_draw_PC',mean_draw_PC,'mean_draw_Cm',mean_draw_Cm,'mean_draw_PCm',mean_draw_PCm,...
-        'std_draw',std_draw,'std_draw_C',std_draw_C,'std_draw_PC',std_draw_PC,'std_draw_Cm',std_draw_Cm,'std_draw_PCm',std_draw_PCm,...
-        'accept',accept,'accept_C',accept_C,'accept_PC',accept_PC,'accept_Cm',accept_Cm,'accept_PCm',accept_PCm,...
-        'mit',mit,'CV',CV,'mit_C',mit_C,'CV_C',CV_C,'mit_Cm',mit_C,'CV_Cm',CV_C,...
-        'VaR_1',VaR_1,'VaR_1_post',VaR_1_post,'VaR_1_post_C',VaR_1_post_C,'VaR_1_post_PC',VaR_1_post_PC,'VaR_1_post_Cm',VaR_1_post_Cm,'VaR_1_post_PCm',VaR_1_post_PCm,...
-        'VaR_5',VaR_5,'VaR_5_post',VaR_5_post,'VaR_5_post_C',VaR_5_post_C,'VaR_5_post_PC',VaR_5_post_PC,'VaR_5_post_Cm',VaR_5_post_Cm,'VaR_5_post_PCm',VaR_5_post_PCm);
+    results = struct('y',y,'draw',draw,'draw_Cah',draw_Cah,'draw_PCah',draw_PCah,'draw_Cm',draw_Cm,'draw_PCm',draw_PCm,...
+        'q1',q1,'q5',q5,'q05',q05,'cdf1',cdf1,'cdf5',cdf5,'cdf05',cdf05,...
+        'mean_draw',mean_draw,'mean_draw_Cah',mean_draw_Cah,'mean_draw_PCah',mean_draw_PCah,'mean_draw_Cm',mean_draw_Cm,'mean_draw_PCm',mean_draw_PCm,...
+        'std_draw',std_draw,'std_draw_Cah',std_draw_Cah,'std_draw_PCah',std_draw_PCah,'std_draw_Cm',std_draw_Cm,'std_draw_PCm',std_draw_PCm,...
+        'accept',accept,'accept_Cah',accept_Cah,'accept_PCah',accept_PCah,'accept_Cm',accept_Cm,'accept_PCm',accept_PCm,...
+        'mit',mit,'CV',CV,'mit_Cah',mit_Cah,'CV_Cah',CV_Cah,'mit_Cm',mit_Cm,'CV_Cm',CV_Cm,...
+        'VaR_1',VaR_1,'VaR_1_post',VaR_1_post,'VaR_1_post_Cah',VaR_1_post_Cah,'VaR_1_post_PCah',VaR_1_post_PCah,'VaR_1_post_Cm',VaR_1_post_Cm,'VaR_1_post_PCm',VaR_1_post_PCm,...
+        'VaR_5',VaR_5,'VaR_5_post',VaR_5_post,'VaR_5_post_Cah',VaR_5_post_Cah,'VaR_5_post_PCah',VaR_5_post_PCah,'VaR_5_post_Cm',VaR_5_post_Cm,'VaR_5_post_PCm',VaR_5_post_PCm,...
+        'VaR_05',VaR_05,'VaR_05_post',VaR_05_post,'VaR_05_post_Cah',VaR_05_post_Cah,'VaR_05_post_PCah',VaR_05_post_PCah,'VaR_05_post_Cm',VaR_05_post_Cm,'VaR_05_post_PCm',VaR_05_post_PCm,...
+        'ES_1',ES_1,'ES_1_post',ES_1_post,'ES_1_post_Cah',ES_1_post_Cah,'ES_1_post_PCah',ES_1_post_PCah,'ES_1_post_Cm',ES_1_post_Cm,'ES_1_post_PCm',ES_1_post_PCm,...
+        'ES_5',ES_5,'ES_5_post',ES_5_post,'ES_5_post_Cah',ES_5_post_Cah,'ES_5_post_PCah',ES_5_post_PCah,'ES_5_post_Cm',ES_5_post_Cm,'ES_5_post_PCm',ES_5_post_PCm,...
+        'ES_05',ES_05,'ES_05_post',ES_05_post,'ES_05_post_Cah',ES_05_post_Cah,'ES_05_post_PCah',ES_05_post_PCah,'ES_05_post_Cm',ES_05_post_Cm,'ES_05_post_PCm',ES_05_post_PCm);
 end

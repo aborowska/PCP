@@ -96,7 +96,7 @@ void C_posterior_t_garch_mex(double *y, mwSignedIndex N, mwSignedIndex T, double
     mwSignedIndex *r1;
     double *r2; 
     double *rho;
-    double h, *pdf; 
+    double *pdf; 
     double rhoh;
     mwSignedIndex i, j;
         
@@ -140,7 +140,7 @@ void C_posterior_t_garch_mex(double *y, mwSignedIndex N, mwSignedIndex T, double
             {   
 // //     /*            h[i] = beta[i]*h[i] + omega[i] + alpha[i]*(y[j-1]-mu[i])*(y[j-1]-mu[i]);     */    
 //                h = theta[N+i]*h + omega[i] + theta[i]*(y[j-1]-theta[2*N+i])*(y[j-1]-theta[2*N+i]);   
-                h[i] = theta[2*N+i]*h + theta[i] + theta[N+i]*(y[j-1]-theta[3*N+i])*(y[j-1]-theta[3*N+i]);   
+                h[i] = theta[2*N+i]*h[i] + theta[i] + theta[N+i]*(y[j-1]-theta[3*N+i])*(y[j-1]-theta[3*N+i]);   
                 rhoh = rho[i]*h[i];
                 duvt_garch(y[j], theta[i+3*N], rhoh, theta[i+4*N], GamMat, G, pdf);
                 d[i] = d[i] + log(pdf[0]);
@@ -162,7 +162,7 @@ void C_posterior_t_garch_mex(double *y, mwSignedIndex N, mwSignedIndex T, double
 void mexFunction( int nlhs, mxArray *plhs[],
                   int nrhs, const mxArray *prhs[])
 {
-    mwSignedIndex N, T, G, *T_out;;                              /* size of matrix */
+    mwSignedIndex N, T, G, *T_out;                             /* size of matrix */
     double *y, *S, *theta, *hyper;                      /* input*/
     double *GamMat;                                     /* input */
     double *d, *h                                          /* output */

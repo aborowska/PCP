@@ -1,9 +1,13 @@
 clear all
 addpath(genpath('include/'));
 
-model = 'garch11';
+% model = 'arch1'; %'arch1';
+% TT = [1000,2500];
+% suffix = [];
 
-TT = [1000,2500];
+model = 'garch11'; 
+TT = [1000, 2500];
+suffix = '_tunning';% [];
   	
 S = 50;
 H = 100;
@@ -18,15 +22,19 @@ beta = 0.8;
 if strcmp(model,'garch11')
     parameters = {'$\\mu$','$\\omega$','$\\alpha$','$\\beta$'};
     param_true = [0,1,0.1,0.8];
-else
+elseif strcmp(model,'agarch11')
     parameters = {'$\\mu_{1}$','$\\omega$','$\\mu_{2}$','$\\alpha$','$\\beta$'};  
-    param_true = [0,1,0,0.1,0.8];    
+    param_true = [0,1,0,0.1,0.8]; 
+elseif strcmp(model,'arch1')
+    parameters = {'$\\mu_{1}$','$\\omega$','$\\mu_{2}$','$\\alpha$'};  
+    param_true = [0,1,0,0.1];     
 end
 % clear -regexp ^MSE ^mean ^draw
 
 
 %% Create table
-fname = ['results/',model,'/',model,'_',num2str(sigma1),'_',num2str(sigma2),'_H',num2str(H),'_pcp_mc_varc_draws.tex'];
+fname = ['results/',model,'/',model,'_',num2str(sigma1),'_',num2str(sigma2),...
+    '_H',num2str(H),'_pcp_mc_varc_draws',suffix,'.tex'];
 FID = fopen(fname, 'w+');
 
 fprintf(FID, '{ \\renewcommand{\\arraystretch}{1.2} \n');
@@ -40,14 +48,16 @@ for T = TT
     %   load variables
     %% VARC  
     varc = true;
-    name = ['results\',model,'\',model,'_1_2_T',num2str(T),'_H100_II10_PCP0_MC_(R2017a)_varc_low_es.mat'];
+    name = ['results\',model,'\',model,'_1_2_T',num2str(T),...
+        '_H100_II10_PCP0_MC_(R2017a)_varc_low_es',suffix,'.mat'];
     load(name,'-regexp','^mean')
     load(name,'-regexp','^median')
     load(name,'-regexp','^std')
 
     %% TIME CONSTANT
     varc = false;
-    name = ['results\',model,'\',model,'_1_2_T',num2str(T),'_H100_II10_PCP0_MC_(R2017a)_low_es.mat'];
+    name = ['results\',model,'\',model,'_1_2_T',num2str(T),...
+        '_H100_II10_PCP0_MC_(R2017a)_low_es',suffix,'.mat'];
     load(name,'-regexp','^mean')
     load(name,'-regexp','^median')
     load(name,'-regexp','^std')
@@ -59,8 +69,9 @@ for T = TT
 
     for ii = 1:length(parameters)
         param = parameters(ii);
+        fprintf(FID,' \\rowcolor{LightCyan} \n' );
         fprintf(FID,[char(param),'&& %6.4f & %6.4f & %6.4f & %6.4f & %6.4f & %6.4f &', ...
-            ' %6.4f & %6.4f & %6.4f & %6.4f  \\\\ \n'], ...
+            ' %6.4f & %6.4f & %6.4f & %6.4f  \\\\   \n'], ...
             param_true(ii), mean(mean_draw(:,ii)), ...
             mean(mean_draw_C0(:,ii)), mean(mean_draw_PC0(:,ii)), ...
             mean(mean_draw_C(:,ii)), mean(mean_draw_PC(:,ii)), ...
@@ -83,12 +94,12 @@ for T = TT
 end      
 fprintf(FID, '\\hline \n');
 
-fprintf(FID, '\\multicolumn{12}{l}{\\footnotesize{CP: Censored posterior.}}  \\\\ \n');
-fprintf(FID, '\\multicolumn{12}{l}{\\footnotesize{PCP: Partially censored posterior.}} \\\\ \n');
-fprintf(FID, '\\multicolumn{12}{l}{\\footnotesize{(P)CP0: Censoring with threshold 0.}} \\\\ \n'); 
-fprintf(FID, '\\multicolumn{12}{l}{\\footnotesize{(P)CP10\\%%: Censoring with threshold 10\\%% sample quantile.}}  \\\\ \n');
-fprintf(FID, '\\multicolumn{12}{l}{\\footnotesize{(P)CP var ad: Time Varying Censoring, ad hoc method.}} \\\\ \n'); 
-fprintf(FID, '\\multicolumn{12}{l}{\\footnotesize{(P)CP var mle: Time Varying Censoring, MLE based method.}}  \\\\ \n');    
+fprintf(FID, '%%\\multicolumn{12}{l}{\\footnotesize{CP: Censored posterior.}}  \\\\ \n');
+fprintf(FID, '%%\\multicolumn{12}{l}{\\footnotesize{PCP: Partially censored posterior.}} \\\\ \n');
+fprintf(FID, '%%\\multicolumn{12}{l}{\\footnotesize{(P)CP0: Censoring with threshold 0.}} \\\\ \n'); 
+fprintf(FID, '%%\\multicolumn{12}{l}{\\footnotesize{(P)CP10\\%%: Censoring with threshold 10\\%% sample quantile.}}  \\\\ \n');
+fprintf(FID, '%%\\multicolumn{12}{l}{\\footnotesize{(P)CP var ad: Time Varying Censoring, ad hoc method.}} \\\\ \n'); 
+fprintf(FID, '%%\\multicolumn{12}{l}{\\footnotesize{(P)CP var mle: Time Varying Censoring, MLE based method.}}  \\\\ \n');    
 fprintf(FID, '\\end{tabular}\n ');
 
 caption = ['\\caption{Draws statistics (means, medians, standard deviations) for standard posterior, censored posterior and partially censored posterior',...

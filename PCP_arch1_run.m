@@ -1,4 +1,6 @@
-function results = PCP_arch1_run(sdd, c, sigma1, sigma2, kappa, omega, alpha, p_bar1, p_bar, T, H, M, BurnIn, mu_init, df, cont, options, partition, II, GamMat)
+function results = PCP_arch1_run(sdd, c, sigma1, sigma2, kappa, omega, alpha,...
+    p_bar0, p_bar1, p_bar, T, H, M, BurnIn, mu_init, df, cont, options, ...
+    partition, II, GamMat)
     
     s = RandStream('mt19937ar','Seed',sdd);
     RandStream.setGlobalStream(s); 
@@ -20,10 +22,17 @@ function results = PCP_arch1_run(sdd, c, sigma1, sigma2, kappa, omega, alpha, p_
         h_true(ii,1) = omega*(1-alpha) + alpha*(y(ii-1,1)).^2;
         y(ii,1) = sqrt(h_true(ii,1)).*eps(ii,1);
     end
+    
     % true VaRs
+    q05 = norminv(p_bar0, c, sigma2_k*sqrt(h_true(T+1:T+H)))';
     q1 = norminv(p_bar1, c, sigma2_k*sqrt(h_true(T+1:T+H)))';
     q5 = norminv(p_bar, c, sigma2_k*sqrt(h_true(T+1:T+H)))'; 
-
+   
+    % true ESs
+    cdf05 = c - sigma2_k*sqrt(h_true(T+1:T+H))'*normpdf(norminv(1-p_bar0))/(p_bar0);
+    cdf1 = c - sigma2_k*sqrt(h_true(T+1:T+H))'*normpdf(norminv(1-p_bar1))/(p_bar1);
+    cdf5 = c - sigma2_k*sqrt(h_true(T+1:T+H))'*normpdf(norminv(1-p_bar))/(p_bar);    
+        
     % MC VaRs under the true model
     eps_sort = randn(M,H);
     ind = (eps_sort>0);
@@ -33,8 +42,14 @@ function results = PCP_arch1_run(sdd, c, sigma1, sigma2, kappa, omega, alpha, p_
 
     y_sort = bsxfun(@times,eps_sort,sqrt(h_true(T+1:T+H,1))');
     y_sort = sort(y_sort);
+
     VaR_1 = y_sort(p_bar1*M,:); 
     VaR_5 = y_sort(p_bar*M,:); 
+    VaR_05 = y_sort(p_bar0*M,:); 
+
+    ES_1 = mean(y_sort(1:p_bar1*M,:)); 
+    ES_5 = mean(y_sort(1:p_bar*M,:)); 
+    ES_05 = mean(y_sort(1:p_bar0*M,:));        
 
     %% Misspecified model: ARCH(1,1) normal 
     %% Uncensored Posterior
@@ -68,8 +83,15 @@ function results = PCP_arch1_run(sdd, c, sigma1, sigma2, kappa, omega, alpha, p_
     y_post = randn(M,H).*sqrt(h_post);
     y_post = bsxfun(@plus,y_post,draw(:,1));
     y_post = sort(y_post);
+    
     VaR_1_post = y_post(p_bar1*M,:); 
     VaR_5_post = y_post(p_bar*M,:); 
+    VaR_05_post = y_post(p_bar0*M,:); 
+
+    ES_1_post = mean(y_post(1:p_bar1*M,:)); 
+    ES_5_post = mean(y_post(1:p_bar*M,:)); 
+    ES_05_post = mean(y_post(1:p_bar0*M,:)); 
+    
     mean_draw = mean(draw);
     median_draw = median(draw);
     std_draw = std(draw);
@@ -120,8 +142,15 @@ function results = PCP_arch1_run(sdd, c, sigma1, sigma2, kappa, omega, alpha, p_
     y_post_C = randn(M,H).*sqrt(h_post_C);
     y_post_C = bsxfun(@plus,y_post_C,draw_C(:,1));
     y_post_C = sort(y_post_C);
+
     VaR_1_post_C = y_post_C(p_bar1*M,:); 
     VaR_5_post_C = y_post_C(p_bar*M,:); 
+    VaR_05_post_C = y_post_C(p_bar0*M,:); 
+
+    ES_1_post_C = mean(y_post_C(1:p_bar1*M,:)); 
+    ES_5_post_C = mean(y_post_C(1:p_bar*M,:)); 
+    ES_05_post_C = mean(y_post_C(1:p_bar0*M,:)); 
+    
     mean_draw_C = mean(draw_C);
     median_draw_C = median(draw_C);
     std_draw_C = std(draw_C);
@@ -135,9 +164,10 @@ function results = PCP_arch1_run(sdd, c, sigma1, sigma2, kappa, omega, alpha, p_
     
     [draw_PC, a_PC, lnw_PC] = sim_cond_mit_MH_outloop(mit_C, draw_short, partition, II, BurnIn, kernel, GamMat, cont.disp, thinning);
     accept_PC = mean(a_PC); 
-    ind_fin = isfinite(lnw_PC);
-    M_fin = sum(ind_fin);
-    draw_PC = draw_PC(ind_fin,:) ;  
+%     ind_fin = isfinite(lnw_PC);
+%     M_fin = sum(ind_fin);
+%     draw_PC = draw_PC(ind_fin,:) ;  
+M_fin = M;
 
     mean_draw_PC = mean(draw_PC);
     median_draw_PC = median(draw_PC);
@@ -147,9 +177,14 @@ function results = PCP_arch1_run(sdd, c, sigma1, sigma2, kappa, omega, alpha, p_
     y_post_PC = randn(M_fin,H).*sqrt(h_post_PC);
     y_post_PC = bsxfun(@plus,y_post_PC,draw_PC(:,1));
     y_post_PC = sort(y_post_PC);
+    
     VaR_1_post_PC = y_post_PC(round(p_bar1*M_fin),:); 
     VaR_5_post_PC = y_post_PC(round(p_bar*M_fin),:); 
+    VaR_05_post_PC = y_post_PC(round(p_bar0*M_fin),:); 
 
+    ES_1_post_PC = mean(y_post_PC(1:round(p_bar1*M_fin),:)); 
+    ES_5_post_PC = mean(y_post_PC(1:round(p_bar*M_fin),:)); 
+    ES_05_post_PC = mean(y_post_PC(1:round(p_bar0*M_fin),:));
     %% Threshold = 0
     threshold0 = 0;
     %% CENSORED
@@ -195,8 +230,14 @@ function results = PCP_arch1_run(sdd, c, sigma1, sigma2, kappa, omega, alpha, p_
     y_post_C0 = randn(M,H).*sqrt(h_post_C0);
     y_post_C0 = bsxfun(@plus,y_post_C0,draw_C0(:,1));
     y_post_C0 = sort(y_post_C0);
+
     VaR_1_post_C0 = y_post_C0(p_bar1*M,:); 
     VaR_5_post_C0 = y_post_C0(p_bar*M,:); 
+    VaR_05_post_C0 = y_post_C0(p_bar0*M,:); 
+
+    ES_1_post_C0 = mean(y_post_C0(1:p_bar1*M,:)); 
+    ES_5_post_C0 = mean(y_post_C0(1:p_bar*M,:)); 
+    ES_05_post_C0 = mean(y_post_C0(1:p_bar0*M,:)); 
     
     %% PARTIAL CENSORING: keep alpha and beta uncensored, then censor mu and sigma
     fprintf('*** Partially Censored Posterior, threshold 0 ***\n');
@@ -204,10 +245,11 @@ function results = PCP_arch1_run(sdd, c, sigma1, sigma2, kappa, omega, alpha, p_
 %     [draw_PC0, a_PC0] = sim_cond_mit_MH(mit_C0, draw_short, partition, M_short, BurnIn, kernel, GamMat);
     [draw_PC0, a_PC0, lnw_PC0] = sim_cond_mit_MH_outloop(mit_C0, draw_short, partition, II, BurnIn, kernel, GamMat, cont.disp);
     accept_PC0 = mean(a_PC0);
-    ind_fin = isfinite(lnw_PC0);
-    M_fin = sum(ind_fin);
-    draw_PC0 = draw_PC0(ind_fin,:);
-    
+%     ind_fin = isfinite(lnw_PC0);
+%     M_fin = sum(ind_fin);
+%     draw_PC0 = draw_PC0(ind_fin,:);
+M_fin = M;
+   
     mean_draw_PC0 = mean(draw_PC0);
     median_draw_PC0 = median(draw_PC0);
     std_draw_PC0 = std(draw_PC0);    
@@ -216,17 +258,28 @@ function results = PCP_arch1_run(sdd, c, sigma1, sigma2, kappa, omega, alpha, p_
     y_post_PC0 = randn(M_fin,H).*sqrt(h_post_PC0);
     y_post_PC0 = bsxfun(@plus,y_post_PC0,draw_PC0(:,1));
     y_post_PC0 = sort(y_post_PC0);
+
     VaR_1_post_PC0 = y_post_PC0(round(p_bar1*M_fin),:); 
     VaR_5_post_PC0 = y_post_PC0(round(p_bar*M_fin),:); 
-      
+    VaR_05_post_PC0 = y_post_PC0(round(p_bar0*M_fin),:); 
+  
+    ES_1_post_PC0 = mean(y_post_PC0(1:round(p_bar1*M_fin),:)); 
+    ES_5_post_PC0 = mean(y_post_PC0(1:round(p_bar*M_fin),:)); 
+    ES_05_post_PC0 = mean(y_post_PC0(1:round(p_bar0*M_fin),:)); 
+    
+    %% Results   
     results = struct('y',y,'draw',draw,'draw_C',draw_C,'draw_PC',draw_PC,'draw_C0',draw_C0,'draw_PC0',draw_PC0,...
-        'q1',q1,'q5',q5,...
+        'q1',q1,'q5',q5,'q05',q05,'cdf1',cdf1,'cdf5',cdf5,'cdf05',cdf05,...
     'mean_draw',mean_draw,'mean_draw_C',mean_draw_C,'mean_draw_PC',mean_draw_PC,'mean_draw_C0',mean_draw_C0,'mean_draw_PC0',mean_draw_PC0,...
     'median_draw',median_draw,'median_draw_C',median_draw_C,'median_draw_PC',median_draw_PC,'median_draw_C0',median_draw_C0,'median_draw_PC0',median_draw_PC0,...
     'std_draw',std_draw,'std_draw_C',std_draw_C,'std_draw_PC',std_draw_PC,'std_draw_C0',std_draw_C0,'std_draw_PC0',std_draw_PC0,...
     'accept',accept,'accept_C',accept_C,'accept_PC',accept_PC,'accept_C0',accept_C0,'accept_PC0',accept_PC0,...
     'mit',mit,'CV',CV,'mit_C',mit_C,'CV_C',CV_C,'mit_C0',mit_C0,'CV_C0',CV_C0,...
     'VaR_1',VaR_1,'VaR_1_post',VaR_1_post,'VaR_1_post_C',VaR_1_post_C,'VaR_1_post_PC',VaR_1_post_PC,'VaR_1_post_C0',VaR_1_post_C0,'VaR_1_post_PC0',VaR_1_post_PC0,...
-    'VaR_5',VaR_5,'VaR_5_post',VaR_5_post,'VaR_5_post_C',VaR_5_post_C,'VaR_5_post_PC',VaR_5_post_PC,'VaR_5_post_C0',VaR_5_post_C0,'VaR_5_post_PC0',VaR_5_post_PC0);
+    'VaR_5',VaR_5,'VaR_5_post',VaR_5_post,'VaR_5_post_C',VaR_5_post_C,'VaR_5_post_PC',VaR_5_post_PC,'VaR_5_post_C0',VaR_5_post_C0,'VaR_5_post_PC0',VaR_5_post_PC0,...
+    'VaR_05',VaR_05,'VaR_05_post',VaR_05_post,'VaR_05_post_C',VaR_05_post_C,'VaR_05_post_PC',VaR_05_post_PC,'VaR_05_post_C0',VaR_05_post_C0,'VaR_05_post_PC0',VaR_05_post_PC0,...
+    'ES_1',ES_1,'ES_1_post',ES_1_post,'ES_1_post_C',ES_1_post_C,'ES_1_post_PC',ES_1_post_PC,'ES_1_post_C0',ES_1_post_C0,'ES_1_post_PC0',ES_1_post_PC0,...
+    'ES_5',ES_5,'ES_5_post',ES_5_post,'ES_5_post_C',ES_5_post_C,'ES_5_post_PC',ES_5_post_PC,'ES_5_post_C0',ES_5_post_C0,'ES_5_post_PC0',ES_5_post_PC0,...
+    'ES_05',ES_05,'ES_05_post',ES_05_post,'ES_05_post_C',ES_05_post_C,'ES_05_post_PC',ES_05_post_PC,'ES_05_post_C0',ES_05_post_C0,'ES_05_post_PC0',ES_05_post_PC0);
 
 end 

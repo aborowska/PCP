@@ -1,4 +1,4 @@
-function PCP_arch1_MC_fun(T, sigma2, S, II)
+function PCP_arch1_MC_fun(T, sigma2, S, varc, II)
 % T = 2500; S = 1; II = 10; sigma2 = 2 ; % <------------------ !!! 
 
     % clear all
@@ -33,18 +33,18 @@ function PCP_arch1_MC_fun(T, sigma2, S, II)
     mu_true = [0, omega, 0, alpha];
     param_true = [c,sigma2,omega,mu2,alpha];
     mu_init = [0, 1, 0.1, 0.05];
+    d = length(mu_init);
 
     % S = 20; % number of MC replications
     H = 100;
 
-    varc = true; % run the version with time varying threshold
+%     varc = true; % run the version with time varying threshold
 
     % quantiles of interest
+    p_bar0 = 0.005;
     p_bar1 = 0.01;
-    p_bar = 0.05;
-    % theoretical quantiles
-    q1 = zeros(S,H);
-    q5 = zeros(S,H);
+    p_bar = 0.05; 
+ 
 
     % Metropolis-Hastings for the parameters
     M = 10000; % number of draws 
@@ -82,58 +82,176 @@ function PCP_arch1_MC_fun(T, sigma2, S, II)
     id = 'optim:fminunc:SwitchingMethod';
     warning('off',id);    
     
+    %% theoretical quantiles
+    q05 = zeros(S,H);
+    q1 = zeros(S,H);
+    q5 = zeros(S,H);
+    
+    % theoretical ES
+    cdf05 = zeros(S,H);
+    cdf1 = zeros(S,H);
+    cdf5 = zeros(S,H);
+    
     %% simulated quantiles: 
     % true model, posterior, censored posterior 10%, partially censored posterior 10%, 
     % censored posterior at 0, partially censored posterior at 0
     VaR_1 = zeros(S,H);
     VaR_1_post = zeros(S,H);
-    VaR_1_post_C = zeros(S,H);
-    VaR_1_post_PC = zeros(S,H);
-    VaR_1_post_C0 = zeros(S,H);
-    VaR_1_post_PC0 = zeros(S,H);
-
+    if varc
+        VaR_1_post_Cah = zeros(S,H);
+        VaR_1_post_PCah = zeros(S,H);
+        VaR_1_post_Cm = zeros(S,H);
+        VaR_1_post_PCm = zeros(S,H);        
+    else
+        VaR_1_post_C = zeros(S,H);
+        VaR_1_post_PC = zeros(S,H);
+        VaR_1_post_C0 = zeros(S,H);
+        VaR_1_post_PC0 = zeros(S,H);
+    end
+    
     VaR_5 = zeros(S,H);
     VaR_5_post = zeros(S,H);
-    VaR_5_post_C = zeros(S,H);
-    VaR_5_post_PC = zeros(S,H);
-    VaR_5_post_C0 = zeros(S,H);
-    VaR_5_post_PC0 = zeros(S,H);
+    if varc
+        VaR_5_post_Cah = zeros(S,H);
+        VaR_5_post_PCah = zeros(S,H);
+        VaR_5_post_Cm = zeros(S,H);
+        VaR_5_post_PCm = zeros(S,H);
+    else
+        VaR_5_post_C = zeros(S,H);
+        VaR_5_post_PC = zeros(S,H);
+        VaR_5_post_C0 = zeros(S,H);
+        VaR_5_post_PC0 = zeros(S,H);        
+    end
+    
+    VaR_05 = zeros(S,H);
+    VaR_05_post = zeros(S,H);
+    if varc
+        VaR_05_post_Cah = zeros(S,H);
+        VaR_05_post_PCah = zeros(S,H);
+        VaR_05_post_Cm = zeros(S,H);
+        VaR_05_post_PCm = zeros(S,H);    
+    else
+        VaR_05_post_C = zeros(S,H);
+        VaR_05_post_PC = zeros(S,H);
+        VaR_05_post_C0 = zeros(S,H);
+        VaR_05_post_PC0 = zeros(S,H);            
+    end
 
+    ES_1 = zeros(S,H);
+    ES_1_post = zeros(S,H);
+    if varc
+        ES_1_post_Cah = zeros(S,H);
+        ES_1_post_PCah = zeros(S,H);
+        ES_1_post_Cm = zeros(S,H);
+        ES_1_post_PCm = zeros(S,H);        
+    else
+        ES_1_post_C = zeros(S,H);
+        ES_1_post_PC = zeros(S,H);
+        ES_1_post_C0 = zeros(S,H);
+        ES_1_post_PC0 = zeros(S,H);
+    end
+    
+    ES_5 = zeros(S,H);
+    ES_5_post = zeros(S,H);
+    if varc
+        ES_5_post_Cah = zeros(S,H);
+        ES_5_post_PCah = zeros(S,H);
+        ES_5_post_Cm = zeros(S,H);
+        ES_5_post_PCm = zeros(S,H);
+    else
+        ES_5_post_C = zeros(S,H);
+        ES_5_post_PC = zeros(S,H);
+        ES_5_post_C0 = zeros(S,H);
+        ES_5_post_PC0 = zeros(S,H);        
+    end
+    
+    ES_05 = zeros(S,H);
+    ES_05_post = zeros(S,H);
+    if varc
+        ES_05_post_Cah = zeros(S,H);
+        ES_05_post_PCah = zeros(S,H);
+        ES_05_post_Cm = zeros(S,H);
+        ES_05_post_PCm = zeros(S,H);    
+    else
+        ES_05_post_C = zeros(S,H);
+        ES_05_post_PC = zeros(S,H);
+        ES_05_post_C0 = zeros(S,H);
+        ES_05_post_PC0 = zeros(S,H);            
+    end    
+    
     %% simulated parameters:
     % true model, posterior, censored posterior 10%, partially censored posterior 10%, 
     % censored posterior at 0, partially censored posterior at 0
-    mean_draw = zeros(S,4);
-    mean_draw_C = zeros(S,4);
-    mean_draw_PC = zeros(S,4);
-    mean_draw_C0 = zeros(S,4);
-    mean_draw_PC0 = zeros(S,4);
-
-    median_draw = zeros(S,4);
-    median_draw_C = zeros(S,4);
-    median_draw_PC = zeros(S,4);
-    median_draw_C0 = zeros(S,4);
-    median_draw_PC0 = zeros(S,4);
-
-    std_draw = zeros(S,4);
-    std_draw_C = zeros(S,4);
-    std_draw_PC = zeros(S,4);
-    std_draw_C0 = zeros(S,4);
-    std_draw_PC0 = zeros(S,4);
-
+    mean_draw = zeros(S,d);
+    if varc
+        mean_draw_Cah = zeros(S,d);
+        mean_draw_PCah = zeros(S,d);
+        mean_draw_Cm = zeros(S,d);
+        mean_draw_PCm = zeros(S,d);
+    else
+        mean_draw_C = zeros(S,d);
+        mean_draw_PC = zeros(S,d);
+        mean_draw_C0 = zeros(S,d);
+        mean_draw_PC0 = zeros(S,d);
+    end
+    
+    median_draw = zeros(S,d);
+    if varc
+        median_draw_Cah = zeros(S,d);
+        median_draw_PCah = zeros(S,d);
+        median_draw_Cm = zeros(S,d);
+        median_draw_PCm = zeros(S,d);
+    else
+        median_draw_C = zeros(S,d);
+        median_draw_PC = zeros(S,d);
+        median_draw_C0 = zeros(S,d);
+        median_draw_PC0 = zeros(S,d);        
+    end
+    
+    std_draw = zeros(S,d);
+    if varc
+        std_draw_Cah = zeros(S,d);
+        std_draw_PCah = zeros(S,d);
+        std_draw_Cm = zeros(S,d);
+        std_draw_PCm = zeros(S,d);
+    else
+        std_draw_C = zeros(S,d);
+        std_draw_PC = zeros(S,d);
+        std_draw_C0 = zeros(S,d);
+        std_draw_PC0 = zeros(S,d);
+    end
+    
     accept = zeros(S,1);
-    accept_C = zeros(S,1);
-    accept_PC = zeros(S,1);
-    accept_C0 = zeros(S,1);
-    accept_PC0 = zeros(S,1);
+    if varc
+        accept_Cah = zeros(S,1);
+        accept_PCah = zeros(S,1);
+        accept_Cm = zeros(S,1);
+        accept_PCm = zeros(S,1);       
+    else
+        accept_C = zeros(S,1);
+        accept_PC = zeros(S,1);
+        accept_C0 = zeros(S,1);
+        accept_PC0 = zeros(S,1);        
+    end
 
     %% MitISEM results: mits and CVs
     mit = cell(S,1);
-    mit_C = cell(S,1);
-    mit_C0 = cell(S,1);
-
+    if varc
+        mit_Cah = cell(S,1);
+        mit_Cm = cell(S,1);        
+    else
+        mit_C = cell(S,1);
+        mit_C0 = cell(S,1);
+    end
+    
     CV = cell(S,1);
-    CV_C = cell(S,1);
-    CV_C0 = cell(S,1);
+    if varc
+        CV_Cah = cell(S,1);
+        CV_Cm = cell(S,1);
+    else
+        CV_C = cell(S,1);
+        CV_C0 = cell(S,1);        
+    end
     
     SDD = zeros(S,1);
 
@@ -150,20 +268,33 @@ function PCP_arch1_MC_fun(T, sigma2, S, II)
         %     end
         try
             if varc            
-                results = PCP_arch1_run_varc(sdd, c, sigma1, sigma2, kappa, omega, alpha, p_bar1, p_bar, T, H, M, BurnIn, mu_init, df, cont, options, partition, II, GamMat);
+                results = PCP_arch1_run_varc(sdd, c, sigma1, sigma2, kappa, ...
+                    omega, alpha, p_bar0, p_bar1, p_bar, T, H, M, BurnIn, ...
+                    mu_init, df, cont, options, partition, II, GamMat);
             else
-                results = PCP_arch1_run(sdd, c, sigma1, sigma2, kappa, omega, alpha, p_bar1, p_bar, T, H, M, BurnIn, mu_init, df, cont, options, partition, II, GamMat);
+                results = PCP_arch1_run(sdd, c, sigma1, sigma2, kappa, ...
+                    omega, alpha, p_bar0, p_bar1, p_bar, T, H, M, BurnIn, ...
+                    mu_init, df, cont, options, partition, II, GamMat);
             end
             s = s+1;
             SDD(s,:) = sdd;
  
-            y = results.y;
+              y = results.y;
+
             q1(s,:) = results.q1;
             q5(s,:) = results.q5;   
-
+            q05(s,:) = results.q05;
+            cdf1(s,:) = results.cdf1;
+            cdf5(s,:) = results.cdf5;   
+            cdf05(s,:) = results.cdf05;
+            
             VaR_1(s,:) = results.VaR_1;
             VaR_5(s,:) = results.VaR_5;
-
+            VaR_05(s,:) = results.VaR_05;
+            ES_1(s,:) = results.ES_1;
+            ES_5(s,:) = results.ES_5;
+            ES_05(s,:) = results.ES_05;
+            
             mit{s,1} = results.mit;
             CV{s,1} = results.CV;
             draw = results.draw;
@@ -173,25 +304,39 @@ function PCP_arch1_MC_fun(T, sigma2, S, II)
             std_draw(s,:) =  results.std_draw;
             VaR_1_post(s,:) = results.VaR_1_post; 
             VaR_5_post(s,:) = results.VaR_5_post;
+            VaR_05_post(s,:) = results.VaR_05_post;
+            ES_1_post(s,:) = results.ES_1_post; 
+            ES_5_post(s,:) = results.ES_5_post;
+            ES_05_post(s,:) = results.ES_05_post;
 
-            mit_C{s,1} = results.mit_C;
-            CV_C{s,1} = results.CV_C;        
-            draw_C = results.draw_C;
-            accept_C(s,1) = results.accept_C;
-            mean_draw_C(s,:) = results.mean_draw_C;
-            median_draw_C(s,:) = results.median_draw_C;
-            std_draw_C(s,:) =  results.std_draw_C;
-            VaR_1_post_C(s,:) = results.VaR_1_post_C; 
-            VaR_5_post_C(s,:) = results.VaR_5_post_C; 
-
-            draw_PC = results.draw_PC;
-            accept_PC(s,1) = results.accept_PC;
-            mean_draw_PC(s,:) = results.mean_draw_PC;
-            median_draw_PC(s,:) = results.median_draw_PC;
-            std_draw_PC(s,:) =  results.std_draw_PC;
-            VaR_1_post_PC(s,:) = results.VaR_1_post_PC; 
-            VaR_5_post_PC(s,:) = results.VaR_5_post_PC; 
             if ~varc
+                mit_C{s,1} = results.mit_C;
+                CV_C{s,1} = results.CV_C;        
+                draw_C = results.draw_C;
+                accept_C(s,1) = results.accept_C;
+                mean_draw_C(s,:) = results.mean_draw_C;
+                median_draw_C(s,:) = results.median_draw_C;
+                std_draw_C(s,:) =  results.std_draw_C;
+                VaR_1_post_C(s,:) = results.VaR_1_post_C; 
+                VaR_5_post_C(s,:) = results.VaR_5_post_C; 
+                VaR_05_post_C(s,:) = results.VaR_05_post_C; 
+                ES_1_post_C(s,:) = results.ES_1_post_C; 
+                ES_5_post_C(s,:) = results.ES_5_post_C; 
+                ES_05_post_C(s,:) = results.ES_05_post_C;               
+                
+                draw_PC = results.draw_PC;
+                accept_PC(s,1) = results.accept_PC;
+                mean_draw_PC(s,:) = results.mean_draw_PC;
+                median_draw_PC(s,:) = results.median_draw_PC;
+                std_draw_PC(s,:) =  results.std_draw_PC;
+                VaR_1_post_PC(s,:) = results.VaR_1_post_PC; 
+                VaR_5_post_PC(s,:) = results.VaR_5_post_PC; 
+                VaR_05_post_PC(s,:) = results.VaR_05_post_PC; 
+                ES_1_post_PC(s,:) = results.ES_1_post_PC; 
+                ES_5_post_PC(s,:) = results.ES_5_post_PC; 
+                ES_05_post_PC(s,:) = results.ES_05_post_PC; 
+                
+                
                 mit_C0{s,1} = results.mit_C0;
                 CV_C0{s,1} = results.CV_C0;        
                 draw_C0 = results.draw_C0;
@@ -201,32 +346,75 @@ function PCP_arch1_MC_fun(T, sigma2, S, II)
                 std_draw_C0(s,:) =  results.std_draw_C0;
                 VaR_1_post_C0(s,:) = results.VaR_1_post_C0; 
                 VaR_5_post_C0(s,:) = results.VaR_5_post_C0; 
-
+                VaR_05_post_C0(s,:) = results.VaR_05_post_C0;  
+                ES_1_post_C0(s,:) = results.ES_1_post_C0; 
+                ES_5_post_C0(s,:) = results.ES_5_post_C0;  
+                ES_05_post_C0(s,:) = results.ES_05_post_C0;                 
+                
                 draw_PC0 = results.draw_PC0;
                 accept_PC0(s,1) = results.accept_PC0;
                 mean_draw_PC0(s,:) = results.mean_draw_PC0;
                 median_draw_PC0(s,:) = results.median_draw_PC0;
                 std_draw_PC0(s,:) =  results.std_draw_PC0;
                 VaR_1_post_PC0(s,:) = results.VaR_1_post_PC0; 
-                VaR_5_post_PC0(s,:) = results.VaR_5_post_PC0; 
+                VaR_5_post_PC0(s,:) = results.VaR_5_post_PC0;  
+                VaR_05_post_PC0(s,:) = results.VaR_05_post_PC0;  
+                ES_1_post_PC0(s,:) = results.ES_1_post_PC0; 
+                ES_5_post_PC0(s,:) = results.ES_5_post_PC0;  
+                ES_05_post_PC0(s,:) = results.ES_05_post_PC0;                  
             else
-                mit_C0{s,1} = results.mit_Cm;
-                CV_C0{s,1} = results.CV_Cm;        
-                draw_C0 = results.draw_Cm;
-                accept_C0(s,1) = results.accept_Cm;
-                mean_draw_C0(s,:) = results.mean_draw_Cm;
-                median_draw_C0(s,:) = results.median_draw_Cm;
-                std_draw_C0(s,:) =  results.std_draw_Cm;
-                VaR_1_post_C0(s,:) = results.VaR_1_post_Cm; 
-                VaR_5_post_C0(s,:) = results.VaR_5_post_Cm; 
+                mit_Cah{s,1} = results.mit_Cah;
+                CV_Cah{s,1} = results.CV_Cah;        
+                draw_Cah = results.draw_Cah;
+                accept_Cah(s,1) = results.accept_Cah;
+                mean_draw_Cah(s,:) = results.mean_draw_Cah;
+                median_draw_Cah(s,:) = results.median_draw_Cah;
+                std_draw_Cah(s,:) =  results.std_draw_Cah;
+                VaR_1_post_Cah(s,:) = results.VaR_1_post_Cah; 
+                VaR_5_post_Cah(s,:) = results.VaR_5_post_Cah; 
+                VaR_05_post_Cah(s,:) = results.VaR_05_post_Cah; 
+                ES_1_post_Cah(s,:) = results.ES_1_post_Cah; 
+                ES_5_post_Cah(s,:) = results.ES_5_post_Cah; 
+                ES_05_post_Cah(s,:) = results.ES_05_post_Cah; 
 
-                draw_PC0 = results.draw_PCm;
-                accept_PC0(s,1) = results.accept_PCm;
-                mean_draw_PC0(s,:) = results.mean_draw_PCm;
-                median_draw_PC0(s,:) = results.median_draw_PCm;
-                std_draw_PC0(s,:) =  results.std_draw_PCm;
-                VaR_1_post_PC0(s,:) = results.VaR_1_post_PCm; 
-                VaR_5_post_PC0(s,:) = results.VaR_5_post_PCm;                 
+                draw_PCah = results.draw_PCah;
+                accept_PCah(s,1) = results.accept_PCah;
+                mean_draw_PCah(s,:) = results.mean_draw_PCah;
+                median_draw_PCah(s,:) = results.median_draw_PCah;
+                std_draw_PCah(s,:) =  results.std_draw_PCah;
+                VaR_1_post_PCah(s,:) = results.VaR_1_post_PCah; 
+                VaR_5_post_PCah(s,:) = results.VaR_5_post_PCah; 
+                VaR_05_post_PCah(s,:) = results.VaR_05_post_PCah; 
+                ES_1_post_PCah(s,:) = results.ES_1_post_PCah; 
+                ES_5_post_PCah(s,:) = results.ES_5_post_PCah; 
+                ES_05_post_PCah(s,:) = results.ES_05_post_PCah; 
+                
+                
+                mit_Cm{s,1} = results.mit_Cm;
+                CV_Cm{s,1} = results.CV_Cm;        
+                draw_Cm = results.draw_Cm;
+                accept_Cm(s,1) = results.accept_Cm;
+                mean_draw_Cm(s,:) = results.mean_draw_Cm;
+                median_draw_Cm(s,:) = results.median_draw_Cm;
+                std_draw_Cm(s,:) =  results.std_draw_Cm;
+                VaR_1_post_Cm(s,:) = results.VaR_1_post_Cm; 
+                VaR_5_post_Cm(s,:) = results.VaR_5_post_Cm; 
+                VaR_05_post_Cm(s,:) = results.VaR_05_post_Cm; 
+                ES_1_post_Cm(s,:) = results.ES_1_post_Cm; 
+                ES_5_post_Cm(s,:) = results.ES_5_post_Cm; 
+                ES_05_post_Cm(s,:) = results.ES_05_post_Cm;                
+                
+                draw_PCm = results.draw_PCm;
+                accept_PCm(s,1) = results.accept_PCm;
+                mean_draw_PCm(s,:) = results.mean_draw_PCm;
+                median_draw_PCm(s,:) = results.median_draw_PCm;
+                std_draw_PCm(s,:) =  results.std_draw_PCm;
+                VaR_1_post_PCm(s,:) = results.VaR_1_post_PCm; 
+                VaR_5_post_PCm(s,:) = results.VaR_5_post_PCm;                 
+                VaR_05_post_PCm(s,:) = results.VaR_05_post_PCm;   
+                ES_1_post_PCm(s,:) = results.ES_1_post_PCm; 
+                ES_5_post_PCm(s,:) = results.ES_5_post_PCm;                 
+                ES_05_post_PCm(s,:) = results.ES_05_post_PCm;                   
             end
         end
     end
@@ -234,21 +422,46 @@ function PCP_arch1_MC_fun(T, sigma2, S, II)
     % MSEs
     MSE_1 = mean((VaR_1 - q1).^2,2);
     MSE_1_post = mean((VaR_1_post - q1).^2,2);
-    MSE_1_post_C = mean((VaR_1_post_C - q1).^2,2);
-    MSE_1_post_PC = mean((VaR_1_post_PC - q1).^2,2);
-%     if ~varc
+    if varc
+        MSE_1_post_Cah = mean((VaR_1_post_Cah - q1).^2,2);
+        MSE_1_post_PCah = mean((VaR_1_post_PCah - q1).^2,2);
+        MSE_1_post_Cm = mean((VaR_1_post_Cm - q1).^2,2);
+        MSE_1_post_PCm = mean((VaR_1_post_PCm - q1).^2,2);
+    else
+        MSE_1_post_C = mean((VaR_1_post_C - q1).^2,2);
+        MSE_1_post_PC = mean((VaR_1_post_PC - q1).^2,2);
         MSE_1_post_C0 = mean((VaR_1_post_C0 - q1).^2,2);
         MSE_1_post_PC0 = mean((VaR_1_post_PC0 - q1).^2,2);
-%     end
+    end
     
     MSE_5 = mean((VaR_5 - q5).^2,2);
     MSE_5_post = mean((VaR_5_post - q5).^2,2);
-    MSE_5_post_C = mean((VaR_5_post_C - q5).^2,2);
-    MSE_5_post_PC = mean((VaR_5_post_PC - q5).^2,2);
-%     if ~varc
+    if varc
+        MSE_5_post_Cah = mean((VaR_5_post_Cah - q5).^2,2);
+        MSE_5_post_PCah = mean((VaR_5_post_PCah - q5).^2,2);
+        MSE_5_post_Cm = mean((VaR_5_post_Cm - q5).^2,2);
+        MSE_5_post_PCm = mean((VaR_5_post_PCm - q5).^2,2);
+    else
+        MSE_5_post_C = mean((VaR_5_post_C - q5).^2,2);
+        MSE_5_post_PC = mean((VaR_5_post_PC - q5).^2,2);
         MSE_5_post_C0 = mean((VaR_5_post_C0 - q5).^2,2);
         MSE_5_post_PC0 = mean((VaR_5_post_PC0 - q5).^2,2);
-%     end
+    end
+    
+    MSE_05 = mean((VaR_05 - q05).^2,2);
+    MSE_05_post = mean((VaR_05_post - q05).^2,2);
+    if varc
+        MSE_05_post_Cah = mean((VaR_05_post_Cah - q05).^2,2);
+        MSE_05_post_PCah = mean((VaR_05_post_PCah - q05).^2,2);
+        MSE_05_post_Cm = mean((VaR_05_post_Cm - q05).^2,2);
+        MSE_05_post_PCm = mean((VaR_05_post_PCm - q05).^2,2);        
+    else
+        MSE_05_post_C = mean((VaR_05_post_C - q05).^2,2);
+        MSE_05_post_PC = mean((VaR_05_post_PC - q05).^2,2);
+        MSE_05_post_C0 = mean((VaR_05_post_C0 - q05).^2,2);
+        MSE_05_post_PC0 = mean((VaR_05_post_PC0 - q05).^2,2);
+    end
+    
     time_total = toc;
 
     if save_on
@@ -256,29 +469,37 @@ function PCP_arch1_MC_fun(T, sigma2, S, II)
             name = ['results/',model,'/',model,'_',num2str(sigma1),'_',...
                 num2str(sigma2),...
                 '_T',num2str(T),'_H',num2str(H),'_II',num2str(II)...
-                '_PCP0_MC_',v_new,'_varc.mat'];
+                '_PCP0_MC_',v_new,'_varc_low_es.mat'];
         else
             name = ['results/',model,'/',model,'_',num2str(sigma1),'_',...
             num2str(sigma2),'_T',num2str(T),'_H',num2str(H),...
-            '_II',num2str(II),'_PCP0_MC_',v_new,'.mat'];            
+            '_II',num2str(II),'_PCP0_MC_',v_new,'_low_es.mat'];            
         end
-
-%         if varc
-%             save(name,...
-%             'time_total','SDD',...
-%             'y','draw','draw_C','draw_PC','param_true','q1','q5',...
-%             'mean_draw','mean_draw_C','mean_draw_PC',...
-%             'std_draw','std_draw_C','std_draw_PC',...
-%             'accept','accept_C','accept_PC',...
-%             'II','mit','CV','mit_C','CV_C',...
-%             'VaR_1','VaR_1_post','VaR_1_post_C','VaR_1_post_PC',...
-%             'VaR_5','VaR_5_post','VaR_5_post_C','VaR_5_post_PC',...
-%             'MSE_1','MSE_1_post','MSE_1_post_C','MSE_1_post_PC',...
-%             'MSE_5','MSE_5_post','MSE_5_post_C','MSE_5_post_PC')
-%         else
+        
+        if varc
             save(name,...
             'time_total','SDD',...
-            'y','draw','draw_C','draw_PC','draw_C0','draw_PC0','param_true','q1','q5',...
+            'y','draw','draw_Cah','draw_PCah','draw_Cm','draw_PCm','param_true',...
+            'q1','q5','q05','cdf1','cdf5','cdf05',...
+            'mean_draw','mean_draw_Cah','mean_draw_PCah','mean_draw_Cm','mean_draw_PCm',...
+            'median_draw','median_draw_Cah','median_draw_PCah','median_draw_Cm','median_draw_PCm',...
+            'std_draw','std_draw_Cah','std_draw_PCah','std_draw_Cm','std_draw_PCm',...
+            'accept','accept_Cah','accept_PCah','accept_Cm','accept_PCm',...
+            'II','mit','CV','mit_Cah','CV_Cah','mit_Cm','CV_Cm',...
+            'VaR_1','VaR_1_post','VaR_1_post_Cah','VaR_1_post_PCah','VaR_1_post_Cm','VaR_1_post_PCm',...
+            'VaR_5','VaR_5_post','VaR_5_post_Cah','VaR_5_post_PCah','VaR_5_post_Cm','VaR_5_post_PCm',...
+            'VaR_05','VaR_05_post','VaR_05_post_Cah','VaR_05_post_PCah','VaR_05_post_Cm','VaR_05_post_PCm',...
+            'MSE_1','MSE_1_post','MSE_1_post_Cah','MSE_1_post_PCah','MSE_1_post_Cm','MSE_1_post_PCm',...
+            'MSE_5','MSE_5_post','MSE_5_post_Cah','MSE_5_post_PCah','MSE_5_post_Cm','MSE_5_post_PCm',...
+            'MSE_05','MSE_05_post','MSE_05_post_Cah','MSE_05_post_PCah','MSE_05_post_Cm','MSE_05_post_PCm',...
+            'ES_1','ES_1_post','ES_1_post_Cah','ES_1_post_PCah','ES_1_post_Cm','ES_1_post_PCm',...
+            'ES_5','ES_5_post','ES_5_post_Cah','ES_5_post_PCah','ES_5_post_Cm','ES_5_post_PCm',...
+            'ES_05','ES_05_post','ES_05_post_Cah','ES_05_post_PCah','ES_05_post_Cm','ES_05_post_PCm');         
+        else
+            save(name,...
+            'time_total','SDD',...
+            'y','draw','draw_C','draw_PC','draw_C0','draw_PC0','param_true',...
+            'q1','q5','q05','cdf1','cdf5','cdf05',...
             'mean_draw','mean_draw_C','mean_draw_PC','mean_draw_C0','mean_draw_PC0',...
             'median_draw','median_draw_C','median_draw_PC','median_draw_C0','median_draw_PC0',...
             'std_draw','std_draw_C','std_draw_PC','std_draw_C0','std_draw_PC0',...
@@ -286,8 +507,13 @@ function PCP_arch1_MC_fun(T, sigma2, S, II)
             'II','mit','CV','mit_C','CV_C','mit_C0','CV_C0',...
             'VaR_1','VaR_1_post','VaR_1_post_C','VaR_1_post_PC','VaR_1_post_C0','VaR_1_post_PC0',...
             'VaR_5','VaR_5_post','VaR_5_post_C','VaR_5_post_PC','VaR_5_post_C0','VaR_5_post_PC0',...
+            'VaR_05','VaR_05_post','VaR_05_post_C','VaR_05_post_PC','VaR_05_post_C0','VaR_05_post_PC0',...
             'MSE_1','MSE_1_post','MSE_1_post_C','MSE_1_post_PC','MSE_1_post_C0','MSE_1_post_PC0',...
-            'MSE_5','MSE_5_post','MSE_5_post_C','MSE_5_post_PC','MSE_5_post_C0','MSE_5_post_PC0')
-%         end
+            'MSE_5','MSE_5_post','MSE_5_post_C','MSE_5_post_PC','MSE_5_post_C0','MSE_5_post_PC0',...
+            'MSE_05','MSE_05_post','MSE_05_post_C','MSE_05_post_PC','MSE_05_post_C0','MSE_05_post_PC0',...
+            'ES_1','ES_1_post','ES_1_post_C','ES_1_post_PC','ES_1_post_C0','ES_1_post_PC0',...
+            'ES_5','ES_5_post','ES_5_post_C','ES_5_post_PC','ES_5_post_C0','ES_5_post_PC0',...
+            'ES_05','ES_05_post','ES_05_post_C','ES_05_post_PC','ES_05_post_C0','ES_05_post_PC0');        
+        end
     end
 end

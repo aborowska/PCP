@@ -4,6 +4,9 @@ function results = PCP_garch11_run_varc(sdd, c, sigma1, sigma2, kappa, ...
     
     s = RandStream('mt19937ar','Seed',sdd);
     RandStream.setGlobalStream(s); 
+ 
+    thinning = 10;
+    BurnIn_PCP = BurnIn/10;
     
     sigma1_k = sigma1/sqrt(kappa);
     sigma2_k = sigma2/sqrt(kappa);
@@ -159,7 +162,8 @@ function results = PCP_garch11_run_varc(sdd, c, sigma1, sigma2, kappa, ...
     fprintf('*** Partially Censored Posterior,  time varying threshold, THR = %3.2f ***\n',threshold);
     % mit_Cah: joint candidate for the joint censored posterior    
     draw_short = draw((1:II:M)',:); % thinning - to get hight quality rhos
-    [draw_PCah, a_PCah, lnw_PCah] = sim_cond_mit_MH_outloop(mit_Cah, draw_short, partition, II, BurnIn, kernel, GamMat, cont.disp);
+    [draw_PCah, a_PCah, lnw_PCah] = sim_cond_mit_MH_outloop(mit_Cah, draw_short, ...
+        partition, II, BurnIn_PCP, kernel, GamMat, cont.disp, thinning);
     accept_PCah = mean(a_PCah); 
 %     ind_fin = isfinite(lnw_PCah);
 %     M_fin = sum(ind_fin);
@@ -242,7 +246,8 @@ M_fin = M;
     fprintf('*** Partially Censored Posterior, MLE time varying threshold, THR = %3.2f ***\n',threshold);
     % mit_C: joint candidate for the joint censored posterior    
     draw_short = draw((1:II:M)',:); % thinning - to get hight quality rhos
-    [draw_PCm, a_PCm, lnw_PCm] = sim_cond_mit_MH_outloop(mit_Cm, draw_short, partition, II, BurnIn, kernel, GamMat, cont.disp);
+    [draw_PCm, a_PCm, lnw_PCm] = sim_cond_mit_MH_outloop(mit_Cm, draw_short, ...
+        partition, II, BurnIn_PCP, kernel, GamMat, cont.disp, thinning);
     accept_PCm = mean(a_PCm); 
     
 %     ind_fin = isfinite(lnw_PCm);

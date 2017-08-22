@@ -1,4 +1,4 @@
-function PCP_ar1_MC_fun(T, sigma2, S, II)
+function PCP_ar1_MC_fun(T, sigma2, S, varc, II)
  % T = 1000; S = 1; II = 10; sigma2 = 2 ; % <------------------ !!! 
     close all
 
@@ -12,31 +12,26 @@ function PCP_ar1_MC_fun(T, sigma2, S, II)
     parameters = {'$\\mu$','$\\sigma$','$\\phi$'};
     partition = 3;
 
+    fprintf('Time series length T = %d.\n',T)
+    
     sigma1 = 1;
     % sigma2 = 2;    
     c = (sigma2 - sigma1)/sqrt(2*pi);
     rho = 0.8;
     param_true = [c, sigma2, rho];
     mu_init = [0,1,0.9];
-
+    d = length(mu_init);
+    
 %     S = 100; % number of MC replications
     H = 100;
     
-    threshold_c = false; % true = run the version with an additional theoretical threshold equal to c
-    if (sigma1 == sigma2)
-        threshold_c = false;
-    end
-    varc = true; % run the version with time varying threshold
+%     varc = true; % run the version with time varying threshold
  
     % quantiles of interest
+    p_bar0 = 0.005;
     p_bar1 = 0.01;
     p_bar = 0.05;
-    % theoretical quantiles
-    q1 = zeros(S,H);
-    q5 = zeros(S,H);
-    % T = 10000; % time series length
-    fprintf('Time series length T = %d.\n',T)
-
+    
     % Metropolis-Hastings for the parameters
     M = 10000; % number of draws 
     BurnIn = 1000;
@@ -73,69 +68,164 @@ function PCP_ar1_MC_fun(T, sigma2, S, II)
     % id = w.identifier;
     id = 'optim:fminunc:SwitchingMethod';
     warning('off',id);
+
+    %% theoretical quantiles
+    q05 = zeros(S,H);
+    q1 = zeros(S,H);
+    q5 = zeros(S,H);
+    
+    % theoretical ES
+    cdf05 = zeros(S,H);
+    cdf1 = zeros(S,H);
+    cdf5 = zeros(S,H);
     
     %% simulated quantiles: 
     % true model, posterior, censored posterior 10%, partially censored posterior 10%, 
     % censored posterior at 0, partially censored posterior at 0
     VaR_1 = zeros(S,H);
     VaR_1_post = zeros(S,H);
-    VaR_1_post_C = zeros(S,H);
-    VaR_1_post_PC = zeros(S,H);
-    VaR_1_post_C0 = zeros(S,H);
-    VaR_1_post_PC0 = zeros(S,H);
-
+    if varc
+        VaR_1_post_Cah = zeros(S,H);
+        VaR_1_post_PCah = zeros(S,H);
+        VaR_1_post_Cm = zeros(S,H);
+        VaR_1_post_PCm = zeros(S,H);        
+    else
+        VaR_1_post_C = zeros(S,H);
+        VaR_1_post_PC = zeros(S,H);
+        VaR_1_post_C0 = zeros(S,H);
+        VaR_1_post_PC0 = zeros(S,H);
+    end
+    
     VaR_5 = zeros(S,H);
     VaR_5_post = zeros(S,H);
-    VaR_5_post_C = zeros(S,H);
-    VaR_5_post_PC = zeros(S,H);
-    VaR_5_post_C0 = zeros(S,H);
-    VaR_5_post_PC0 = zeros(S,H);
+    if varc
+        VaR_5_post_Cah = zeros(S,H);
+        VaR_5_post_PCah = zeros(S,H);
+        VaR_5_post_Cm = zeros(S,H);
+        VaR_5_post_PCm = zeros(S,H);
+    else
+        VaR_5_post_C = zeros(S,H);
+        VaR_5_post_PC = zeros(S,H);
+        VaR_5_post_C0 = zeros(S,H);
+        VaR_5_post_PC0 = zeros(S,H);        
+    end
+    
+    VaR_05 = zeros(S,H);
+    VaR_05_post = zeros(S,H);
+    if varc
+        VaR_05_post_Cah = zeros(S,H);
+        VaR_05_post_PCah = zeros(S,H);
+        VaR_05_post_Cm = zeros(S,H);
+        VaR_05_post_PCm = zeros(S,H);    
+    else
+        VaR_05_post_C = zeros(S,H);
+        VaR_05_post_PC = zeros(S,H);
+        VaR_05_post_C0 = zeros(S,H);
+        VaR_05_post_PC0 = zeros(S,H);            
+    end
+
+    ES_1 = zeros(S,H);
+    ES_1_post = zeros(S,H);
+    if varc
+        ES_1_post_Cah = zeros(S,H);
+        ES_1_post_PCah = zeros(S,H);
+        ES_1_post_Cm = zeros(S,H);
+        ES_1_post_PCm = zeros(S,H);        
+    else
+        ES_1_post_C = zeros(S,H);
+        ES_1_post_PC = zeros(S,H);
+        ES_1_post_C0 = zeros(S,H);
+        ES_1_post_PC0 = zeros(S,H);
+    end
+    
+    ES_5 = zeros(S,H);
+    ES_5_post = zeros(S,H);
+    if varc
+        ES_5_post_Cah = zeros(S,H);
+        ES_5_post_PCah = zeros(S,H);
+        ES_5_post_Cm = zeros(S,H);
+        ES_5_post_PCm = zeros(S,H);
+    else
+        ES_5_post_C = zeros(S,H);
+        ES_5_post_PC = zeros(S,H);
+        ES_5_post_C0 = zeros(S,H);
+        ES_5_post_PC0 = zeros(S,H);        
+    end
+    
+    ES_05 = zeros(S,H);
+    ES_05_post = zeros(S,H);
+    if varc
+        ES_05_post_Cah = zeros(S,H);
+        ES_05_post_PCah = zeros(S,H);
+        ES_05_post_Cm = zeros(S,H);
+        ES_05_post_PCm = zeros(S,H);    
+    else
+        ES_05_post_C = zeros(S,H);
+        ES_05_post_PC = zeros(S,H);
+        ES_05_post_C0 = zeros(S,H);
+        ES_05_post_PC0 = zeros(S,H);            
+    end    
 
     %% simulated parameters:
     % true model, posterior, censored posterior 10%, partially censored posterior 10%, 
     % censored posterior at 0, partially censored posterior at 0
-    mean_draw = zeros(S,3);
-    mean_draw_C = zeros(S,3);
-    mean_draw_PC = zeros(S,3);
-    mean_draw_C0 = zeros(S,3);
-    mean_draw_PC0 = zeros(S,3);
-
-    std_draw = zeros(S,3);
-    std_draw_C = zeros(S,3);
-    std_draw_PC = zeros(S,3);
-    std_draw_C0 = zeros(S,3);
-    std_draw_PC0 = zeros(S,3);
-
+    mean_draw = zeros(S,d);
+    if varc
+        mean_draw_Cah = zeros(S,d);
+        mean_draw_PCah = zeros(S,d);
+        mean_draw_Cm = zeros(S,d);
+        mean_draw_PCm = zeros(S,d);
+    else
+        mean_draw_C = zeros(S,d);
+        mean_draw_PC = zeros(S,d);
+        mean_draw_C0 = zeros(S,d);
+        mean_draw_PC0 = zeros(S,d);
+    end
+    
+    std_draw = zeros(S,d);
+    if varc
+        std_draw_Cah = zeros(S,d);
+        std_draw_PCah = zeros(S,d);
+        std_draw_Cm = zeros(S,d);
+        std_draw_PCm = zeros(S,d);
+    else
+        std_draw_C = zeros(S,d);
+        std_draw_PC = zeros(S,d);
+        std_draw_C0 = zeros(S,d);
+        std_draw_PC0 = zeros(S,d);
+    end
+    
     accept = zeros(S,1);
-    accept_C = zeros(S,1);
-    accept_PC = zeros(S,1);
-    accept_C0 = zeros(S,1);
-    accept_PC0 = zeros(S,1);
+    if varc
+        accept_Cah = zeros(S,1);
+        accept_PCah = zeros(S,1);
+        accept_Cm = zeros(S,1);
+        accept_PCm = zeros(S,1);       
+    else
+        accept_C = zeros(S,1);
+        accept_PC = zeros(S,1);
+        accept_C0 = zeros(S,1);
+        accept_PC0 = zeros(S,1);        
+    end
     
     %% MitISEM results: mits and CVs
     mit = cell(S,1);
-    mit_C = cell(S,1);
-    mit_C0 = cell(S,1);
-
+    if varc
+        mit_Cah = cell(S,1);
+        mit_Cm = cell(S,1);        
+    else
+        mit_C = cell(S,1);
+        mit_C0 = cell(S,1);
+    end
+    
     CV = cell(S,1);
-    CV_C = cell(S,1);
-    CV_C0 = cell(S,1);    
-
-    if threshold_c 
-        mit_Cc = cell(S,1);
-        CV_Cc = cell(S,1);      
-        accept_Cc = zeros(S,1);
-        mean_draw_Cc = zeros(S,3);
-        std_draw_Cc = zeros(S,3);
-        VaR_1_post_Cc = zeros(S,H); 
-        VaR_5_post_Cc = zeros(S,H);
-
-        accept_PCc = zeros(S,1);
-        mean_draw_PCc = zeros(S,3);
-        std_draw_PCc =  zeros(S,3);
-        VaR_1_post_PCc = zeros(S,H); 
-        VaR_5_post_PCc = zeros(S,H); 
-    end    
+    if varc
+        CV_Cah = cell(S,1);
+        CV_Cm = cell(S,1);
+    else
+        CV_C = cell(S,1);
+        CV_C0 = cell(S,1);        
+    end   
 
     %% MC Simulations
     tic
@@ -145,141 +235,197 @@ function PCP_ar1_MC_fun(T, sigma2, S, II)
     %     if (mod(s,10)==0)
             fprintf(['\n',model, ' simulation no. %i\n'],s)
     %     end
-        try
-            if threshold_c
-                results = PCP_ar1_run_c(c, sigma1, sigma2, rho, p_bar1, p_bar, T, H, M, BurnIn, mu_init, df, cont, options, partition, II, GamMat);
-            elseif varc
-                results = PCP_ar1_run_varc(c, sigma1, sigma2, rho, p_bar1, p_bar, T, H, M, BurnIn, mu_init, df, cont, options, partition, II, GamMat);
+%         try
+            if varc
+                results = PCP_ar1_run_varc(c, sigma1, sigma2, rho, ...
+                    p_bar0, p_bar1, p_bar, T, H, M, BurnIn, mu_init, ...
+                    df, cont, options, partition, II, GamMat);
             else
-                results = PCP_ar1_run(c, sigma1, sigma2, rho, p_bar1, p_bar, T, H, M, BurnIn, mu_init, df, cont, options, partition, II, GamMat);
+                results = PCP_ar1_run(c, sigma1, sigma2, rho, ...
+                    p_bar0, p_bar1, p_bar, T, H, M, BurnIn, mu_init, ...
+                    df, cont, options, partition, II, GamMat);
             end
             s = s+1;
 
             y = results.y;
+            
             q1(s,:) = results.q1;
             q5(s,:) = results.q5;   
-
+            q05(s,:) = results.q05;
+            cdf1(s,:) = results.cdf1;
+            cdf5(s,:) = results.cdf5;   
+            cdf05(s,:) = results.cdf05;
+            
             VaR_1(s,:) = results.VaR_1;
             VaR_5(s,:) = results.VaR_5;
-
+            VaR_05(s,:) = results.VaR_05;
+            ES_1(s,:) = results.ES_1;
+            ES_5(s,:) = results.ES_5;
+            ES_05(s,:) = results.ES_05;
+            
             mit{s,1} = results.mit;
-            CV{s,1} = results.CV;        
+            CV{s,1} = results.CV;
             draw = results.draw;
             accept(s,1) = results.accept;
             mean_draw(s,:) = results.mean_draw;
             std_draw(s,:) =  results.std_draw;
             VaR_1_post(s,:) = results.VaR_1_post; 
             VaR_5_post(s,:) = results.VaR_5_post;
+            VaR_05_post(s,:) = results.VaR_05_post;
+            ES_1_post(s,:) = results.ES_1_post; 
+            ES_5_post(s,:) = results.ES_5_post;
+            ES_05_post(s,:) = results.ES_05_post;
 
-            mit_C{s,1} = results.mit_C;
-            CV_C{s,1}  = results.CV_C;        
-            draw_C = results.draw_C;
-            accept_C(s,1) = results.accept_C;
-            mean_draw_C(s,:) = results.mean_draw_C;
-            std_draw_C(s,:) =  results.std_draw_C;
-            VaR_1_post_C(s,:) = results.VaR_1_post_C; 
-            VaR_5_post_C(s,:) = results.VaR_5_post_C; 
-
-            draw_PC = results.draw_PC;
-            accept_PC(s,1) = results.accept_PC;
-            mean_draw_PC(s,:) = results.mean_draw_PC;
-            std_draw_PC(s,:) =  results.std_draw_PC;
-            VaR_1_post_PC(s,:) = results.VaR_1_post_PC; 
-            VaR_5_post_PC(s,:) = results.VaR_5_post_PC; 
-                      
             if ~varc
-                mit_C0{s,1} = results.mit_C0;  
-                CV_C0{s,1} = results.CV_C0;
+                mit_C{s,1} = results.mit_C;
+                CV_C{s,1} = results.CV_C;        
+                draw_C = results.draw_C;
+                accept_C(s,1) = results.accept_C;
+                mean_draw_C(s,:) = results.mean_draw_C;
+                std_draw_C(s,:) =  results.std_draw_C;
+                VaR_1_post_C(s,:) = results.VaR_1_post_C; 
+                VaR_5_post_C(s,:) = results.VaR_5_post_C; 
+                VaR_05_post_C(s,:) = results.VaR_05_post_C; 
+                ES_1_post_C(s,:) = results.ES_1_post_C; 
+                ES_5_post_C(s,:) = results.ES_5_post_C; 
+                ES_05_post_C(s,:) = results.ES_05_post_C;               
+                
+                draw_PC = results.draw_PC;
+                accept_PC(s,1) = results.accept_PC;
+                mean_draw_PC(s,:) = results.mean_draw_PC;
+                std_draw_PC(s,:) =  results.std_draw_PC;
+                VaR_1_post_PC(s,:) = results.VaR_1_post_PC; 
+                VaR_5_post_PC(s,:) = results.VaR_5_post_PC; 
+                VaR_05_post_PC(s,:) = results.VaR_05_post_PC; 
+                ES_1_post_PC(s,:) = results.ES_1_post_PC; 
+                ES_5_post_PC(s,:) = results.ES_5_post_PC; 
+                ES_05_post_PC(s,:) = results.ES_05_post_PC; 
+                
+                
+                mit_C0{s,1} = results.mit_C0;
+                CV_C0{s,1} = results.CV_C0;        
                 draw_C0 = results.draw_C0;
                 accept_C0(s,1) = results.accept_C0;
                 mean_draw_C0(s,:) = results.mean_draw_C0;
                 std_draw_C0(s,:) =  results.std_draw_C0;
                 VaR_1_post_C0(s,:) = results.VaR_1_post_C0; 
                 VaR_5_post_C0(s,:) = results.VaR_5_post_C0; 
-
+                VaR_05_post_C0(s,:) = results.VaR_05_post_C0;  
+                ES_1_post_C0(s,:) = results.ES_1_post_C0; 
+                ES_5_post_C0(s,:) = results.ES_5_post_C0;  
+                ES_05_post_C0(s,:) = results.ES_05_post_C0;                 
+                
                 draw_PC0 = results.draw_PC0;
                 accept_PC0(s,1) = results.accept_PC0;
                 mean_draw_PC0(s,:) = results.mean_draw_PC0;
                 std_draw_PC0(s,:) =  results.std_draw_PC0;
                 VaR_1_post_PC0(s,:) = results.VaR_1_post_PC0; 
-                VaR_5_post_PC0(s,:) = results.VaR_5_post_PC0; 
+                VaR_5_post_PC0(s,:) = results.VaR_5_post_PC0;  
+                VaR_05_post_PC0(s,:) = results.VaR_05_post_PC0;  
+                ES_1_post_PC0(s,:) = results.ES_1_post_PC0; 
+                ES_5_post_PC0(s,:) = results.ES_5_post_PC0;  
+                ES_05_post_PC0(s,:) = results.ES_05_post_PC0;                  
             else
-                mit_Cm{s,1} = results.mit_Cm;  
-                CV_Cm{s,1} = results.CV_Cm;
+                mit_Cah{s,1} = results.mit_Cah;
+                CV_Cah{s,1} = results.CV_Cah;        
+                draw_Cah = results.draw_Cah;
+                accept_Cah(s,1) = results.accept_Cah;
+                mean_draw_Cah(s,:) = results.mean_draw_Cah;
+                std_draw_Cah(s,:) =  results.std_draw_Cah;
+                VaR_1_post_Cah(s,:) = results.VaR_1_post_Cah; 
+                VaR_5_post_Cah(s,:) = results.VaR_5_post_Cah; 
+                VaR_05_post_Cah(s,:) = results.VaR_05_post_Cah; 
+                ES_1_post_Cah(s,:) = results.ES_1_post_Cah; 
+                ES_5_post_Cah(s,:) = results.ES_5_post_Cah; 
+                ES_05_post_Cah(s,:) = results.ES_05_post_Cah; 
+
+                draw_PCah = results.draw_PCah;
+                accept_PCah(s,1) = results.accept_PCah;
+                mean_draw_PCah(s,:) = results.mean_draw_PCah;
+                std_draw_PCah(s,:) =  results.std_draw_PCah;
+                VaR_1_post_PCah(s,:) = results.VaR_1_post_PCah; 
+                VaR_5_post_PCah(s,:) = results.VaR_5_post_PCah; 
+                VaR_05_post_PCah(s,:) = results.VaR_05_post_PCah; 
+                ES_1_post_PCah(s,:) = results.ES_1_post_PCah; 
+                ES_5_post_PCah(s,:) = results.ES_5_post_PCah; 
+                ES_05_post_PCah(s,:) = results.ES_05_post_PCah; 
+                
+                
+                mit_Cm{s,1} = results.mit_Cm;
+                CV_Cm{s,1} = results.CV_Cm;        
                 draw_Cm = results.draw_Cm;
                 accept_Cm(s,1) = results.accept_Cm;
                 mean_draw_Cm(s,:) = results.mean_draw_Cm;
                 std_draw_Cm(s,:) =  results.std_draw_Cm;
                 VaR_1_post_Cm(s,:) = results.VaR_1_post_Cm; 
                 VaR_5_post_Cm(s,:) = results.VaR_5_post_Cm; 
-
+                VaR_05_post_Cm(s,:) = results.VaR_05_post_Cm; 
+                ES_1_post_Cm(s,:) = results.ES_1_post_Cm; 
+                ES_5_post_Cm(s,:) = results.ES_5_post_Cm; 
+                ES_05_post_Cm(s,:) = results.ES_05_post_Cm;                
+                
                 draw_PCm = results.draw_PCm;
                 accept_PCm(s,1) = results.accept_PCm;
                 mean_draw_PCm(s,:) = results.mean_draw_PCm;
                 std_draw_PCm(s,:) =  results.std_draw_PCm;
                 VaR_1_post_PCm(s,:) = results.VaR_1_post_PCm; 
-                VaR_5_post_PCm(s,:) = results.VaR_5_post_PCm; 
+                VaR_5_post_PCm(s,:) = results.VaR_5_post_PCm;                 
+                VaR_05_post_PCm(s,:) = results.VaR_05_post_PCm;   
+                ES_1_post_PCm(s,:) = results.ES_1_post_PCm; 
+                ES_5_post_PCm(s,:) = results.ES_5_post_PCm;                 
+                ES_05_post_PCm(s,:) = results.ES_05_post_PCm;                   
             end
-            if threshold_c
-                mit_Cc{s,1} = results.mit_Cc;
-                CV_Cc{s,1} = results.CV_Cc;        
-                draw_Cc = results.draw_Cc;
-                accept_Cc(s,1) = results.accept_Cc;
-                mean_draw_Cc(s,:) = results.mean_draw_Cc;
-                std_draw_Cc(s,:) =  results.std_draw_Cc;
-                VaR_1_post_Cc(s,:) = results.VaR_1_post_Cc; 
-                VaR_5_post_Cc(s,:) = results.VaR_5_post_Cc; 
-
-                draw_PCc = results.draw_PCc;
-                accept_PCc(s,1) = results.accept_PCc;
-                mean_draw_PCc(s,:) = results.mean_draw_PCc;
-                std_draw_PCc(s,:) =  results.std_draw_PCc;
-                VaR_1_post_PCc(s,:) = results.VaR_1_post_PCc; 
-                VaR_5_post_PCc(s,:) = results.VaR_5_post_PCc;     
-            end
-        end
+           
+%         end
     end
 
-    % MSEs
+    % MSEs  
     MSE_1 = mean((VaR_1 - q1).^2,2);
     MSE_1_post = mean((VaR_1_post - q1).^2,2);
-    MSE_1_post_C = mean((VaR_1_post_C - q1).^2,2);
-    MSE_1_post_PC = mean((VaR_1_post_PC - q1).^2,2);
-    if ~varc
+    if varc
+        MSE_1_post_Cah = mean((VaR_1_post_Cah - q1).^2,2);
+        MSE_1_post_PCah = mean((VaR_1_post_PCah - q1).^2,2);
+        MSE_1_post_Cm = mean((VaR_1_post_Cm - q1).^2,2);
+        MSE_1_post_PCm = mean((VaR_1_post_PCm - q1).^2,2);
+    else
+        MSE_1_post_C = mean((VaR_1_post_C - q1).^2,2);
+        MSE_1_post_PC = mean((VaR_1_post_PC - q1).^2,2);
         MSE_1_post_C0 = mean((VaR_1_post_C0 - q1).^2,2);
         MSE_1_post_PC0 = mean((VaR_1_post_PC0 - q1).^2,2);
-    else
-        MSE_1_post_Cm = mean((VaR_1_post_Cm - q1).^2,2);
-        MSE_1_post_PCm = mean((VaR_1_post_PCm - q1).^2,2);        
     end
     
     MSE_5 = mean((VaR_5 - q5).^2,2);
     MSE_5_post = mean((VaR_5_post - q5).^2,2);
-    MSE_5_post_C = mean((VaR_5_post_C - q5).^2,2);
-    MSE_5_post_PC = mean((VaR_5_post_PC - q5).^2,2);
-    if ~varc
+    if varc
+        MSE_5_post_Cah = mean((VaR_5_post_Cah - q5).^2,2);
+        MSE_5_post_PCah = mean((VaR_5_post_PCah - q5).^2,2);
+        MSE_5_post_Cm = mean((VaR_5_post_Cm - q5).^2,2);
+        MSE_5_post_PCm = mean((VaR_5_post_PCm - q5).^2,2);
+    else
+        MSE_5_post_C = mean((VaR_5_post_C - q5).^2,2);
+        MSE_5_post_PC = mean((VaR_5_post_PC - q5).^2,2);
         MSE_5_post_C0 = mean((VaR_5_post_C0 - q5).^2,2);
         MSE_5_post_PC0 = mean((VaR_5_post_PC0 - q5).^2,2);
-    else
-        MSE_5_post_Cm = mean((VaR_5_post_Cm - q5).^2,2);
-        MSE_5_post_PCm = mean((VaR_5_post_PCm - q5).^2,2);        
     end
     
-    if threshold_c
-        MSE_1_post_Cc = mean((VaR_1_post_Cc - q1).^2,2);
-        MSE_1_post_PCc = mean((VaR_1_post_PCc - q1).^2,2);
-        MSE_5_post_Cc = mean((VaR_5_post_Cc - q5).^2,2);
-        MSE_5_post_PCc = mean((VaR_5_post_PCc - q5).^2,2);
+    MSE_05 = mean((VaR_05 - q05).^2,2);
+    MSE_05_post = mean((VaR_05_post - q05).^2,2);
+    if varc
+        MSE_05_post_Cah = mean((VaR_05_post_Cah - q05).^2,2);
+        MSE_05_post_PCah = mean((VaR_05_post_PCah - q05).^2,2);
+        MSE_05_post_Cm = mean((VaR_05_post_Cm - q05).^2,2);
+        MSE_05_post_PCm = mean((VaR_05_post_PCm - q05).^2,2);        
+    else
+        MSE_05_post_C = mean((VaR_05_post_C - q05).^2,2);
+        MSE_05_post_PC = mean((VaR_05_post_PC - q05).^2,2);
+        MSE_05_post_C0 = mean((VaR_05_post_C0 - q05).^2,2);
+        MSE_05_post_PC0 = mean((VaR_05_post_PC0 - q05).^2,2);
     end
     
     time_total = toc;
 
     if save_on
-        if threshold_c
-            name = ['results/',model,'/',model,'_',num2str(sigma1),'_',num2str(sigma2),...
-                '_T',num2str(T),'_H',num2str(H),'_II',num2str(II)...
-                '_PCP0_MC_',v_new,'_c.mat'];
-        elseif varc        
+       if varc        
             name = ['results/',model,'/',model,'_',num2str(sigma1),'_',num2str(sigma2),...
                 '_T',num2str(T),'_H',num2str(H),'_II',num2str(II)...
                 '_PCP0_MC_',v_new,'_varc.mat'];
@@ -289,108 +435,46 @@ function PCP_ar1_MC_fun(T, sigma2, S, II)
                 '_PCP0_MC_',v_new,'.mat'];
         end
 
-        if threshold_c
-             save(name,...   
-             'draw_Cc','draw_PCc','mean_draw_Cc','mean_draw_PCc','std_draw_Cc','std_draw_PCc',...
-             'accept_Cc','accept_PCc','mit_Cc','CV_Cc',...
-             'VaR_1_post_Cc','VaR_1_post_PCc','VaR_5_post_Cc','VaR_5_post_PCc',...
-             'MSE_1_post_Cc','MSE_1_post_PC0',...
-             'MSE_5_post_Cc','MSE_5_post_PCc','-append')
-        elseif varc
-            save(name,...
+        if varc
+         save(name,...
             'time_total',...
-            'y','draw','draw_C','draw_PC','draw_Cm','draw_PCm','param_true','q1','q5',...
-            'mean_draw','mean_draw_C','mean_draw_PC','mean_draw_Cm','mean_draw_PCm',...
-            'std_draw','std_draw_C','std_draw_PC','std_draw_Cm','std_draw_PCm',...
-            'accept','accept_C','accept_PC','accept_Cm','accept_PCm',...
-            'II','mit','CV','mit_C','CV_C','mit_Cm','CV_Cm',...
-            'VaR_1','VaR_1_post','VaR_1_post_C','VaR_1_post_PC','VaR_1_post_Cm','VaR_1_post_PCm',...
-            'VaR_5','VaR_5_post','VaR_5_post_C','VaR_5_post_PC','VaR_5_post_Cm','VaR_5_post_PCm',...
-            'MSE_1','MSE_1_post','MSE_1_post_C','MSE_1_post_PC','MSE_1_post_Cm','MSE_1_post_PCm',...
-            'MSE_5','MSE_5_post','MSE_5_post_C','MSE_5_post_PC','MSE_5_post_Cm','MSE_5_post_PCm')
+            'y','draw','draw_Cah','draw_PCah','draw_Cm','draw_PCm','param_true',...
+            'q1','q5','q05','cdf1','cdf5','cdf05',...
+            'mean_draw','mean_draw_Cah','mean_draw_PCah','mean_draw_Cm','mean_draw_PCm',...
+            'std_draw','std_draw_Cah','std_draw_PCah','std_draw_Cm','std_draw_PCm',...
+            'accept','accept_Cah','accept_PCah','accept_Cm','accept_PCm',...
+            'II','mit','CV','mit_Cah','CV_Cah','mit_Cm','CV_Cm',...
+            'VaR_1','VaR_1_post','VaR_1_post_Cah','VaR_1_post_PCah','VaR_1_post_Cm','VaR_1_post_PCm',...
+            'VaR_5','VaR_5_post','VaR_5_post_Cah','VaR_5_post_PCah','VaR_5_post_Cm','VaR_5_post_PCm',...
+            'VaR_05','VaR_05_post','VaR_05_post_Cah','VaR_05_post_PCah','VaR_05_post_Cm','VaR_05_post_PCm',...
+            'MSE_1','MSE_1_post','MSE_1_post_Cah','MSE_1_post_PCah','MSE_1_post_Cm','MSE_1_post_PCm',...
+            'MSE_5','MSE_5_post','MSE_5_post_Cah','MSE_5_post_PCah','MSE_5_post_Cm','MSE_5_post_PCm',...
+            'MSE_05','MSE_05_post','MSE_05_post_Cah','MSE_05_post_PCah','MSE_05_post_Cm','MSE_05_post_PCm',...
+            'ES_1','ES_1_post','ES_1_post_Cah','ES_1_post_PCah','ES_1_post_Cm','ES_1_post_PCm',...
+            'ES_5','ES_5_post','ES_5_post_Cah','ES_5_post_PCah','ES_5_post_Cm','ES_5_post_PCm',...
+            'ES_05','ES_05_post','ES_05_post_Cah','ES_05_post_PCah','ES_05_post_Cm','ES_05_post_PCm');         
+
         else
-            save(name,...
+         save(name,...
             'time_total',...
-            'y','draw','draw_C','draw_PC','draw_C0','draw_PC0','param_true','q1','q5',...
+            'y','draw','draw_C','draw_PC','draw_C0','draw_PC0','param_true',...
+            'q1','q5','q05','cdf1','cdf5','cdf05',...
             'mean_draw','mean_draw_C','mean_draw_PC','mean_draw_C0','mean_draw_PC0',...
             'std_draw','std_draw_C','std_draw_PC','std_draw_C0','std_draw_PC0',...
             'accept','accept_C','accept_PC','accept_C0','accept_PC0',...
             'II','mit','CV','mit_C','CV_C','mit_C0','CV_C0',...
             'VaR_1','VaR_1_post','VaR_1_post_C','VaR_1_post_PC','VaR_1_post_C0','VaR_1_post_PC0',...
             'VaR_5','VaR_5_post','VaR_5_post_C','VaR_5_post_PC','VaR_5_post_C0','VaR_5_post_PC0',...
+            'VaR_05','VaR_05_post','VaR_05_post_C','VaR_05_post_PC','VaR_05_post_C0','VaR_05_post_PC0',...
             'MSE_1','MSE_1_post','MSE_1_post_C','MSE_1_post_PC','MSE_1_post_C0','MSE_1_post_PC0',...
-            'MSE_5','MSE_5_post','MSE_5_post_C','MSE_5_post_PC','MSE_5_post_C0','MSE_5_post_PC0')
+            'MSE_5','MSE_5_post','MSE_5_post_C','MSE_5_post_PC','MSE_5_post_C0','MSE_5_post_PC0',...
+            'MSE_05','MSE_05_post','MSE_05_post_C','MSE_05_post_PC','MSE_05_post_C0','MSE_05_post_PC0',...
+            'ES_1','ES_1_post','ES_1_post_C','ES_1_post_PC','ES_1_post_C0','ES_1_post_PC0',...
+            'ES_5','ES_5_post','ES_5_post_C','ES_5_post_PC','ES_5_post_C0','ES_5_post_PC0',...
+            'ES_05','ES_05_post','ES_05_post_C','ES_05_post_PC','ES_05_post_C0','ES_05_post_PC0');        
         end
     end
 
     % print_table_pcp_mc(model,parameters,sigma1,sigma2)
     % print_table_pcp_mc(model,parameters,sigma1,sigma2,100)
-
-    if plot_on
-        figure(21)
-        set(gcf,'units','normalized','outerposition',[0.1 0.1 0.9 0.9]);
-        hold on
-        if strcmp(v_new,'(R2014a)')
-            fn_hist([mean_draw(:,1), mean_draw_C(:,1), mean_draw_PC(:,1), mean_draw_C0(:,1), mean_draw_PC0(:,1)])    
-        else
-            fn_hist(mean_draw(:,1))
-            fn_hist(mean_draw_C(:,1))
-            fn_hist(mean_draw_PC(:,1))
-            fn_hist(mean_draw_C0(:,1))
-            fn_hist(mean_draw_PC0(:,1))
-        end
-        hold off
-        xlabel('\mu','FontSize',11)
-        plotTickLatex2D('FontSize',11); 
-        leg = legend('Uncensored','CP 10\% ','PCP 10\% ','CP 0','PCP 0');
-        set(leg,'Interpreter','latex','FontSize',11)
-
-        figure(22)
-        set(gcf,'units','normalized','outerposition',[0.1 0.1 0.9 0.9]);    
-        hold on
-        if strcmp(v_new,'(R2014a)')
-            fn_hist([mean_draw(:,2), mean_draw_C(:,2), mean_draw_PC(:,2), mean_draw_C0(:,2), mean_draw_PC0(:,2)])    
-        else
-            fn_hist(mean_draw(:,2))
-            fn_hist(mean_draw_C(:,2))
-            fn_hist(mean_draw_PC(:,2))
-            fn_hist(mean_draw_C0(:,2))
-            fn_hist(mean_draw_PC0(:,2))
-        end
-        hold off
-        xlabel('\sigma','FontSize',11)
-        plotTickLatex2D('FontSize',11); 
-        leg = legend('Uncensored','CP 10\% ','PCP 10\% ','CP 0','PCP 0');
-        set(leg,'Interpreter','latex','FontSize',11)
-
-        figure(23)
-        set(gcf,'units','normalized','outerposition',[0.1 0.1 0.9 0.9]);    
-        hold on    
-        if strcmp(v_new,'(R2014a)')
-            hist([mean_draw(:,3), mean_draw_C(:,3), mean_draw_PC(:,3), mean_draw_C0(:,3), mean_draw_PC0(:,3)],50)    
-        else
-    %         [pF, x] = ksdensity(mean_draw(:,3),'function','pdf');
-    %         plot(x, pF/sum(pF))        
-    %         [pF, x] = ksdensity(mean_draw_C(:,3),'function','pdf');
-    %         plot(x, pF/sum(pF))        
-    %         [pF, x] = ksdensity(mean_draw_PC(:,3),x,'function','pdf');
-    %         plot(x, pF/sum(pF))        
-    %         [pF, x] = ksdensity(mean_draw_C0(:,3),x,'function','pdf');
-    %         plot(x, pF/sum(pF))        
-    %         [pF, x] = ksdensity(mean_draw_PC0(:,3),x,'function','pdf');
-    %         plot(x, pF/sum(pF))        
-            fn_hist(mean_draw(:,3))
-            fn_hist(mean_draw_C(:,3))
-            fn_hist(mean_draw_PC(:,3))
-            fn_hist(mean_draw_C0(:,3))
-            fn_hist(mean_draw_PC0(:,3))
-        end
-        hold off
-        xlabel('\phi','FontSize',11)
-        plotTickLatex2D('FontSize',11); 
-        leg = legend('Uncensored','CP 10\% ','PCP 10\% ','CP 0','PCP 0');
-        set(leg,'Interpreter','latex','FontSize',11)    
-    end
-
-
 end
