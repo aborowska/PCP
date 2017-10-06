@@ -1,4 +1,4 @@
-function d = C_posterior_t_garch11(theta, y, threshold, y_S, hyper)
+function d = posterior_t_garch11(theta, y, y_S, hyper)
     T = length(y);
     M = size(theta,1);
     
@@ -14,33 +14,26 @@ function d = C_posterior_t_garch11(theta, y, threshold, y_S, hyper)
         h = omega;
     else        
         h = y_S*ones(M,1);
-    end      
+    end    
     
     d = -Inf*ones(M,1);
     prior = prior_t_garch(M, nu, omega, alpha, beta, hyper);   
-    ind = (y<threshold); % observations of interest
 
     for ii = 1:M        
         if prior(ii,1) % compute only for valid draws
             scale = sqrt(rho(ii,1)*h(ii,1));
-            if ind(1,1) 
-                z = (y(1,1) - mu(ii,1))/scale;
-                d(ii,1) = log(tpdf(z,nu(ii))/scale);
-            else
-                z = (threshold - mu(ii,1))/scale;
-                d(ii,1) = log(1-tcdf(z,nu(ii,1)));                    
-            end    
-        
+            z = (y(1,1) - mu(ii,1))/scale;
+            d(ii,1) = log(tpdf(z,nu(ii))/scale);
+%             d(ii,1) = log(duvt_garch(y(1,1),mu(ii,1),rho(ii,1)*h(ii,1),nu(ii,1)));           
+            
             for jj = 2:T
-                h(ii,1) = omega(ii,1)*(1-alpha(ii,1)-beta(ii,1)) + alpha(ii,1)*(y(jj-1,1)-mu(ii,1)).^2  + beta(ii,1)*h(ii,1);
+                h(ii,1) = omega(ii,1)*(1-alpha(ii,1)-beta(ii,1)) + alpha(ii,1)*(y(jj-1,1)-mu(ii,1)).^2 ...
+                    + beta(ii,1)*h(ii,1);
                 scale = sqrt(rho(ii,1)*h(ii,1));
-                if ind(jj,1)
-                    z = (y(jj,1)-mu(ii,1))/scale;
-                    d(ii,1) = d(ii,1) + log(tpdf(z,nu(ii,1))/scale);
-                else  % P(y_t>=threshold|y_1,...,y_(t-1)) = 1 - P(y_t<threshold|y_1,...,y_(t-1))
-                    z = (threshold-mu(ii,1))/scale;
-                    d(ii,1) = d(ii,1) + log(1-tcdf(z,nu(ii,1)));                    
-                end
+                z = (y(jj,1)-mu(ii,1))/scale;
+                d(ii,1) = d(ii,1) + log(tpdf(z,nu(ii,1))/scale);
+                
+%                 d(ii,1) = d(ii,1) + log(duvt_garch(y(jj,1),mu(ii,1),rho(ii,1)*h(ii,1),nu(ii,1)));
             end  
         end
     end

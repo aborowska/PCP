@@ -7,14 +7,14 @@ function d = C_posterior_t_garch11(theta, y, threshold, y_S, hyper)
     omega = theta(:,3);
     alpha = theta(:,4);
     beta = theta(:,5);
-
+    
     rho = (nu-2)./nu;
-
-    if (y_S == 0) 
-        h = omega;
-    else        
-        h = y_S*ones(M,1);
-    end      
+   
+    if (y_S == 0)
+        h1 = omega;
+    else
+        h1 = y_S*ones(M,1);
+    end    
     
     d = -Inf*ones(M,1);
     prior = prior_t_garch(M, nu, omega, alpha, beta, hyper);   
@@ -22,24 +22,28 @@ function d = C_posterior_t_garch11(theta, y, threshold, y_S, hyper)
 
     for ii = 1:M        
         if prior(ii,1) % compute only for valid draws
-            scale = sqrt(rho(ii,1)*h(ii,1));
             if ind(1,1) 
-                z = (y(1,1) - mu(ii,1))/scale;
-                d(ii,1) = log(tpdf(z,nu(ii))/scale);
+%                 d(ii,1) = - 0.5*(log(2*pi) + log(h1(ii,1)) + ((y(1,1) - mu(ii,1)).^2)./h1(ii,1));
+                x = (y(1,1) - mu(ii,1))/sqrt(rho(ii,1)*h1(ii,1));
+                d(ii,1) = log(tpdf(x,nu(ii,1))); 
             else
-                z = (threshold - mu(ii,1))/scale;
-                d(ii,1) = log(1-tcdf(z,nu(ii,1)));                    
+%                 d(ii,1) = log(1-normcdf_my_mex(threshold,mu(ii,1),sqrt(h1(ii,1))));
+                x = (threshold - mu(ii,1))/sqrt(rho(ii,1)*h1(ii,1));
+                d(ii,1) = log(1-tcdf(x,nu(ii,1)));  
             end    
         
+            h = zeros(T,1);
+            h(1,1) = h1(ii,1);
             for jj = 2:T
-                h(ii,1) = omega(ii,1)*(1-alpha(ii,1)-beta(ii,1)) + alpha(ii,1)*(y(jj-1,1)-mu(ii,1)).^2  + beta(ii,1)*h(ii,1);
-                scale = sqrt(rho(ii,1)*h(ii,1));
+                h(jj,1) = omega(ii,1)*(1-alpha(ii,1)-beta(ii,1)) + alpha(ii,1)*(y(jj-1,1)-mu(ii,1)).^2  + beta(ii,1)*h(jj-1,1);
                 if ind(jj,1)
-                    z = (y(jj,1)-mu(ii,1))/scale;
-                    d(ii,1) = d(ii,1) + log(tpdf(z,nu(ii,1))/scale);
+%                     d(ii,1) = d(ii,1) - 0.5*(log(2*pi) + log(h(jj,1)) + ((y(jj,1)-mu(ii,1)).^2)/h(jj,1));
+                    x = (y(jj,1) - mu(ii,1))/sqrt(rho(ii,1)*h(jj,1));
+                    d(ii,1) = d(ii,1) + log(tpdf(x,nu(ii,1))); 
                 else  % P(y_t>=threshold|y_1,...,y_(t-1)) = 1 - P(y_t<threshold|y_1,...,y_(t-1))
-                    z = (threshold-mu(ii,1))/scale;
-                    d(ii,1) = d(ii,1) + log(1-tcdf(z,nu(ii,1)));                    
+%                     d(ii,1) = d(ii,1) + log(1-normcdf_my_mex(threshold,mu(ii,1), sqrt(h(jj,1))));     
+                    x = (threshold - mu(ii,1))/sqrt(rho(ii,1)*h(jj,1));
+                    d(ii,1) = d(ii,1) + log(1-tcdf(x,nu(ii,1)));                    
                 end
             end  
         end

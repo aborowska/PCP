@@ -6,7 +6,12 @@ end
 function r = fn_isPDS(M)
 % r = true if any problem with PSD of M
 % r = false if no problems
-    r = any(eig(M)<=0); % if true, M not pd matrix
+    try    
+        r = any(eig(M)<=0); % if true, M not pd matrix
+        r = false;
+    catch
+        r = true;
+    end
     if (~r) % if M pd
         try
             r = chol(M);

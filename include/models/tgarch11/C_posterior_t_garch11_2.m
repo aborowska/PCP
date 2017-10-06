@@ -1,4 +1,4 @@
-function d = C_posterior_t_garch11(theta, y, threshold, y_S, hyper)
+function d = C_posterior_t_garch11_2(theta, y, threshold, y_S, hyper)
     T = length(y);
     M = size(theta,1);
     
@@ -17,31 +17,47 @@ function d = C_posterior_t_garch11(theta, y, threshold, y_S, hyper)
     end      
     
     d = -Inf*ones(M,1);
-    prior = prior_t_garch(M, nu, omega, alpha, beta, hyper);   
+    prior = prior_t_garch(M, nu, omega, alpha, beta, hyper); 
+    
+    sum_C = 0;
+    for jj = 1:T
+        if (y(jj) >= threshold); % observations of interest
+            sum_C = sum_C + 1;
+        end
+    end
+    %sum_C
+    z1 = zeros(sum_C,1);
+    z2 = zeros(T-sum_C,1);
+    
     ind = (y<threshold); % observations of interest
 
     for ii = 1:M        
         if prior(ii,1) % compute only for valid draws
+            i2 = 0;
             scale = sqrt(rho(ii,1)*h(ii,1));
+            d(ii,1) = 0;
             if ind(1,1) 
-                z = (y(1,1) - mu(ii,1))/scale;
-                d(ii,1) = log(tpdf(z,nu(ii))/scale);
-            else
-                z = (threshold - mu(ii,1))/scale;
-                d(ii,1) = log(1-tcdf(z,nu(ii,1)));                    
-            end    
+                z1  = (y(1,1) - mu(ii,1))/scale;
+                d(ii,1) = d(ii,1) + log(tpdf(z1,nu(ii))/scale);
+             else
+                i2 = i2+1;
+                z2(i2,1) = (threshold - mu(ii,1))/scale;
+             end    
         
             for jj = 2:T
                 h(ii,1) = omega(ii,1)*(1-alpha(ii,1)-beta(ii,1)) + alpha(ii,1)*(y(jj-1,1)-mu(ii,1)).^2  + beta(ii,1)*h(ii,1);
                 scale = sqrt(rho(ii,1)*h(ii,1));
                 if ind(jj,1)
-                    z = (y(jj,1)-mu(ii,1))/scale;
-                    d(ii,1) = d(ii,1) + log(tpdf(z,nu(ii,1))/scale);
-                else  % P(y_t>=threshold|y_1,...,y_(t-1)) = 1 - P(y_t<threshold|y_1,...,y_(t-1))
-                    z = (threshold-mu(ii,1))/scale;
-                    d(ii,1) = d(ii,1) + log(1-tcdf(z,nu(ii,1)));                    
-                end
-            end  
+                    z1 = (y(jj,1)-mu(ii,1))/scale;
+                    d(ii,1) = d(ii,1)  + log(tpdf(z1,nu(ii))/scale);
+                 else  % P(y_t>=threshold|y_1,...,y_(t-1)) = 1 - P(y_t<threshold|y_1,...,y_(t-1))
+                    i2 = i2+1;
+                    z2(i2,1) = (threshold-mu(ii,1))/scale;
+                 end
+            end
+%             fprintf('d(ii,1) = %6.4f\n', d(ii,1));
+%             fprintf('sum_cdf = %6.4f\n', sum(tcdf(z2,nu(ii,1))));
+            d(ii,1) = d(ii,1) + sum(log(1-tcdf(z2,nu(ii,1))));
         end
     end
     d = d + prior(:,2);

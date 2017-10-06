@@ -93,7 +93,7 @@ if ~isempty(oldtitle)
     delete(oldtitle);
 end
 axes('pos',[0 1 1 1],'visible','off','Tag','suptitle');
-ht=text(.5,titleypos-1,str,'Interpreter','latex');
+ht=text(.5,titleypos-1,str,'interpreter','latex');
 set(ht,'horizontalalignment','center','fontsize',fs);
 set(gcf,'nextplot',np);
 axes(haold);

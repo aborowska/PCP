@@ -149,10 +149,10 @@ void C_posterior_t_garch11_mex(double *theta, double *y, double *threshold, doub
  theta[i+4*N] <= beta 
  */       
     
-    mwSignedIndex *r1, *cond;
-    double *r2, mu, sigma; /* *h */ 
+    mwSignedIndex *r1, *cond, sum_C, i2;
+    double *r2, mu, sigma, *z2; /* *h */ 
     double *rho, rhoh;
-    double  cdf, pdf;
+    double *cdf, pdf, sum_cdf;
     mwSignedIndex i, j;
         
     /* Variable size arrays */
@@ -172,14 +172,23 @@ void C_posterior_t_garch11_mex(double *theta, double *y, double *threshold, doub
         rho[i] = (theta[i]-2)/theta[i];
     }
 
+    sum_C = 0;
     for (j=0; j<T; j++)
     {
         cond[j] = 0;
         if (y[j] < threshold[0])
         {
             cond[j] = 1;
+        }
+        else
+        {
+            sum_C = sum_C + 1;
         }                
     }    
+
+    z2 = mxMalloc((sum_C)*sizeof(double));
+    cdf = mxMalloc((sum_C)*sizeof(double));
+
     
     if (y_S[0] > 0.0)
     {
@@ -201,6 +210,7 @@ void C_posterior_t_garch11_mex(double *theta, double *y, double *threshold, doub
     {           
         if (r1[i]==1) // compute only for valid draws
         {
+            i2 = -1;
             d[i] = r2[i]; // prior
             // the first observation: from the stationary distribution
             if (cond[0]==1) //pdf
@@ -220,14 +230,14 @@ void C_posterior_t_garch11_mex(double *theta, double *y, double *threshold, doub
             }
             else //cdf
             {
+                i2 = i2+1;
                 // stationary distribution for the first observation
-//                 mu = theta[i];
-//                 sigma = sqrt(h[i]);                               
-//                 normcdf_my_mex(threshold, &mu, &sigma, 1, &cdf);    
-                mu = (threshold[0] - theta[i+N])/sqrt(rho[i]*h[i]);
-                tcdf_call_matlab(&mu, 1, &theta[i], &cdf);
-                
-                d[i] = d[i] + log(1.0-cdf);                   
+// //                 mu = theta[i];
+// //                 sigma = sqrt(h[i]);                               
+// //                 normcdf_my_mex(threshold, &mu, &sigma, 1, &cdf);    
+//                 mu = (threshold[0] - theta[i+N])/sqrt(rho[i]*h[i]);
+//                 tcdf_call_matlab(&mu, 1, &theta[i], &cdf);
+                z2[i2] = (threshold[0] - theta[i+N])/sqrt(rho[i]*h[i]);               
             }
             
             for (j=1; j<T; j++)
@@ -251,14 +261,31 @@ void C_posterior_t_garch11_mex(double *theta, double *y, double *threshold, doub
                 }
                 else //cdf
                 {
-//                     mu = theta[i];                
-//                     sigma = sqrt(h[i]);                                       
-//                     normcdf_my_mex(threshold, &mu, &sigma, 1, &cdf);                    
-                    mu = (threshold[0] - theta[i+N])/sqrt(rho[i]*h[i]);
-                    tcdf_call_matlab(&mu, 1, &theta[i], &cdf);
-                    d[i] = d[i] + log(1.0-cdf);                    
-                }                
-            }         
+                    i2 = i2+1;
+// //                     mu = theta[i];                
+// //                     sigma = sqrt(h[i]);                                       
+// //                     normcdf_my_mex(threshold, &mu, &sigma, 1, &cdf);                    
+//                     tcdf_call_matlab(&mu, 1, &theta[i], &cdf);
+//                     d[i] = d[i] + log(1.0-cdf); 
+                    z2[i2] = (threshold[0] - theta[i+N])/sqrt(rho[i]*h[i]);                 
+                }                                                   
+            }
+            
+            // print d before cdf
+//             mexPrintf("d[i] = %6.4f\n", d[i]);               
+//             mexPrintf("sum_C = %i\n", sum_C);   
+            if (sum_C > 0)
+            {
+                tcdf_call_matlab(z2, sum_C, &theta[i], cdf);
+                sum_cdf = 0;
+                for (j=0; j<sum_C; j++)
+                {
+                    sum_cdf = sum_cdf + cdf[j];
+                    d[i] = d[i] + log(1.0- cdf[j]);   
+                }            
+//                 mexPrintf("sum_cdf = %6.4f\n", sum_cdf);  
+//                 mexPrintf("d[i]+cdf = %6.4f\n", d[i]);  
+            }
         }
         else
         {
@@ -271,7 +298,8 @@ void C_posterior_t_garch11_mex(double *theta, double *y, double *threshold, doub
     mxFree(r2); 
     mxFree(cond); 
     mxFree(rho); 
-
+    mxFree(z2);
+    mxFree(cdf);
 //     mxFree(h); 
 }
 

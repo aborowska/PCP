@@ -8,7 +8,7 @@ void tcdf_call_matlab_clean(double *x, mwSignedIndex N, double *nu, double *cdf)
     int i;
     
     rhs[0] = mxCreateDoubleMatrix(N,1,mxREAL);
-    rhs[1] = mxCreateDoubleMatrix(1,1,mxREAL); uble)); // start copying at the double returned by mxGetPr(array_ptr)
+    rhs[1] = mxCreateDoubleMatrix(1,1,mxREAL);   // start copying at the double returned by mxGetPr(array_ptr)
      
     xp = mxGetPr(rhs[0]);
     nup = mxGetPr(rhs[1]);

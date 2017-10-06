@@ -16,11 +16,18 @@ function h_out = volatility_t_garch11(theta, y, y_S, H)
         H = 1;
     end 
     
-    h_out = zeros(M,H);    
+    if (H > 0)
+        h_out = zeros(M,H);    
+    end
+    
     for jj = 2:T
         h = omega.*(1-alpha-beta) + alpha.*(y(jj-1,1)-mu).^2 + beta.*h;
         if (jj > T-H)
             h_out(:,jj-(T-H)) = h;
         end
-    end  
+    end
+    
+    if (H == 0)
+        h_out = h;
+    end
 end

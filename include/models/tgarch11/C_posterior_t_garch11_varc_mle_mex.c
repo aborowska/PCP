@@ -135,7 +135,7 @@ void prior_t_garch_hyper(double *theta, double *hyper,
 
 /* ********************************************************************* */
 
-void C_posterior_t_garch11_mex(double *theta, double *y, double *threshold, double *y_S,
+void C_posterior_t_garch11_varc_mle_mex(double *theta, double *y,  double *mu_mle, double *threshold, double *y_S,
         mwSignedIndex N, mwSignedIndex T, 
         double *hyper, double *GamMat, mwSignedIndex G,     
         double *d, double *h)
@@ -149,10 +149,10 @@ void C_posterior_t_garch11_mex(double *theta, double *y, double *threshold, doub
  theta[i+4*N] <= beta 
  */       
     
-    mwSignedIndex *r1, *cond;
-    double *r2, mu, sigma; /* *h */ 
+    mwSignedIndex *r1, *cond, sum_C, i2;
+    double *r2, mu, sigma, *z2; /* *h */ 
     double *rho, rhoh;
-    double  cdf, pdf;
+    double *cdf, *THR, h_mle, pdf, sum_cdf;
     mwSignedIndex i, j;
         
     /* Variable size arrays */
@@ -161,8 +161,7 @@ void C_posterior_t_garch11_mex(double *theta, double *y, double *threshold, doub
     rho = mxMalloc((N)*sizeof(double));   
     /* cond = 1 for "uncensored" observations */
     cond = mxMalloc((T)*sizeof(mwSignedIndex));
-    /* Stationary distibution for the first observation */
-//     h = mxMalloc((N)*sizeof(double));              
+    THR = mxMalloc((T)*sizeof(double));  
      
     prior_t_garch_hyper(theta, hyper, N, r1, r2);
 
@@ -172,14 +171,37 @@ void C_posterior_t_garch11_mex(double *theta, double *y, double *threshold, doub
         rho[i] = (theta[i]-2)/theta[i];
     }
 
+    sum_C = 0;
     for (j=0; j<T; j++)
-    {
+    { 
         cond[j] = 0;
-        if (y[j] < threshold[0])
+        if (j==0)
+        {
+            h_mle = y_S[0];            
+        }
+        else
+        {
+            mu = y[j-1] - mu_mle[1];
+            h_mle = mu_mle[2]*(1.0-mu_mle[3]-mu_mle[4]) + mu_mle[3]*(mu*mu) + mu_mle[4]*h_mle;                  
+        }       
+        THR[j] = (y[j] - mu_mle[1])/sqrt(h_mle);
+        if (THR[j] < threshold[0])
         {
             cond[j] = 1;
-        }                
-    }    
+        }
+        else
+        {
+            sum_C = sum_C + 1;
+        }        
+        THR[j] = mu_mle[1] + sqrt(h_mle)*threshold[0];
+    }
+
+//     mexPrintf("h_mle = %6.4f\n", h_mle);  
+
+//     mexPrintf("sum_C = %i\n", sum_C);  
+    
+    z2 = mxMalloc((sum_C)*sizeof(double));
+    cdf = mxMalloc((sum_C)*sizeof(double));
     
     if (y_S[0] > 0.0)
     {
@@ -201,33 +223,21 @@ void C_posterior_t_garch11_mex(double *theta, double *y, double *threshold, doub
     {           
         if (r1[i]==1) // compute only for valid draws
         {
+            i2 = -1;
             d[i] = r2[i]; // prior
             // the first observation: from the stationary distribution
             if (cond[0]==1) //pdf
             {
                 // stationary distribution for the first observation
-//                 mu = y[0] - theta[i+N];
-//                 mu = mu*mu;
-//                 sigma = mu/h[i];
-//                 sigma = sigma + log(h[i]); 
-//                 sigma = sigma + log2PI;                                
-//                 d[i] = d[i] - 0.5*sigma; 
-    
-//                 h[i] = theta[2*N+i]*h + theta[i] + theta[N+i]*(y[j-1]-theta[3*N+i])*(y[j-1]-theta[3*N+i]);                  
                 rhoh = rho[i]*h[i];
                 duvt_garch(y[0], theta[i+N], rhoh, theta[i], GamMat, G, &pdf); /* MU SIGMA NU */
                 d[i] = d[i] + log(pdf);                  
             }
             else //cdf
             {
+                i2 = i2+1;
                 // stationary distribution for the first observation
-//                 mu = theta[i];
-//                 sigma = sqrt(h[i]);                               
-//                 normcdf_my_mex(threshold, &mu, &sigma, 1, &cdf);    
-                mu = (threshold[0] - theta[i+N])/sqrt(rho[i]*h[i]);
-                tcdf_call_matlab(&mu, 1, &theta[i], &cdf);
-                
-                d[i] = d[i] + log(1.0-cdf);                   
+                z2[i2] = (THR[0] - theta[i+N])/sqrt(rho[i]*h[i]);               
             }
             
             for (j=1; j<T; j++)
@@ -237,28 +247,36 @@ void C_posterior_t_garch11_mex(double *theta, double *y, double *threshold, doub
 
                 if (cond[j]==1) //pdf
                 {
-//                     mu = y[j] - theta[i+N];
-//                     mu = mu*mu;
-//                     sigma = mu/h[i];
-//                     sigma = sigma + log(h[i]); 
-//                     sigma = sigma + log2PI;                                
-//                     d[i] = d[i] - 0.5*sigma; 
-                    
-//                     h[i] = theta[2*N+i]*h + theta[i] + theta[N+i]*(y[j-1]-theta[3*N+i])*(y[j-1]-theta[3*N+i]);   
                     rhoh = rho[i]*h[i];                   
                     duvt_garch(y[j], theta[i+N], rhoh, theta[i], GamMat, G, &pdf); /* MU SIGMA NU */
+//                     mexPrintf("d[%i] = %16.14f\n", j,d[i]);  
                     d[i] = d[i] + log(pdf);  
                 }
                 else //cdf
                 {
-//                     mu = theta[i];                
-//                     sigma = sqrt(h[i]);                                       
-//                     normcdf_my_mex(threshold, &mu, &sigma, 1, &cdf);                    
-                    mu = (threshold[0] - theta[i+N])/sqrt(rho[i]*h[i]);
-                    tcdf_call_matlab(&mu, 1, &theta[i], &cdf);
-                    d[i] = d[i] + log(1.0-cdf);                    
-                }                
-            }         
+                    i2 = i2+1;
+                    z2[i2] = (THR[j] - theta[i+N])/sqrt(rho[i]*h[i]);                 
+                }                                                   
+            }
+//             mexPrintf("d[i] = %6.4f\n", d[i]);  
+
+            if (sum_C > 0)
+            {
+                tcdf_call_matlab(z2, sum_C, &theta[i], cdf);
+                sum_cdf = 0;
+                for (j=0; j<sum_C; j++)
+                {    
+                    sum_cdf = sum_cdf + cdf[j];
+//                     if ((j+1)%10 == 1)
+//                     {
+//                         mexPrintf("cdf[%i] = %16.14f\n",j+1, cdf[j]);  
+// 
+//                     }
+                    d[i] = d[i] + log(1.0- cdf[j]);   
+                }            
+//                 mexPrintf("sum_cdf = %6.4f\n", sum_cdf);  
+//                 mexPrintf("d[i]+cdf = %6.4f\n", d[i]);  
+            }
         }
         else
         {
@@ -271,8 +289,9 @@ void C_posterior_t_garch11_mex(double *theta, double *y, double *threshold, doub
     mxFree(r2); 
     mxFree(cond); 
     mxFree(rho); 
-
-//     mxFree(h); 
+    mxFree(z2);
+    mxFree(cdf);
+    mxFree(THR);
 }
 
 /* ********************************************************************* */
@@ -282,7 +301,7 @@ void mexFunction( int nlhs, mxArray *plhs[],
                   int nrhs, const mxArray *prhs[])
 {
     int N, T, G, *T_out;                              /* size of matrix */
-    double *theta, *y, *threshold, *y_S, *hyper;   /* input*/
+    double *theta, *y, *mu_mle, *threshold, *y_S, *hyper;   /* input*/
     double *GamMat;       
     double *d, *h;                                 /* output */
 
@@ -296,10 +315,11 @@ void mexFunction( int nlhs, mxArray *plhs[],
  theta[i+4*N] <= beta 
  */    
     y = mxGetPr(prhs[1]);
-    threshold = mxGetPr(prhs[2]);
-    y_S  = mxGetPr(prhs[3]);
-    GamMat = mxGetPr(prhs[4]);
-    hyper = mxGetPr(prhs[5]); /* hyperparameter on degrees of freedom*/
+    mu_mle = mxGetPr(prhs[2]);    
+    threshold = mxGetPr(prhs[3]);
+    y_S  = mxGetPr(prhs[4]);
+    GamMat = mxGetPr(prhs[5]);
+    hyper = mxGetPr(prhs[6]); /* hyperparameter on degrees of freedom*/
   
     
     N = mxGetM(prhs[0]); /* no of parameter draws */
@@ -317,6 +337,6 @@ void mexFunction( int nlhs, mxArray *plhs[],
     h = mxGetPr(plhs[2]);
   
     /* call the function */
-    C_posterior_t_garch11_mex(theta, y, threshold, y_S, N, T, hyper, GamMat, G,  d, h); 
+    C_posterior_t_garch11_varc_mle_mex(theta, y, mu_mle, threshold, y_S, N, T, hyper, GamMat, G,  d, h); 
     T_out[0] = T;
 }

@@ -142,8 +142,8 @@ function [mit_new, CV] = MitISEM_new(kernel_init, kernel, mu_init, cont, GamMat)
     % add more mixture components until convergence
     hstop = false;
     iter = 0;
-%     while ((H < Hmax) && (hstop == false))
-    while ((iter < cont.mit.iter_max) && (hstop == false))
+    while ((H < Hmax) && (hstop == false))
+%     while ((iter < cont.mit.iter_max) && (hstop == false))
         iter = iter + 1;
         H = H + 1;
         if cont.disp

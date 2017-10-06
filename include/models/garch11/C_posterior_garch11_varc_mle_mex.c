@@ -100,7 +100,6 @@ void C_posterior_garch11_varc_mle_mex(double *theta, double *y, double *mu_mle, 
     cond = mxMalloc((T)*sizeof(mwSignedIndex));              
     THR = mxMalloc((T)*sizeof(double));  
 
-    /* Stationary distibution for the first observation */    
     prior_garch11(theta, N, r1, r2);
 
     /* Initialise */ 
