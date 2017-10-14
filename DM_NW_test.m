@@ -15,11 +15,18 @@ function DM = DM_NW_test(model, T, sigma1, sigma2, H, II)
     load(name, '-regexp','^C_score')
     aaa = who('-regexp','^C_score');
     M = length(aaa)/3;  % no of methods compared (div 3: 3 thresholds considered)
+
+    load(name, '-regexp','^Cv_score')
+    bbb = who('-regexp','^Cv_score');
+    N = length(bbb)/3;
     
-    aaa_05 = who('-regexp','._05'); 
-    aaa_1 = who('-regexp','.1'); 
-    aaa_5 = who('-regexp','._5'); 
-    
+    aaa_05 = who('-regexp','C_score\w*_05$'); 
+    aaa_1 = who('-regexp','C_score\w*_1$'); 
+    aaa_5 = who('-regexp','C_score\w*_5$'); 
+
+    bbb_05 = who('-regexp','Cv_score\w*_05$'); 
+    bbb_1 = who('-regexp','Cv_score\w*_1$'); 
+    bbb_5 = who('-regexp','Cv_score\w*_5$');    
     % Ordering: MC sampling from the true model,
     % (Standard) Posterior,
     % Censored Posterior and Partially Censored Posterior with threshold at 0,
@@ -75,6 +82,55 @@ function DM = DM_NW_test(model, T, sigma1, sigma2, H, II)
         end
     end
 
+    %% time varying     
+    DM_v = NaN(N,1); % NaN will be removed while printing to tex
+    DM_v_05 = diag(DM_v);
+    DM_v_1 = diag(DM_v);
+    DM_v_5 = diag(DM_v);
+    % positive terms: the colum method is better than the row one
+    % negative terms: the row method is better than the column one
+
+    for ii = 2:N
+        for jj = 1:(ii-1)
+            d = eval(char(bbb_05{ii})) - eval(char(bbb_05{jj}));
+            if (sum(imag(d)~=0) > 0)
+                DM_v_05(ii,jj) = NaN;
+            else
+                nwse = sqrt(NeweyWest(d));
+                DM_v_05(ii,jj) = mean(d)/nwse;
+            end
+            
+            d = eval(char(bbb_1{ii})) - eval(char(bbb_1{jj}));
+            if (sum(imag(d)~=0) > 0)
+                DM_v_1(ii,jj) = NaN;
+            else
+                nwse = sqrt(NeweyWest(d));
+                DM_v_1(ii,jj) = mean(d)/nwse;
+            end
+            
+            d = eval(char(bbb_5{ii})) - eval(char(bbb_5{jj}));
+            if (sum(imag(d)~=0) > 0)
+                DM_v_5(ii,jj) = NaN;
+            else
+                nwse = sqrt(NeweyWest(d));
+                DM_v_5(ii,jj) = mean(d)/nwse;
+            end
+        end
+    end
+
+    %% Combined
+    if (N == M)
+        DM_all_05 = DM_05; % NaN will be removed while printing to tex
+        DM_all_1 = DM_1; % NaN will be removed while printing to tex
+        DM_all_5 = DM_5; %
+        
+        for ii = 2:N
+            for jj = 1:(ii-1)
+                DM_all_05()
+            end
+        end
+    end
+    
     %% Print to tex file
     fname = print_table_DM(DM,model,T,S);
     Remove_NaN(fname);

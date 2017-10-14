@@ -1,11 +1,11 @@
-function d = posterior_t_gas(theta, y, hyper, L, GamMat)
+function d = posterior_t_gas(theta, y, hyper)
     % theta is Nx5, matrix of draws
     [N ,~] = size(theta);
-    mu = theta(:,1);
-    omega = theta(:,2);
-    A = theta(:,3);
-    B = theta(:,4); 
-    nu = theta(:,5);
+    nu = theta(:,1);
+    mu = theta(:,2);
+    omega = theta(:,3);
+    A = theta(:,4);
+    B = theta(:,5); 
     
     rho = (nu-2)./nu;
     
@@ -15,39 +15,39 @@ function d = posterior_t_gas(theta, y, hyper, L, GamMat)
     prior = prior_t_gas(N, omega, B, nu, hyper);
     
     T = size(y,1);
-     
+                 
+    f = omega./(1-B); % unconditional variance to initialize h_1
+
     d = -Inf*ones(N,1);
        
-    for ii = 1:N
-        if mod(ii,1000) == 0
-            fprintf('posterior ii = %d\n',ii);
-        end
-        
-        f = zeros(T,1);
-        pdf = zeros(T,1);
-        
+    for ii = 1:N               
         if (prior(ii,1)) % when all the parameter constraints are satisfied
-            f(1,1) = omega(ii,1)/(1-B(ii,1)); % unconditional variance to initialize h_1
             
-            pdf(1,1) = dmvt(y(1,1), mu(ii,1), rho(ii,1)*f(1,1), nu(ii,1), GamMat);
-            pdf(1,1) = log(pdf(1,1));
+%             pdf(1,1) = dmvt(y(1,1), mu(ii,1), rho(ii,1)*f(ii,1), nu(ii,1), GamMat);
+%             pdf(1,1) = log(pdf(1,1));
+
+            scale = sqrt(rho(ii,1)*f(ii,1));
+            z = (y(1,1) - mu(ii,1))/scale;
+            d(ii,1) = log(tpdf(z,nu(ii))/scale);
+% %             d(ii,1) = log(duvt_garch(y(1,1),mu(ii,1),rho(ii,1)*f(ii,1),nu(ii,1)));             
             
             for jj = 2:T
-                C = 1 + ((y(jj-1,1)-mu(ii,1)).^2)/((nu(ii,1)-2)*f(jj-1,1));
+                C = 1 + ((y(jj-1,1)-mu(ii,1)).^2)/((nu(ii,1)-2)*f(ii,1));
                 
-                f(jj,1) = omega(ii,1) + A(ii,1)*(nu_con(ii,1)*((y(jj-1,1)-mu(ii,1)).^2)/C - f(jj-1,1)) ...
-                            + B(ii,1)*f(jj-1,1);
+                f(ii,1) = omega(ii,1) + A(ii,1)*(nu_con(ii,1)*((y(jj-1,1)-mu(ii,1)).^2)/C - f(ii,1)) ...
+                            + B(ii,1)*f(ii,1);
                         
-                pdf(jj,1) = dmvt(y(jj,1), mu(ii,1), rho(ii,1)*f(jj,1), nu(ii,1), GamMat);
-                pdf(jj,1) = log(pdf(jj,1));
+%                 pdf(jj,1) = dmvt(y(jj,1), mu(ii,1), rho(ii,1)*f(ii,1), nu(ii,1), GamMat);
+%                 pdf(jj,1) = log(pdf(jj,1));
+                   
+                scale = sqrt(rho(ii,1)*f(ii,1));
+                z = (y(jj,1)-mu(ii,1))/scale;
+                d(ii,1) = d(ii,1) + log(tpdf(z,nu(ii,1))/scale);             
             end
-            d(ii,1) = sum(pdf) + prior(ii,2); 
         end
     end
     
-    if (~L)
-        d = exp(d);
-    end
+    d = d + prior(:,2);
 end
 
 

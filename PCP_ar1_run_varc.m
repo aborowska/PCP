@@ -20,9 +20,9 @@ function results = PCP_ar1_run_varc(c, sigma1, sigma2, rho, ...
     q5 = norminv(p_bar,c+rho*y(T:(T+H-1),1),sigma2)'; 
 
     % true ESs
-    cdf05 = c - sigma2*normpdf(norminv(1-p_bar0))/(p_bar0);
-    cdf1 = c - sigma2*normpdf(norminv(1-p_bar1))/(p_bar1);
-    cdf5 = c - sigma2*normpdf(norminv(1-p_bar))/(p_bar);    
+    cdf05 = c + rho*y(T:(T+H-1),1) - sigma2*normpdf(norminv(1-p_bar0))/(p_bar0);
+    cdf1 = c + rho*y(T:(T+H-1),1) - sigma2*normpdf(norminv(1-p_bar1))/(p_bar1);
+    cdf5 = c + rho*y(T:(T+H-1),1) - sigma2*normpdf(norminv(1-p_bar))/(p_bar);    
  
     % MC VaRs under the true model
     eps_sort = randn(M,H);

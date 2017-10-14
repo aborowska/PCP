@@ -1,9 +1,9 @@
-function [THR, cond] = Threshold_varc_mle(y, mu_MLE, threshold_m)
+function [THR, cond] = Threshold_varc_mle(y, mu_MLE, y_S, quantile)
             
-    P = length(threshold_m); % potentially P different thresholds
-    quantile = tinv(threshold_m, mu_MLE(1));
+    P = length(quantile); % potentially P different thresholds
+%     quantile = tinv(threshold_m, mu_MLE(1));
 
-    y_S = var(y);
+%     y_S = var(y);
 %y((T+1):(T+H))
     H = length(y);
     THR = zeros(P,H);
