@@ -1,0 +1,48 @@
+{ \renewcommand{\arraystretch}{1.2} 
+{\footnotesize 
+\begin{table} 
+\center 
+\begin{tabular}{cc cccccc} 
+Value & & DGP & Posterior & CP0  & CP10\% & PCP0  & PCP10\% \\ \hline 
+\hline 
+\multicolumn{8}{c}{$T =100$}  \\ 
+\hline 
+\rowcolor{LightCyan} 
+$\mu$&& 0.0000 & -0.0003 & 0.0069 & 0.1123 & 0.0023 & 0.2376 \\ 
+&&   & (0.1018) & (0.1405) & (0.5657) & (0.1349) & (0.4303) \\ [1ex]
+\rowcolor{LightCyan} 
+$\sigma$&& 1.0000 & 1.0030 & 0.9993 & 1.0908 & 0.9995 & 1.1307 \\ 
+&&   & (0.0725) & (0.1088) & (0.3017) & (0.1066) & (0.2753) \\ [1ex]
+\rowcolor{LightCyan} 
+$\phi$&& 0.8000 & 0.7574 & 0.7571 & 0.7029 & 0.7574 & 0.7574 \\ 
+&&   & (0.0635) & (0.0878) & (0.1606) & (0.0635) & (0.0635) \\ [1ex]
+\hline 
+\multicolumn{8}{c}{$T =1000$}  \\ 
+\hline 
+\rowcolor{LightCyan} 
+$\mu$&& 0.0000 & -0.0094 & -0.0046 & 0.0359 & -0.0083 & 0.0215 \\ 
+&&   & (0.0316) & (0.0459) & (0.1985) & (0.0424) & (0.1090) \\ [1ex]
+\rowcolor{LightCyan} 
+$\sigma$&& 1.0000 & 0.9997 & 0.9996 & 1.0229 & 0.9976 & 1.0193 \\ 
+&&   & (0.0224) & (0.0329) & (0.0812) & (0.0318) & (0.0669) \\ [1ex]
+\rowcolor{LightCyan} 
+$\phi$&& 0.8000 & 0.7916 & 0.7957 & 0.7965 & 0.7915 & 0.7915 \\ 
+&&   & (0.0193) & (0.0290) & (0.0690) & (0.0194) & (0.0194) \\ [1ex]
+\hline 
+\multicolumn{8}{c}{$T =10000$}  \\ 
+\hline 
+\rowcolor{LightCyan} 
+$\mu$&& 0.0000 & 0.0022 & 0.0038 & 0.0067 & 0.0030 & 0.0018 \\ 
+&&   & (0.0100) & (0.0146) & (0.0628) & (0.0135) & (0.0332) \\ [1ex]
+\rowcolor{LightCyan} 
+$\sigma$&& 1.0000 & 0.9993 & 1.0002 & 1.0001 & 0.9997 & 0.9988 \\ 
+&&   & (0.0071) & (0.0105) & (0.0250) & (0.0102) & (0.0204) \\ [1ex]
+\rowcolor{LightCyan} 
+$\phi$&& 0.8000 & 0.7985 & 0.7995 & 0.8004 & 0.7985 & 0.7985 \\ 
+&&   & (0.0060) & (0.0092) & (0.0224) & (0.0060) & (0.0060) \\ [1ex]
+\hline 
+\end{tabular}
+ \caption{Symmetric (correctly specified) ar1 zero mean split normal model with $\sigma_{1} = 1$ and $\sigma_{2} = 1$:  simulation results for the regular posterior, censored posterior (CP)  and partially censored posterior (PCP) with different thresholds,  at $0$ (CP0, PCP0) and at the 10\% data percentile (CP10\%, PCP 10\%).  For the censored methods the focus is on the left tail.  All results averaged 100 MC replications, (mean) standard errors in parentheses.} 
+\label{tab:ar1_s1_pcp_est}  
+\end{table}
+}}

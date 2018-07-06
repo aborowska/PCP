@@ -106,7 +106,7 @@ void prior_t_garch_hyper(double *theta, double *hyper,
     for (i=0; i<N; i++)
     {
         r1[i] = 1;
-        if (theta[i+2*N] <= 0) // omega>0
+        if ((theta[i+2*N] <= 0) || ((theta[i+2*N] >= 100)))   // omega>0
         {
             r1[i] = 0;
         }   

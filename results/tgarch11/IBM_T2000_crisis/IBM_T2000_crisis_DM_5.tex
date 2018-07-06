@@ -1,0 +1,21 @@
+{ \renewcommand{\arraystretch}{1.2} 
+\begin{table} 
+\center 
+\begin{tabular}{l | rrrrr} 
+& \multicolumn{1}{c}{CP}& \multicolumn{1}{c}{CP$_{var}$}& \multicolumn{1}{c}{PCP}& \multicolumn{1}{c}{PCP$_{var}$}& \multicolumn{1}{c}{Post} \\ \hline 
+\multicolumn{6}{c}{$\tau = 5$} \\ \hline 
+CP &    --\phantom{$^{***}$} &    --\phantom{$^{***}$} &    --\phantom{$^{***}$} &    --\phantom{$^{***}$} &    --\phantom{$^{***}$}   \\ 
+CP$_{var}$ & 0.0735\phantom{$^{***}$} &    --\phantom{$^{***}$} &    --\phantom{$^{***}$} &    --\phantom{$^{***}$} &    --\phantom{$^{***}$}   \\ 
+PCP & 3.5258$^{***}$ & 3.2159$^{***}$ &    --\phantom{$^{***}$} &    --\phantom{$^{***}$} &    --\phantom{$^{***}$}   \\ 
+PCP$_{var}$ & 3.8532$^{***}$ & 3.5323$^{***}$ & -0.7073\phantom{$^{***}$} &    --\phantom{$^{***}$} &    --\phantom{$^{***}$}   \\ 
+Post & 4.9013$^{***}$ & 5.0946$^{***}$ & 1.8209$^{*}$\phantom{$^{**}$} & 2.2713$^{**}$\phantom{$^{*}$} &    --\phantom{$^{***}$}   \\ 
+\hline 
+\multicolumn{6}{l}{\footnotesize{CP: Censored posterior.}}  \\ 
+\multicolumn{6}{l}{\footnotesize{PCP: Partially censored posterior.}} \\ 
+\multicolumn{6}{l}{\footnotesize{(P)CP: Censoring with constant threshold at 10\% sample quantile.}}  \\ 
+\multicolumn{6}{l}{\footnotesize{(P)CP$_{var}$: Censoring with time-varying threshold at 10\% MLE implied quantile.}} \\ 
+\end{tabular}
+ \caption{IBM: Diebold-Mariano test statistics for  pairwise method comparison of forecasting performance in the tail based on  Censored Score Rules differentials over $H=1500$ out-of-sample periods. }
+\label{tab:IBM_DM_5}  
+\end{table}
+}

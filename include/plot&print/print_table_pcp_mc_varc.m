@@ -14,7 +14,7 @@ function print_table_pcp_mc_varc(model,parameters,sigma1,sigma2,T,H, version)
     fprintf(FID, '\\begin{tabular}{cc cc cccc cccc} \n');
 
     fprintf(FID, ['Value & & True/MC$^*$ & Posterior & CP0  & PCP0 & CP10\\%%  & PCP10\\%% &', ...
-        'CP var ah & PCP var ah & CP var mle & PCP var mle \\\\ \\hline \n']); 
+        'CP var mf & PCP var mf & CP var mle & PCP var mle \\\\ \\hline \n']); 
     
     for t = T
         % Load time varying threshold results

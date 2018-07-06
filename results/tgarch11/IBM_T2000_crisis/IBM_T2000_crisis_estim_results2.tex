@@ -1,0 +1,27 @@
+{ \renewcommand{\arraystretch}{1.2} 
+\begin{table} 
+\center 
+\begin{tabular}{cc ccccccc} 
+Parameter & & Posterior & CP10\% & PCP10\%  & CP$_{var,mf}$ & PCP$_{var,mf}$ & CP$_{var,mle}$ & PCP$_{var,mle}$ \\ \hline 
+\rowcolor{LightCyan} 
+$\nu$&& 7.0943 & 45.6427 & 38.1495 & 37.2623 & 35.6633 & 43.2466 & 33.7796 \\ 
+&&    (1.4748) & (25.3582) & (26.3139)  & (24.7424) & (24.9202) & (25.3678) & (24.8307)  \\ 
+\rowcolor{LightCyan} 
+$\mu$&& 0.0905 & 0.6684 & 0.6287 & 0.3219 & 0.3078 & 0.5821 & 0.4492 \\ 
+&&    (0.0362) & (0.2725) & (0.3825)  & (0.1410) & (0.1444) & (0.2310) & (0.3131)  \\ 
+\rowcolor{LightCyan} 
+$\omega$&& 16.4548 & 260.5379 & 47.3642 & 26.7770 & 31.7775 & 288.6082 & 42.7302 \\ 
+&&    (18.9873) & (369.5474) & (60.8834)  & (23.6653) & (29.0946) & (423.7474) & (59.0946)  \\ 
+\rowcolor{LightCyan} 
+$\alpha$&& 0.1260 & 0.1605 & 0.1264 & 0.1326 & 0.1260 & 0.1683 & 0.1264 \\ 
+&&    (0.0271) & (0.0515) & (0.0273)  & (0.0293) & (0.0271) & (0.0562) & (0.0273)  \\ 
+\rowcolor{LightCyan} 
+$\beta$&& 0.8652 & 0.8317 & 0.8650 & 0.8581 & 0.8652 & 0.8234 & 0.8650 \\ 
+&&    (0.0280) & (0.0530) & (0.0281)  & (0.0321) & (0.0280) & (0.0572) & (0.0281)  \\ 
+\hline 
+\end{tabular}
+ \caption{IBM: estimation results (posterior means and standard deviations)  for the GARCH(1,1)-$t$ model estimated with the regular posterior, censored posterior (CP) and partially censored posterior (PCP) with different thresholds,  a time-constant one at the 10\% data percentile (CP10\%, PCP 10\%) and two time-varying ones, model-free and based on the 10\% MLE implied quantile. 
+For the censored methods the focus is on the left tail. }
+\label{tab:IBM_estim}  
+\end{table}
+}

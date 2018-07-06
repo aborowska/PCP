@@ -6,7 +6,7 @@ Value & & True/MC$^*$ & Posterior & CP10\% & CP0 \\ \hline
 \hline 
 \multicolumn{6}{c}{$T =100$}  \\ 
 \hline 
-AR && -- & 0.8585 & 0.4671 & 0.7843  \\  
+%AR && -- & 0.8585 & 0.4671 & 0.7843  \\  
 $\mu$&& 0.0000 & 0.0926 & 1.5715 & 0.1727  \\ 
 &&   & (0.1014) & (1.5261) & (0.1529)  \\ 
 $\sigma$&& 1.0000 & 1.0226 & 1.8779 & 1.1289  \\ 
@@ -18,7 +18,7 @@ VaR 5\% && -1.4804 & -1.4899 & -1.4668 & -1.4951  \\
 \hline 
 \multicolumn{6}{c}{$T =1000$}  \\ 
 \hline 
-AR && -- & 0.8727 & 0.8143 & 0.8627  \\  
+%AR && -- & 0.8727 & 0.8143 & 0.8627  \\  
 $\mu$&& 0.0000 & 0.0071 & 0.0196 & 0.0230  \\ 
 &&   & (0.0304) & (0.1473) & (0.0387)  \\ 
 $\sigma$&& 1.0000 & 0.9604 & 0.9446 & 0.9725  \\ 
@@ -30,7 +30,7 @@ VaR 5\% && -1.4804 & -1.4816 & -1.4823 & -1.4858  \\
 \hline 
 \multicolumn{6}{c}{$T =10000$}  \\ 
 \hline 
-AR && -- & 0.8723 & 0.8667 & 0.8655  \\  
+%AR && -- & 0.8723 & 0.8667 & 0.8655  \\  
 $\mu$&& 0.0000 & 0.0031 & 0.0300 & -0.0049  \\ 
 &&   & (0.0100) & (0.0433) & (0.0123)  \\ 
 $\sigma$&& 1.0000 & 0.9960 & 1.0053 & 0.9865  \\ 
@@ -41,11 +41,11 @@ VaR 5\% && -1.4822 & -1.4802 & -1.4767 & -1.4815  \\
  && [0.2710] & [0.2712] & [0.2713] & [0.2713]  \\ 
 \hline 
 \multicolumn{6}{l}{\footnotesize{$^*$ True value for parameters, MC mean value for VaRs.}}  \\ 
-\multicolumn{6}{l}{\footnotesize{AR: acceptance rate for the independent MH.}}  \\ 
-\multicolumn{6}{l}{\footnotesize{CP10\%: Censored posterior, threshold 10\% sample quantile.}}  \\ 
-\multicolumn{6}{l}{\footnotesize{CP0: Censored posterior, threshold 0.}} 
+%\multicolumn{6}{l}{\footnotesize{AR: acceptance rate for the independent MH.}}  \\ 
+%\multicolumn{6}{l}{\footnotesize{CP10\%: Censored posterior, threshold 10\% sample quantile.}}  \\ 
+%\multicolumn{6}{l}{\footnotesize{CP0: Censored posterior, threshold 0.}} 
 \end{tabular}
- \caption{Symmetric (correctly specified) i.i.d. zero mean split normal model with $\sigma_{1} = 1$ and $\sigma_{2} = 1$. Simulation results for posterior without and with censoring (with different thresholds). For the censored posterior the focus is on the left tail. Standard errors in parantheses, MSEs in brackets.} 
+ \caption{Symmetric (correctly specified) i.i.d. zero mean split normal model with $\sigma_{1} = 1$ and $\sigma_{2} = 1$. Simulation results for the regular posterior and for the censored posterior,  with different thresholds, at $0$ (CP0) and at the 10\% data percentile (CP10\%). For the CP the focus is on the left tail. Standard errors in parentheses, MSEs in brackets.} 
 \label{tab:iid}  
 \end{table}
 }

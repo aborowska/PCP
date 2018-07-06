@@ -1,0 +1,35 @@
+{ \renewcommand{\arraystretch}{1.2} 
+\begin{table} 
+\center 
+\begin{tabular}{l | rrrr} 
+& \multicolumn{1}{c}{CP10\%}& \multicolumn{1}{c}{CP$_{var}$}& \multicolumn{1}{c}{PCP10\%}& \multicolumn{1}{c}{PCP$_{var}$}\\ \hline 
+\multicolumn{5}{c}{$\tau = 0.5$} \\ \hline 
+%CP10\% &    --\phantom{$^{***}$} &    --\phantom{$^{***}$} &    --\phantom{$^{***}$} &    --\phantom{$^{***}$}    \\ 
+CP$_{var}$ & -2.0998$^{**}$\phantom{$^{*}$} &    --\phantom{$^{***}$} &    --\phantom{$^{***}$} &    --\phantom{$^{***}$} \\ 
+PCP10\% & 2.5867$^{***}$ & 2.5866$^{***}$ &    --\phantom{$^{***}$} &    --\phantom{$^{***}$}\\ 
+PCP$_{var}$ & 2.6460$^{***}$ & 2.6533$^{***}$ & -1.8986$^{*}$\phantom{$^{**}$} &    --\phantom{$^{***}$} \\ 
+Posterior & 2.5013$^{**}$\phantom{$^{*}$} & 2.9143$^{***}$ & -2.0464$^{**}$\phantom{$^{*}$} & -2.0369$^{**}$\phantom{$^{*}$}   \\ 
+\hline  
+\multicolumn{5}{c}{$\tau = 1$} \\ \hline 
+%CP10\% &    --\phantom{$^{***}$} &    --\phantom{$^{***}$} &    --\phantom{$^{***}$} &    --\phantom{$^{***}$}   \\ 
+CP$_{var}$ & -1.7450$^{*}$\phantom{$^{**}$} &    --\phantom{$^{***}$} &    --\phantom{$^{***}$} &    --\phantom{$^{***}$} \\ 
+PCP10\% & 2.5763$^{***}$ & 2.5415$^{**}$\phantom{$^{*}$} &    --\phantom{$^{***}$} &    --\phantom{$^{***}$}   \\ 
+PCP$_{var}$ & 2.7439$^{***}$ & 2.7008$^{***}$ & -1.3752\phantom{$^{***}$} &    --\phantom{$^{***}$} \\ 
+Posterior  & 3.8343$^{***}$ & 4.0150$^{***}$ & -1.3922\phantom{$^{***}$} & -1.3609\phantom{$^{***}$}    \\ 
+\hline 
+\multicolumn{5}{c}{$\tau = 5$} \\ \hline 
+%CP &    --\phantom{$^{***}$} &    --\phantom{$^{***}$} &    --\phantom{$^{***}$} &    --\phantom{$^{***}$}  \\ 
+CP$_{var}$ & -2.0998$^{**}$\phantom{$^{*}$} &    --\phantom{$^{***}$} &    --\phantom{$^{***}$} &    --\phantom{$^{***}$} \\ 
+PCP10\% & 2.5867$^{***}$ & 2.5866$^{***}$ &    --\phantom{$^{***}$} &    --\phantom{$^{***}$}  \\ 
+PCP$_{var}$ & 2.6460$^{***}$ & 2.6533$^{***}$ & -1.8986$^{*}$\phantom{$^{**}$} &    --\phantom{$^{***}$}   \\ 
+Posterior & 2.5013$^{**}$\phantom{$^{*}$} & 2.9143$^{***}$ & -2.0464$^{**}$\phantom{$^{*}$} & -2.0369$^{**}$\phantom{$^{*}$}   \\ 
+\hline 
+%\multicolumn{5}{l}{\footnotesize{CP: Censored posterior.}}  \\ 
+%\multicolumn{5}{l}{\footnotesize{PCP: Partially censored posterior.}} \\ 
+%\multicolumn{5}{p{8cm}}{\footnotesize{(P)CP: Censoring with constant threshold at 10\% sample quantile.}}  \\ 
+%\multicolumn{5}{p{8cm}}{\footnotesize{(P)CP$_{var}$: Censoring with time-varying threshold at 10\% MLE implied quantile.}} \\ 
+\end{tabular}
+ \caption{IBM: Diebold-Mariano test statistics for  pairwise method comparison of forecasting performance in the $\tau$\% tail based on  censored likelihood score rules   for $H=1500$ out-of-sample periods,  between  the regular posterior, censored posterior (CP) and partially censored posterior (PCP) with different thresholds,  time-constant at the 10\% data percentile (CP10\%, PCP 10\%) and time-varying based on the 10\% MLE implied quantile. }
+\label{tab:IBM_DM}  
+\end{table}
+}

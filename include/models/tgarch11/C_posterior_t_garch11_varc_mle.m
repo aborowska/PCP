@@ -13,7 +13,8 @@ function d = C_posterior_t_garch11_varc_mle(theta, y, mu_mle, threshold, ...
     beta = theta(:,5);
 
     rho = (nu-2)./nu;
-
+    rho_mle = (mu_mle(1)-2)/mu_mle(1);
+    
     if (y_S == 0) 
         h = omega;
     else        
@@ -34,17 +35,15 @@ function d = C_posterior_t_garch11_varc_mle(theta, y, mu_mle, threshold, ...
             h_mle = mu_mle(3)*(1-mu_mle(4)-mu_mle(5)) ...
                 + mu_mle(4)*temp^2 + mu_mle(5)*h_mle;
         end
-        THR(jj) = (y(jj) - mu_mle(2))/sqrt(h_mle);
+        THR(jj) = (y(jj) - mu_mle(2))/sqrt(rho_mle*h_mle);
         if (THR(jj) < threshold) % observations of interest
             cond(jj) = 1;
         else
             sum_C = sum_C + 1;
         end
-        THR(jj) = mu_mle(2) + sqrt(h_mle)*threshold;
+        THR(jj) = mu_mle(2) + sqrt(rho_mle*h_mle)*threshold;
     end
-%     fprintf('h_mle = %6.4f\n', h_mle);  
-%     fprintf('sum_C = %i\n', sum_C);  
-
+    
 %     z1 = zeros(sum_C,1);
     z2 = zeros(T-sum_C,1);
     

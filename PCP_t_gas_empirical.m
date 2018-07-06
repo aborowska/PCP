@@ -80,7 +80,7 @@
 %     if exist(name,'file')
 %         exits_on = true;
 %         load(name,'mit','CV','draw','accept','mu_MLE','Sigma')
-%         fT = volatility_t_gas(draw,y(1:T),y_S,0);  
+%         fT = volatility_t_gas(draw,y(1:T),0);  
 %     else
 %         exits_on = false;    
     %     kernel_init = @(xx) - posterior_t_gas_mex(xx, y(1:T), y_S, GamMat, hyper)/T;
@@ -89,7 +89,13 @@
         [mu_MLE1,~,exitflag,output,~,Sigma] = fminunc(kernel_init,mu_init,options);
         [mu_MLE,~,exitflag,output,~,Sigma] = fminunc(kernel_init,mu_MLE1,options);
 
-        Sigma = inv(T*Sigma);    
+        Sigma = inv(T*Sigma); 
+        r = fn_testSigma(reshape(Sigma,1,5^2)); % if r==1 then there is a problem with Sigma_C
+        if ~r
+            Sigma_start = Sigma;   
+        else
+            Sigma_start = nearestSPD(Sigma);      
+        end        
 %         if (data == 4)
 %             Sigma = csvread('MSFT_Sigma_mle.csv',1,1)
 %         end 
@@ -131,7 +137,7 @@
         draw = draw(BurnIn+1:BurnIn+M,:);    
 
         % compute the implied volatility for the last in-sample period
-        fT = volatility_t_gas(draw,y(1:T));  
+        fT = volatility_t_gas(draw,y(1:T),0);  
 
         mean_draw = mean(draw);
         median_draw = median(draw);
@@ -146,10 +152,9 @@
         C_score_post_1 = C_ScoringRule(dens_post, cdf_post(2,:), y((T+1):(T+H)), THR_emp(2));
         C_score_post_5 = C_ScoringRule(dens_post, cdf_post(3,:), y((T+1):(T+H)), THR_emp(3));
 
-
         QUANT = tinv(P_bars, mu_MLE(1))';
-        fT_MLE = volatility_t_gas(mu_MLE,y(1:T));
-        [THR_MLE, cond_MLE] = Threshold_varc_mle(y((T+1):(T+H)), mu_MLE, fT_MLE, QUANT);
+        fT_MLE = volatility_t_gas(mu_MLE,y(1:T),0);
+        [THR_MLE, cond_MLE] = threshold_t_gas_varc_mle(y((T+1):(T+H)), mu_MLE, fT_MLE, QUANT);
         
         cdf_v_post = predictive_cdf_t_gas(y(T:(T+H)), fT, draw, THR_MLE);       
         Cv_score_post_05 = C_ScoringRule(dens_post, cdf_v_post(1,:), y((T+1):(T+H)), THR_MLE(1));
@@ -203,7 +208,7 @@
         accept_C = a/(M+BurnIn);
         draw_C = draw_C(BurnIn+1:BurnIn+M,:);
         
-        fT_C = volatility_t_gas(draw_C,y(1:T));  
+        fT_C = volatility_t_gas(draw_C,y(1:T),0);  
 
         mean_draw_C = mean(draw_C);
         median_draw_C = median(draw_C);
@@ -217,12 +222,7 @@
         C_score_C_1 = C_ScoringRule(dens_C, cdf_C(2,:), y((T+1):(T+H)), THR_emp(2));
         C_score_C_5 = C_ScoringRule(dens_C, cdf_C(3,:), y((T+1):(T+H)), THR_emp(3));    
         % predicitve cdfs, var mle threshold for different tails
-        
-
-%         QUANT = tinv(P_bars, mu_MLE(1))';
-%         fT_MLE = volatility_t_gas(mu_MLE,y(1:T),y_S,0);
-%         [THR_MLE, cond_MLE] = Threshold_varc_mle(y((T+1):(T+H)), mu_MLE, fT_MLE, QUANT);
-        
+       
         cdf_v_C = predictive_cdf_t_gas(y(T:(T+H)), fT_C, draw_C, THR_MLE);       
         Cv_score_C_05 = C_ScoringRule(dens_C, cdf_v_C(1,:), y((T+1):(T+H)), THR_MLE(1));
         Cv_score_C_1 = C_ScoringRule(dens_C, cdf_v_C(2,:), y((T+1):(T+H)), THR_MLE(2));
@@ -239,7 +239,7 @@
             partition, II, BurnIn_PCP, kernel, GamMat, cont.disp, thinning);
         accept_PC = mean(a_PC); 
 
-        fT_PC = volatility_t_gas(draw_PC,y(1:T),y_S,0);  
+        fT_PC = volatility_t_gas(draw_PC,y(1:T),0);  
 
         mean_draw_PC = mean(draw_PC);
         median_draw_PC = median(draw_PC);
@@ -252,10 +252,6 @@
         C_score_PC_05 = C_ScoringRule(dens_PC, cdf_PC(1,:), y((T+1):(T+H)), THR_emp(1));
         C_score_PC_1 = C_ScoringRule(dens_PC, cdf_PC(2,:), y((T+1):(T+H)), THR_emp(2));
         C_score_PC_5 = C_ScoringRule(dens_PC, cdf_PC(3,:), y((T+1):(T+H)), THR_emp(3));     
-        
-%         QUANT = tinv(P_bars, mu_MLE(1))';
-%         fT_MLE = volatility_t_gas(mu_MLE,y(1:T),y_S,0);
-%         [THR_MLE, cond_MLE] = Threshold_varc_mle(y((T+1):(T+H)), mu_MLE, fT_MLE, QUANT);
         
         cdf_v_PC = predictive_cdf_t_gas(y(T:(T+H)), fT_PC, draw_PC, THR_MLE);       
         Cv_score_PC_05 = C_ScoringRule(dens_PC, cdf_v_PC(1,:), y((T+1):(T+H)), THR_MLE(1));
@@ -272,7 +268,7 @@
             partition2, II, BurnIn_PCP, kernel, GamMat, cont.disp, thinning);
         accept_PC2 = mean(a_PC2); 
 
-        fT_PC2 = volatility_t_gas(draw_PC2,y(1:T),y_S,0);  
+        fT_PC2 = volatility_t_gas(draw_PC2,y(1:T),0);  
 
         mean_draw_PC2 = mean(draw_PC2);
         median_draw_PC2 = median(draw_PC2);
@@ -285,11 +281,6 @@
         C_score_PC2_05 = C_ScoringRule(dens_PC2, cdf_PC2(1,:), y((T+1):(T+H)), THR_emp(1));
         C_score_PC2_1 = C_ScoringRule(dens_PC2, cdf_PC2(2,:), y((T+1):(T+H)), THR_emp(2));
         C_score_PC2_5 = C_ScoringRule(dens_PC2, cdf_PC2(3,:), y((T+1):(T+H)), THR_emp(3));  
-        
-
-        QUANT = tinv(P_bars, mu_MLE(1))';
-        fT_MLE = volatility_t_gas(mu_MLE,y(1:T),y_S,0);
-        [THR_MLE, cond_MLE] = Threshold_varc_mle(y((T+1):(T+H)), mu_MLE, fT_MLE, QUANT);
         
         cdf_v_PC2 = predictive_cdf_t_gas(y(T:(T+H)), fT_PC2, draw_PC2, THR_MLE);       
         Cv_score_PC2_05 = C_ScoringRule(dens_PC2, cdf_v_PC2(1,:), y((T+1):(T+H)), THR_MLE(1));
@@ -312,30 +303,30 @@
         std_draw_PCg = std(draw_PCg);
 
         % compute the implied volatility for the last in-sample period
-        fT_PCg = volatility_t_gas(draw_PCg,y(1:T),y_S,0);        
+        fT_PCg = volatility_t_gas(draw_PCg,y(1:T),0);        
     end
     
     %% CENSORED MLE PARAMETERS
     if arg6
-        if (arg1 == 0)
-            load(name,'mu_MLE','Sigma');
-        end
-%       
         threshold_m = 0.1; %<---------- HiGhER?
         quantile = tinv(threshold_m, mu_MLE(1));
         fprintf('*** Censored Posterior, MLE time varying threshold, THR = %3.2f ***\n',threshold_m);
-        kernel_init = @(xx) - C_posterior_t_gas_varc_mle(xx, y(1:T,1), mu_MLE, quantile, y_S, hyper)/T;    
-        kernel = @(xx) C_posterior_t_gas_varc_mle_mex(xx, y(1:T,1), mu_MLE, quantile, y_S, GamMat, hyper);
+        kernel_init = @(xx) - C_posterior_t_gas_varc_mle(xx, y(1:T,1), mu_MLE, quantile, hyper)/T;    
+        kernel = @(xx) C_posterior_t_gas_varc_mle_mex(xx, y(1:T,1), mu_MLE, quantile, GamMat, hyper);
 
         [mu_Cm2,~,~,~,~,Sigma_Cm] = fminunc(kernel_init,mu_init,options);
         [mu_Cm,~,~,~,~,Sigma_Cm] = fminunc(kernel_init,mu_Cm2,options);
         Sigma_Cm = inv(T*Sigma_Cm);
 
     %     cont.mit.CV_tol = 0.3; 
-        cont.mit.CV_max = 2.1; %1.5; %1.9;
+        cont.mit.CV_max = 1.9; %2.1; %1.5; %1.9;
         CV_Cm = cont.mit.CV_old;
-        while (CV_Cm(end) >= 2)
+        iter = 0;
+        while ((CV_Cm(end) >= 2) && (iter < 5))
+            iter = iter + 1;
             try
+%                 df = 5;
+%                 cont.mit.dfnc = 5;
                 draw_Cm = rmvt(mu_Cm,Sigma_Cm,df,M+BurnIn);
                 mit_Cm = struct('mu',mu_Cm,'Sigma',reshape(Sigma_Cm,1,length(mu_Cm)^2),'df', df, 'p', 1);
                 [mit_Cm, CV_Cm] = MitISEM_new2(mit_Cm, kernel, mu_init, cont, GamMat);   
@@ -345,14 +336,22 @@
                 [draw_Cm, lnk_Cm] = fn_rmvgt_robust(M+BurnIn, mit_Cm, kernel, false);
                 lnd_Cm = dmvgt(draw_Cm, mit_Cm, true, GamMat);    
             catch
-                mit_Cm = struct('mu',mu_Cm,'Sigma',reshape(Sigma,1,length(mu_Cm)^2),'df', df, 'p', 1);
-                [mit_Cm, CV_Cm] = MitISEM_new2(mit_Cm, kernel, mu_init, cont, GamMat);   
-                if CV_Cm(end)>2
+                try
+                    mit_Cm = struct('mu',mu_Cm,'Sigma',reshape(Sigma,1,length(mu_Cm)^2),'df', df, 'p', 1);
                     [mit_Cm, CV_Cm] = MitISEM_new2(mit_Cm, kernel, mu_init, cont, GamMat);   
+                    if CV_Cm(end)>2
+                        [mit_Cm, CV_Cm] = MitISEM_new2(mit_Cm, kernel, mu_init, cont, GamMat);   
+                    end
+                    [draw_Cm, lnk_Cm] = fn_rmvgt_robust(M+BurnIn, mit_Cm, kernel, false);
+                    lnd_Cm = dmvgt(draw_Cm, mit_Cm, true, GamMat);       
                 end
-                [draw_Cm, lnk_Cm] = fn_rmvgt_robust(M+BurnIn, mit_Cm, kernel, false);
-                lnd_Cm = dmvgt(draw_Cm, mit_Cm, true, GamMat);    
             end 
+        end
+% mit_Cm = mit_old   ;     
+        if (CV_Cm(end) >= 2)
+            mit_Cm = struct('mu',mu_Cm,'Sigma',reshape(Sigma,1,length(mu_Cm)^2),'df', df, 'p', 1);
+            [draw_Cm, lnk_Cm] = fn_rmvgt_robust(M+BurnIn, mit_Cm, kernel, false);
+            lnd_Cm = dmvgt(draw_Cm, mit_Cm, true, GamMat);
         end
         lnw_Cm = lnk_Cm - lnd_Cm;
         lnw_Cm = lnw_Cm - max(lnw_Cm);
@@ -360,15 +359,13 @@
         draw_Cm = draw_Cm(ind,:);
         accept_Cm = a/(M+BurnIn);
         draw_Cm = draw_Cm(BurnIn+1:BurnIn+M,:);
-
         
         mean_draw_Cm = mean(draw_Cm);
         median_draw_Cm = median(draw_Cm);
         std_draw_Cm = std(draw_Cm);
      
-     
         % compute the implied volatility for the last in-sample period
-        fT_Cm = volatility_t_gas(draw_Cm,y(1:T),y_S,0);  
+        fT_Cm = volatility_t_gas(draw_Cm,y(1:T));  
 
         % predictive densities        
         dens_Cm = predictive_dens_t_gas(y(T:(T+H)), fT_Cm, draw_Cm);
@@ -377,10 +374,6 @@
         C_score_Cm_05 = C_ScoringRule(dens_Cm, cdf_Cm(1,:), y((T+1):(T+H)), THR_emp(1));
         C_score_Cm_1 = C_ScoringRule(dens_Cm, cdf_Cm(2,:), y((T+1):(T+H)), THR_emp(2));
         C_score_Cm_5 = C_ScoringRule(dens_Cm, cdf_Cm(3,:), y((T+1):(T+H)), THR_emp(3));    
-
-        QUANT = tinv(P_bars, mu_MLE(1))';
-        fT_MLE = volatility_t_gas(mu_MLE,y(1:T),y_S,0);
-        [THR_MLE, cond_MLE] = Threshold_varc_mle(y((T+1):(T+H)), mu_MLE, fT_MLE, QUANT);
         
         cdf_v_Cm = predictive_cdf_t_gas(y(T:(T+H)), fT_Cm, draw_Cm, THR_MLE);       
         Cv_score_Cm_05 = C_ScoringRule(dens_Cm, cdf_v_Cm(1,:), y((T+1):(T+H)), THR_MLE(1));
@@ -389,13 +382,7 @@
     end
     
     %% PARTIALLY CENSORED: keep alpha and beta uncensored, then censor nu, mu and sigma
-    if arg7
-        if (arg1 == 0)
-            load(name,'mu_MLE','draw');
-        end
-        if (arg6 == 0)
-            load(name,'mit_Cm');
-        end        
+    if arg7      
         fprintf('*** Partially Censored Posterior, MLE time varying threshold, THR = %3.2f ***\n',threshold_m);
         % mit_C: joint candidate for the joint censored posterior    
         draw_short = draw((1:II:M)',:); % thinning - to get higfT quality rhos
@@ -409,7 +396,7 @@
         std_draw_PCm = std(draw_PCm);
      
         % compute the implied volatility for the last in-sample period
-        fT_PCm = volatility_t_gas(draw_PCm,y(1:T),y_S,0);  
+        fT_PCm = volatility_t_gas(draw_PCm,y(1:T),0);  
 
         % predictive densities        
         dens_PCm = predictive_dens_t_gas(y(T:(T+H)), fT_PCm, draw_PCm);
@@ -419,11 +406,6 @@
         C_score_PCm_1 = C_ScoringRule(dens_PCm, cdf_PCm(2,:), y((T+1):(T+H)), THR_emp(2));
         C_score_PCm_5 = C_ScoringRule(dens_PCm, cdf_PCm(3,:), y((T+1):(T+H)), THR_emp(3));
         
-
-        QUANT = tinv(P_bars, mu_MLE(1))';
-        fT_MLE = volatility_t_gas(mu_MLE,y(1:T),y_S,0);
-        [THR_MLE, cond_MLE] = Threshold_varc_mle(y((T+1):(T+H)), mu_MLE, fT_MLE, QUANT);
-        
         cdf_v_PCm = predictive_cdf_t_gas(y(T:(T+H)), fT_PCm, draw_PCm, THR_MLE);       
         Cv_score_PCm_05 = C_ScoringRule(dens_PCm, cdf_v_PCm(1,:), y((T+1):(T+H)), THR_MLE(1));
         Cv_score_PCm_1 = C_ScoringRule(dens_PCm, cdf_v_PCm(2,:), y((T+1):(T+H)), THR_MLE(2));
@@ -431,13 +413,7 @@
     end
 
     %% PARTIALLY CENSORED 2: keep omega, alpha and beta uncensored, then censor nu and mu
-    if arg8
-        if (arg1 == 0)
-            load(name,'mu_MLE','draw');
-        end
-        if (arg6 == 0)
-            load(name,'mit_Cm');
-        end        
+    if arg8  
         fprintf('*** Partially Censored Posterior, MLE time varying threshold, THR = %3.2f ***\n',threshold_m);
         % mit_C: joint candidate for the joint censored posterior    
         draw_short = draw((1:II:M)',:); % thinning - to get higfT quality rhos
@@ -451,7 +427,7 @@
         std_draw_PCm2 = std(draw_PCm2);
      
         % compute the implied volatility for the last in-sample period
-        fT_PCm2 = volatility_t_gas(draw_PCm2,y(1:T),y_S,0);  
+        fT_PCm2 = volatility_t_gas(draw_PCm2,y(1:T),0);  
 
         % predictive densities        
         dens_PCm2 = predictive_dens_t_gas(y(T:(T+H)), fT_PCm2, draw_PCm2);
@@ -461,16 +437,12 @@
         C_score_PCm2_1 = C_ScoringRule(dens_PCm2, cdf_PCm2(2,:), y((T+1):(T+H)), THR_emp(2));
         C_score_PCm2_5 = C_ScoringRule(dens_PCm2, cdf_PCm2(3,:), y((T+1):(T+H)), THR_emp(3));   
         
-
-        QUANT = tinv(P_bars, mu_MLE(1))';
-        fT_MLE = volatility_t_gas(mu_MLE,y(1:T),y_S,0);
-        [THR_MLE, cond_MLE] = Threshold_varc_mle(y((T+1):(T+H)), mu_MLE, fT_MLE, QUANT);
-        
         cdf_v_PCm2 = predictive_cdf_t_gas(y(T:(T+H)), fT_PCm2, draw_PCm2, THR_MLE);       
         Cv_score_PCm2_05 = C_ScoringRule(dens_PCm2, cdf_v_PCm2(1,:), y((T+1):(T+H)), THR_MLE(1));
         Cv_score_PCm2_1 = C_ScoringRule(dens_PCm2, cdf_v_PCm2(2,:), y((T+1):(T+H)), THR_MLE(2));
         Cv_score_PCm2_5 = C_ScoringRule(dens_PCm2, cdf_v_PCm2(3,:), y((T+1):(T+H)), THR_MLE(3));         
     end
+        
         
     %% Results
     if save_on
@@ -480,11 +452,14 @@
             '^accept','^mit','^CV',...
             '^dens','^cdf','^C_score',...
             '^cdf_v_','^Cv_score',...
+            '\w*_MLE','^THR',...
             '-append');
         else
             save(name,'-regexp','^mu','^Sigma','^draw','^mean','^median','^std',...
                 '^accept','^mit','^CV',...
-                '^dens','^cdf','^C_score');
+                '^dens','^cdf','^C_score',...
+                '^cdf_v_','^Cv_score',...
+                '\w*_MLE','^THR');
         end
     end
 % end

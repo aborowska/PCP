@@ -86,7 +86,8 @@ void prior_garch11(double *theta, mwSignedIndex N,
 
 /* ********************************************************************* */
 
-void C_posterior_garch11_varc_noparam_mex(double *theta, double *y, double *threshold, double *y_S,
+void C_posterior_garch11_varc_noparam_mex(double *theta, double *y, ...
+        double *threshold, double *y_S,
         mwSignedIndex N, mwSignedIndex T, double *d, double *h)
 {
     mwSignedIndex *r1;

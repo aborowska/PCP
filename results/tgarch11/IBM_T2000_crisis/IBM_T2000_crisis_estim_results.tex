@@ -1,0 +1,30 @@
+{ \renewcommand{\arraystretch}{1.2} 
+\begin{table} 
+\center 
+\begin{tabular}{cc ccccc} 
+Parameter & & Posterior & CP & CP$_{var}$& PCP & PCP$_{var}$ \\ \hline \hline 
+\rowcolor{LightCyan} 
+$\nu$&& 7.0943 & 45.6427 & 43.2466 & 38.1495 & 33.7796 \\ 
+&&    (1.4748) & (25.3582) & (25.3678)  & (26.3139) & (24.8307)  \\ 
+\rowcolor{LightCyan} 
+$\mu$&& 0.0905 & 0.6684 & 0.5821 & 0.6287 & 0.4492 \\ 
+&&    (0.0362) & (0.2725) & (0.2310)  & (0.3825) & (0.3131)  \\ 
+\rowcolor{LightCyan} 
+$\omega$&& 16.4548 & 260.5379 & 288.6082 & 47.3642 & 42.7302 \\ 
+&&    (18.9873) & (369.5474) & (423.7474)  & (60.8834) & (59.0946)  \\ 
+\rowcolor{LightCyan} 
+$\alpha$&& 0.1260 & 0.1605 & 0.1683 & 0.1264 & 0.1264 \\ 
+&&    (0.0271) & (0.0515) & (0.0562)  & (0.0273) & (0.0273)  \\ 
+\rowcolor{LightCyan} 
+$\beta$&& 0.8652 & 0.8317 & 0.8234 & 0.8650 & 0.8650 \\ 
+&&    (0.0280) & (0.0530) & (0.0572)  & (0.0281) & (0.0281)  \\ 
+\hline 
+%\multicolumn{7}{l}{\footnotesize{CP: Censored posterior.}}  \\ 
+%\multicolumn{7}{l}{\footnotesize{PCP: Partially censored posterior.}} \\ 
+%\multicolumn{7}{l}{\footnotesize{(P)CP: Censoring with constant threshold at 10\% sample quantile.}}  \\ 
+%\multicolumn{7}{l}{\footnotesize{(P)CP$_{var}$: Censoring with time-varying threshold at 10\% MLE implied quantile.}} \\ 
+\end{tabular}
+ \caption{IBM: estimation results (posterior means and standard deviations)  for the GARCH(1,1)-$t$ model  estimated with the regular posterior, censored posterior (CP) and partially censored posterior (PCP) with different thresholds,  time-constant at the 10\% data percentile (CP10\%, PCP 10\%) and time-varying based on the 10\% MLE implied quantile. For the censored methods the focus is on the left tail. }
+\label{tab:IBM_estim}  
+\end{table}
+}

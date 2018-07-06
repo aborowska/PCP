@@ -7,14 +7,18 @@ function DM = DM_NW_test(model, T, sigma1, sigma2, H, II)
 %      model = 'garch11';
 
     model = 'tgarch11';
-    data_name = 'MSFT';
-    H = 2000;
-
-    name = ['results/',model,'/',data_name,'/PCP_emp_',model,'_data_',data_name,'.mat'];
-
+    data_name = 'IBM_T2000_crisis';
+%     H = 1000;
+    
+    if strcmp(data_name, 'IBM_T2000_crisis')
+        name = ['results/',model,'/',data_name,'/PCP_emp_',model,'_data_',data_name,'_with_ah.mat'];
+    else
+        name = ['results/',model,'/',data_name,'/PCP_emp_',model,'_data_',data_name,'.mat'];
+    end
+    
     load(name, '-regexp','^C_score')
     aaa = who('-regexp','^C_score');
-    M = length(aaa)/3;  % no of methods compared (div 3: 3 thresholds considered)
+    met = length(aaa)/3;  % no of methods compared (div 3: 3 thresholds considered)
 
     load(name, '-regexp','^Cv_score')
     bbb = who('-regexp','^Cv_score');
@@ -26,13 +30,30 @@ function DM = DM_NW_test(model, T, sigma1, sigma2, H, II)
 
     bbb_05 = who('-regexp','Cv_score\w*_05$'); 
     bbb_1 = who('-regexp','Cv_score\w*_1$'); 
-    bbb_5 = who('-regexp','Cv_score\w*_5$');    
-    % Ordering: MC sampling from the true model,
+    bbb_5 = who('-regexp','Cv_score\w*_5$');
+    
+    met_2 = (met-1)/2;
+    ind = zeros(met,1);
+    ind(1) = met;
+    ind(2:2:met) = 1:(met_2);
+    ind(3:2:met) = (met_2+1):(met-1);
+    aaa_05 = aaa_05(ind);
+    aaa_1 = aaa_1(ind);
+    aaa_5 = aaa_5(ind); 
+   
+    bbb_05 = bbb_05(ind);
+    bbb_1 = bbb_1(ind);
+    bbb_5 = bbb_5(ind); 
+%     [7, 1,4,2,5,3,6]
+%     2,4,6 --> 1,2,3
+%     3,5,7 --> 2,4,6
+
+    % Ordering: MC sampling from the true model, <-- for SS only
     % (Standard) Posterior,
     % Censored Posterior and Partially Censored Posterior with threshold at 0,
     % Censored Posterior and Partially Censored Posterior with threshold at the 10th sample percentile
-
-
+    % Censored Posterior and Partially Censored Posterior with model free time verying threshold  
+    % Censored Posterior and Partially Censored Posterior with MLE-implied time verying threshold  
     
 
     %% DM test statistics based on Censored Score Rules differentials
@@ -47,14 +68,13 @@ function DM = DM_NW_test(model, T, sigma1, sigma2, H, II)
 % So, the t-statistic (that for a large enough number of observations can be compared with critical values -1.96 and 1.96) is then given by
 % t-statistic = (sample mean of the d_t)/(Newey-West standard error) = (OLS estimator of mu)/(Newey-West standard error).
     
-    DM = NaN(M,1); % NaN will be removed while printing to tex
-    DM_05 = diag(DM);
-    DM_1 = diag(DM);
-    DM_5 = diag(DM);
-    % positive terms: the colum method is better than the row one
-    % negative terms: the row method is better than the column one
+    DM = NaN(met,met); % NaN will be removed while printing to tex
+    DM_05 = (DM);
+    DM_1 = (DM);
+    DM_5 = (DM);
+    % positive terms: the row method is better than the columm one
 
-    for ii = 2:M
+    for ii = 2:met
         for jj = 1:(ii-1)
             d = eval(char(aaa_05{ii})) - eval(char(aaa_05{jj}));
             if (sum(imag(d)~=0) > 0)
@@ -82,15 +102,17 @@ function DM = DM_NW_test(model, T, sigma1, sigma2, H, II)
         end
     end
 
+    DM_05(1,:) = [];
+    DM_1(1,:) = [];
+    DM_5(1,:) = [];    
     %% time varying     
-    DM_v = NaN(N,1); % NaN will be removed while printing to tex
-    DM_v_05 = diag(DM_v);
-    DM_v_1 = diag(DM_v);
-    DM_v_5 = diag(DM_v);
-    % positive terms: the colum method is better than the row one
-    % negative terms: the row method is better than the column one
+    DM_v = NaN(met,met); % NaN will be removed while printing to tex
+    DM_v_05 = DM_v;
+    DM_v_1 = DM_v;
+    DM_v_5 = DM_v;
+    % positive terms: the row method is better than the column one
 
-    for ii = 2:N
+    for ii = 2:met
         for jj = 1:(ii-1)
             d = eval(char(bbb_05{ii})) - eval(char(bbb_05{jj}));
             if (sum(imag(d)~=0) > 0)
@@ -118,20 +140,26 @@ function DM = DM_NW_test(model, T, sigma1, sigma2, H, II)
         end
     end
 
-    %% Combined
-    if (N == M)
-        DM_all_05 = DM_05; % NaN will be removed while printing to tex
-        DM_all_1 = DM_1; % NaN will be removed while printing to tex
-        DM_all_5 = DM_5; %
-        
-        for ii = 2:N
-            for jj = 1:(ii-1)
-                DM_all_05()
-            end
-        end
-    end
-    
+
     %% Print to tex file
-    fname = print_table_DM(DM,model,T,S);
-    Remove_NaN(fname);
+%     fname = print_table_DM(DM,model,T,S);
+%     methods = {'True','Posterior','CP0','PCP0','CP10\%','PCP10\%'};
+
+    if (met == 5)
+%         methods =  {'CP','CP$_{var}$','PCP','PCP$_{var}$','Post'};
+        methods =  {'Posterior','CP10\%','PCP10\%',...
+            'CP$_{var,mle}$','PCP$_{var,mle}$'};
+    elseif (met == 7)
+        methods =  {'Posterior','CP10\\%%','PCP10\\%%',...
+            'CP$_{var,mf}$','PCP$_{var,mf}$',...
+            'CP$_{var,mle}$','PCP$_{var,mle}$'};
+    end
+    print_table_DM_emp(DM_5, data_name, 5, methods,'');
+    print_table_DM_emp(DM_1, data_name, 1, methods,'');
+    print_table_DM_emp(DM_05, data_name, 0.5, methods,'');
+
+    print_table_DM_emp(DM_v_5, data_name, 5, methods,'v');
+    print_table_DM_emp(DM_v_1, data_name, 1, methods,'v');
+    print_table_DM_emp(DM_v_05, data_name, 0.5, methods,'v');
+
 end

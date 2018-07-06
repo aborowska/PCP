@@ -1,4 +1,6 @@
-function results = PCP_agarch11_run_varc(sdd, c, sigma1, sigma2, kappa, omega, alpha, beta, p_bar0, p_bar1, p_bar, T, H, M, BurnIn, mu_init, df, cont, options, partition, II, GamMat)
+function results = PCP_agarch11_run_varc(sdd, c, sigma1, sigma2, kappa,...
+    omega, alpha, beta, p_bar0, p_bar1, p_bar, T, H, M, BurnIn, mu_init,...
+    df, cont, options, partition, II, GamMat)
     
     s = RandStream('mt19937ar','Seed',sdd);
     RandStream.setGlobalStream(s); 

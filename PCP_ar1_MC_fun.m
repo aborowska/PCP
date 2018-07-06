@@ -1,5 +1,8 @@
 function PCP_ar1_MC_fun(T, sigma2, S, varc, II)
+%  PCP_ar1_MC_fun(10000, 2, 50, 1, 10)
  % T = 1000; S = 1; II = 10; sigma2 = 2 ; % <------------------ !!! 
+ % T = 10000; S = 1; II = 10; sigma2 = 1; varc = 0; ; % <------------------ !!! 
+ % T = 100; S = 100; II = 10; sigma2 = 2; varc = 0; ; % <------------------ !!! 
     close all
 
     addpath(genpath('include/'));
@@ -235,7 +238,7 @@ function PCP_ar1_MC_fun(T, sigma2, S, varc, II)
     %     if (mod(s,10)==0)
             fprintf(['\n',model, ' simulation no. %i\n'],s)
     %     end
-%         try
+        try
             if varc
                 results = PCP_ar1_run_varc(c, sigma1, sigma2, rho, ...
                     p_bar0, p_bar1, p_bar, T, H, M, BurnIn, mu_init, ...
@@ -376,7 +379,7 @@ function PCP_ar1_MC_fun(T, sigma2, S, varc, II)
                 ES_05_post_PCm(s,:) = results.ES_05_post_PCm;                   
             end
            
-%         end
+        end
     end
 
     % MSEs  

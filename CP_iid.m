@@ -10,7 +10,7 @@ model = 'iid';
 parameters = {'$\\mu$','$\\sigma$'};
 
 sigma1 = 1; 
-sigma2 = 2;
+sigma2 = 1; %2;
 c = (sigma2 - sigma1)/(sqrt(2*pi));
 
 T = 1000; % time series length

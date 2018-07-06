@@ -106,7 +106,7 @@ void prior_t_garch_hyper(double *theta, double *hyper,
     for (i=0; i<N; i++)
     {
         r1[i] = 1;
-        if (theta[i+2*N] <= 0) // omega>0
+        if ((theta[i+2*N] <= 0) || ((theta[i+2*N] >= 100)))   // omega>0
         {
             r1[i] = 0;
         }   
@@ -151,7 +151,7 @@ void C_posterior_t_garch11_varc_mle_mex(double *theta, double *y,  double *mu_ml
     
     mwSignedIndex *r1, *cond, sum_C, i2;
     double *r2, mu, sigma, *z2; /* *h */ 
-    double *rho, rhoh;
+    double *rho, rhoh, rho_mle;
     double *cdf, *THR, h_mle, pdf, sum_cdf;
     mwSignedIndex i, j;
         
@@ -171,6 +171,7 @@ void C_posterior_t_garch11_varc_mle_mex(double *theta, double *y,  double *mu_ml
         rho[i] = (theta[i]-2)/theta[i];
     }
 
+    rho_mle = (mu_mle[0]-2)/mu_mle[0];
     sum_C = 0;
     for (j=0; j<T; j++)
     { 
@@ -182,9 +183,9 @@ void C_posterior_t_garch11_varc_mle_mex(double *theta, double *y,  double *mu_ml
         else
         {
             mu = y[j-1] - mu_mle[1];
-            h_mle = mu_mle[2]*(1.0-mu_mle[3]-mu_mle[4]) + mu_mle[3]*(mu*mu) + mu_mle[4]*h_mle;                  
+            h_mle = mu_mle[2]*(1.0-mu_mle[3]-mu_mle[4]) + mu_mle[3]*(mu*mu) + mu_mle[4]*h_mle;     
         }       
-        THR[j] = (y[j] - mu_mle[1])/sqrt(h_mle);
+        THR[j] = (y[j] - mu_mle[1])/sqrt(rho_mle*h_mle);
         if (THR[j] < threshold[0])
         {
             cond[j] = 1;
@@ -193,12 +194,8 @@ void C_posterior_t_garch11_varc_mle_mex(double *theta, double *y,  double *mu_ml
         {
             sum_C = sum_C + 1;
         }        
-        THR[j] = mu_mle[1] + sqrt(h_mle)*threshold[0];
+        THR[j] = mu_mle[1] + sqrt(rho_mle*h_mle)*threshold[0];
     }
-
-//     mexPrintf("h_mle = %6.4f\n", h_mle);  
-
-//     mexPrintf("sum_C = %i\n", sum_C);  
     
     z2 = mxMalloc((sum_C)*sizeof(double));
     cdf = mxMalloc((sum_C)*sizeof(double));
@@ -324,7 +321,7 @@ void mexFunction( int nlhs, mxArray *plhs[],
     
     N = mxGetM(prhs[0]); /* no of parameter draws */
     T = mxGetM(prhs[1]); /* no. of observations */
-    G = mxGetM(prhs[4]);
+    G = mxGetM(prhs[5]);
 
     /* create the output matrix */
     plhs[0] = mxCreateDoubleMatrix(N,1,mxREAL); 
