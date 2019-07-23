@@ -135,7 +135,8 @@ void prior_t_garch_hyper(double *theta, double *hyper,
 
 /* ********************************************************************* */
 
-void C_posterior_t_garch11_varc_mle_mex(double *theta, double *y,  double *mu_mle, double *threshold, double *y_S,
+void C_posterior_t_garch11_varc_mle_mex(double *theta, double *y,  
+        double *mu_mle, double *threshold, double *y_S,
         mwSignedIndex N, mwSignedIndex T, 
         double *hyper, double *GamMat, mwSignedIndex G,     
         double *d, double *h)
@@ -334,6 +335,7 @@ void mexFunction( int nlhs, mxArray *plhs[],
     h = mxGetPr(plhs[2]);
   
     /* call the function */
-    C_posterior_t_garch11_varc_mle_mex(theta, y, mu_mle, threshold, y_S, N, T, hyper, GamMat, G,  d, h); 
+    C_posterior_t_garch11_varc_mle_mex(theta, y, mu_mle, threshold,
+            y_S, N, T, hyper, GamMat, G,  d, h); 
     T_out[0] = T;
 }

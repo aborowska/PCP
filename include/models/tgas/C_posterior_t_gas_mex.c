@@ -114,6 +114,10 @@ void prior_t_gas_hyper(double *theta, double *hyper,
         {
             r1[i] = 0;
         }
+        if ((theta[i+3*N] < 0) || (theta[i+3*N] >= 1)) // 0<=A<1 ??
+        {
+            r1[i] = 0;
+        }          
         if (theta[i] <= 2) //nu>2
         {
             r1[i] = 0;

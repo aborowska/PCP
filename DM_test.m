@@ -2,14 +2,14 @@ function DM = DM_test(model, T, sigma1, sigma2, H, II)
 %     addpath(genpath('include/'));
 % clear all
 
-%     model = 'ar1';
+%     model = 'skt_ar1'; sigma1 = -0.5; sigma2 = 5; T=100; II=10; H=100;
 %     sigma1 = 1;
 %     sigma2 = 2;
 %     T = 10000;
 %     H = 100;
-%      model = 'garch11';
+     model = 'garch11';
 
-    model = 'ar1'; %agarch11';
+%     model = 'agarch11';
     sigma1 = 1;
     sigma2 = 2;
     T = 1000;
@@ -22,12 +22,14 @@ function DM = DM_test(model, T, sigma1, sigma2, H, II)
     if strcmp(model,'ar1')
         name = ['results/',model,'/',model,'_',num2str(sigma1),'_',num2str(sigma2),'_T',num2str(T),'_H',num2str(H),'_II',num2str(II),'_PCP0_MC_',v_new,'.mat'];
     elseif strcmp(model,'garch11')
-        name = ['results/',model,'/',model,'_',num2str(sigma1),'_',num2str(sigma2),'_T',num2str(T),'_H',num2str(H),'_II',num2str(II),'_PCP0_MC_',v_new,'.mat'];
+        name = ['results/',model,'/',model,'_',num2str(sigma1),'_',num2str(sigma2),'_T',num2str(T),'_H',num2str(H),'_II',num2str(II),'_PCP0_MC_',v_new,'_low_es.mat'];
+    elseif strcmp(model,'skt_ar1')
+        name = ['results/',model,'/',model,'_',num2str(sigma1),'_',num2str(sigma2),'_T',num2str(T),'_H',num2str(H),'_II',num2str(II),'_PCP0_MC.mat'];    
     else
-        name = ['results/',model,'/',model,'_',num2str(sigma1),'_',num2str(sigma2),'_T',num2str(T),'_H',num2str(H),'_II',num2str(II),'_PCP0_MC2_',v_new,'.mat'];    
+        name = ['results/',model,'/',model,'_',num2str(sigma1),'_',num2str(sigma2),'_T',num2str(T),'_H',num2str(H),'_II',num2str(II),'_PCP0_MC_',v_new,'_low_es.mat'];
     end
-%     load(name, '-regexp','^q\w*')
-%     load(name, '-regexp','^VaR\w*')
+    load(name, '-regexp','^q\w*')
+    load(name, '-regexp','^VaR\w*')
     load(name, '-regexp','^ES\w*')
     load(name, '-regexp','^MSE\w*')
     load(name, '-regexp','^cdf\w*')
@@ -41,7 +43,7 @@ function DM = DM_test(model, T, sigma1, sigma2, H, II)
 %     S = size(MSE_1,1);
     aaa = who('-regexp','^MSE_es');
     met = length(aaa)/3;  % no of methods compared (div 3: 3 thresholds considered)
-
+%     met = 5;
     bbb = who('-regexp','^MSE_[^es]');
     
     aaa_05 = who('-regexp','MSE_es_05\w*$'); 
@@ -57,6 +59,7 @@ function DM = DM_test(model, T, sigma1, sigma2, H, II)
     ind(1:2) = [1,2];
     ind(3:2:met) = 3:(met_2+2);
     ind(4:2:met) = (met_2+3):(met);
+%     ind = [1,3,5,2,4];
     
     aaa_05 = aaa_05(ind);
     aaa_1 = aaa_1(ind);
@@ -86,6 +89,7 @@ function DM = DM_test(model, T, sigma1, sigma2, H, II)
             d1 = eval(char(bbb_05{ii}));
             d2 = eval(char(bbb_05{jj}));
             d = sqrt(d1) - sqrt(d2);
+            d = d(imag(d)==0);
             se = std(d)/sqrt(length(d));
             DM_05(ii,jj) = mean(d)/se;
  
@@ -94,6 +98,7 @@ function DM = DM_test(model, T, sigma1, sigma2, H, II)
             d1 = eval(char(bbb_1{ii}));
             d2 = eval(char(bbb_1{jj}));
             d = sqrt(d1) - sqrt(d2);
+            d = d(imag(d)==0);           
             se = std(d)/sqrt(length(d));
             DM_1(ii,jj) = mean(d)/se;
             
@@ -101,6 +106,7 @@ function DM = DM_test(model, T, sigma1, sigma2, H, II)
             d1 = eval(char(bbb_5{ii}));
             d2 = eval(char(bbb_5{jj}));
             d = sqrt(d1) - sqrt(d2);
+            d = d(imag(d)==0);          
             se = std(d)/sqrt(length(d));
             DM_5(ii,jj) = mean(d)/se;
         end
@@ -127,6 +133,7 @@ function DM = DM_test(model, T, sigma1, sigma2, H, II)
             d1 = eval(char(aaa_05{ii}));
             d2 = eval(char(aaa_05{jj}));
             d = sqrt(d1) - sqrt(d2);
+            d = d(imag(d)==0);
             se = std(d)/sqrt(length(d));
             DM_es_05(ii,jj) = mean(d)/se;
  
@@ -135,6 +142,7 @@ function DM = DM_test(model, T, sigma1, sigma2, H, II)
             d1 = eval(char(aaa_1{ii}));
             d2 = eval(char(aaa_1{jj}));
             d = sqrt(d1) - sqrt(d2);
+            d = d(imag(d)==0);
             se = std(d)/sqrt(length(d));
             DM_es_1(ii,jj) = mean(d)/se;
             
@@ -142,6 +150,7 @@ function DM = DM_test(model, T, sigma1, sigma2, H, II)
             d1 = eval(char(aaa_5{ii}));
             d2 = eval(char(aaa_5{jj}));
             d = sqrt(d1) - sqrt(d2);
+            d = d(imag(d)==0);          
             se = std(d)/sqrt(length(d));
             DM_es_5(ii,jj) = mean(d)/se;
         end
@@ -156,8 +165,9 @@ function DM = DM_test(model, T, sigma1, sigma2, H, II)
      
     
     if (met == 6)
-%         methods =  {'CP','CP$_{var}$','PCP','PCP$_{var}$','Post'};
-        methods =  {'True','Posterior','CP0','PCP0','CP10\%','PCP10\%'};
+% %         methods =  {'CP','CP$_{var}$','PCP','PCP$_{var}$','Post'};
+%         methods =  {'True','Posterior','CP0','PCP0','CP10\%','PCP10\%'};
+        methods =  {'True','Posterior','CP10\%','PCP10\%','CP0','PCP0'};
     end
 %     print_table_DM(DM_5, model, 5, methods,'');
 %     print_table_DM(DM_1, model, 1, methods,'');

@@ -143,11 +143,11 @@ void posterior_agarch11_mex(double *theta, double *y, double *y_S,
             {   
 //                 mu = y[j-1] - theta[i] + theta[i+N];
 //                 h[i] = theta[i+2*N]*(1.0-theta[i+3*N]-theta[i+4*N]) + theta[i+3*N]*(mu*mu) + theta[i+4*N]*h[i];
-                mu = y[j-1] - theta[i+2*N];
+                mu = y[j-1] - theta[i+2*N]; // mu2
                 mu = mu*mu;
                 h[i] = theta[i+1*N]*(1.0-theta[i+3*N]-theta[i+4*N]) + theta[i+3*N]*mu + theta[i+4*N]*h[i];               
                 
-                mu = y[j] - theta[i];
+                mu = y[j] - theta[i]; // mu
                 mu = mu*mu;
                 sigma = mu/h[i];
                 sigma = sigma + log(h[i]); 

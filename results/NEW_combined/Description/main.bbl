@@ -1,0 +1,36 @@
+\begin{thebibliography}{4}
+\newcommand{\enquote}[1]{``#1''}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\providecommand{\urlprefix}{URL }
+\providecommand{\bibAnnoteFile}[1]{%
+  \IfFileExists{#1}{\begin{quotation}\noindent\textsc{Key:} #1\\
+  \textsc{Annotation:}\ \input{#1}\end{quotation}}{}}
+\providecommand{\bibAnnote}[2]{%
+  \begin{quotation}\noindent\textsc{Key:} #1\\
+  \textsc{Annotation:}\ #2\end{quotation}}
+
+\bibitem[{Aus{\'\i}n and Galeano(2007)}]{mix_garch}
+Aus{\'\i}n, M.~C. and P.~Galeano (2007), \enquote{{Bayesian Estimation of the
+  Gaussian Mixture GARCH Model}.} \emph{Computational Statistics \& Data
+  Analysis}, 51, 2636--2652.
+\bibAnnoteFile{mix_garch}
+
+\bibitem[{Creal et~al.(2013)Creal, Koopman, and Lucas.}]{gas_paper}
+Creal, D., S.~J. Koopman, and A.~Lucas. (2013), \enquote{{Generalized
+  Autoregressive Score Models with Applications}.} \emph{Journal of Applied
+  Econometrics}, 28, 777--795.
+\bibAnnoteFile{gas_paper}
+
+\bibitem[{Diks et~al.(2011)Diks, Panchenko, and van Dijk}]{CL}
+Diks, C., V.~Panchenko, and D.~van Dijk (2011), \enquote{{Likelihood-based
+  Scoring Rules for Comparing Density Forecasts in Tails}.} \emph{Journal of
+  Econometrics}, 163, 215--230.
+\bibAnnoteFile{CL}
+
+\bibitem[{Hansen(1994)}]{hansen_skt}
+Hansen, B.~E. (1994), \enquote{{Autoregressive Conditional Density
+  Estimation}.} \emph{International Economic Review}, 705--730.
+\bibAnnoteFile{hansen_skt}
+
+\end{thebibliography}

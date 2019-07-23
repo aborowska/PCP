@@ -22,8 +22,19 @@ AAPL = AAPL.Close;
 
 IBM = hist_stock_data(start_date, end_date, 'IBM');
 date_ibm = IBM.Date;
-IBM2 = IBM.AdjClose;
-IBM = IBM.Close;
+IBM = IBM.AdjClose;
+ibm_ret = 100*diff(log(IBM));
+
+end_date2 = '31122018';
+IBM2 = hist_stock_data(start_date, end_date2, 'IBM');
+date_ibm = IBM2.Date;
+IBM2= IBM2.AdjClose; 
+ibm_ret2 = 100*diff(log(IBM2));
+
+plot(1:length(ibm_ret2),ibm_ret2)
+hold on
+plot(1:length(ibm_ret),ibm_ret)
+IBM_new = ibm_ret2(2512:end);
 
 data = hist_stock_data(start_date, end_date, tickers);
 data_AdjClose = [data([1:end]).AdjClose];

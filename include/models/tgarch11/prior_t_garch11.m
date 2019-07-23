@@ -2,12 +2,10 @@ function r2 = prior_t_garch11(theta, hyper)
     M = size(theta,1);
     
     nu = theta(:,1);
-    mu = theta(:,2);
+%     mu = theta(:,2);
     omega = theta(:,3);
     alpha = theta(:,4);
     beta = theta(:,5);
-
-    rho = (nu-2)./nu;
  
     % uniform prior on alpha and beta on (0,1)
     % with restriction alpha + beta < 1

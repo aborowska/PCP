@@ -110,10 +110,14 @@ void prior_t_gas_hyper(double *theta, double *hyper,
         {
             r1[i] = 0;
         }   
-        if ((theta[i+4*N] < 0) || (theta[i+4*N] >= 1)) // 0<=beta<1
+        if ((theta[i+4*N] < 0) || (theta[i+4*N] >= 1)) // 0<=B<1
         {
             r1[i] = 0;
         }
+        if ((theta[i+3*N] < 0) || (theta[i+3*N] >= 1)) // 0<=A<1 ??
+        {
+            r1[i] = 0;
+        }          
         if (theta[i] <= 2) //nu>2
         {
             r1[i] = 0;
@@ -232,7 +236,7 @@ void C_posterior_t_gas_varc_mle_mex(double *theta, double *y, double *mu_mle, do
             {
                 i2 = i2+1;
                 // stationary distribution for the first observation
-                z2[i2] = (threshold[0] - theta[i+N])/sqrt(rhoh);               
+                z2[i2] = (THR[0] - theta[i+N])/sqrt(rhoh);               
             }
             
             for (j=1; j<T; j++)
@@ -258,7 +262,7 @@ void C_posterior_t_gas_varc_mle_mex(double *theta, double *y, double *mu_mle, do
                 else //cdf
                 {
                     i2 = i2+1;
-                    z2[i2] = (threshold[0] - theta[i+N])/sqrt(rhoh);                 
+                    z2[i2] = (THR[j] - theta[i+N])/sqrt(rhoh);                 
                 }                                                   
             }
             

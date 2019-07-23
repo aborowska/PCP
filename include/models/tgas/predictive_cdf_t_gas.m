@@ -29,7 +29,8 @@ function d = predictive_cdf_t_gas(y, fT, theta, threshold)
 %         h = omega.*(1-alpha-beta) + alpha.*(y(t)-mu).^2  + beta.*h;
         for p = 1:P
             x = (threshold(p,t) - mu)./sqrt(rho.*f);
-            dd = tpdf(x,nu); 
+%             dd = tpdf(x,nu); 
+            dd = tcdf(x,nu); 
             d(p,t) = mean(dd);         
         end
    end

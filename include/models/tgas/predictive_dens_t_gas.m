@@ -24,7 +24,7 @@ function d = predictive_dens_t_gas(y, fT, theta)
 
         % h = omega.*(1-alpha-beta) + alpha.*(y(t)-mu).^2  + beta.*h;     
         x = (y(t+1) - mu)./sqrt(rho.*f);
-        dd = tpdf(x,nu); 
+        dd = tpdf(x,nu) - log(sqrt(rho.*f)); 
         d(t) = mean(dd);         
     end
 end

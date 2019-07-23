@@ -73,7 +73,7 @@ function [y, T, y_plot, data_name, time] = Load_data_empirical(data, H)
 %             time = [2007,2014];   
             y = load('Perc_Rets_GSPC_IBM_MSFT_T2000_crisis2.csv');
             y = y(:,2);   
-            time = [2007,2017];   % start_date = '01012007'; end_date = '23122016    
+            time = [2007,2017];   % start_date = '01012007'; end_date = '23122016'   
             TT = length(y);
             T = TT - H;      
             y_plot = y;

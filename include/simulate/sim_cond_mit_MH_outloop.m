@@ -1,4 +1,5 @@
-function [draw_partial, accept, lnw] = sim_cond_mit_MH_outloop(mit, draw, partition, M, BurnIn, kernel, GamMat, print_on, thinning)
+function [draw_partial, accept, lnw] = sim_cond_mit_MH_outloop(mit, draw,...
+    partition, M, BurnIn, kernel, GamMat, print_on, thinning)
 % mit: a structure for a mix of Student's t distributions
 % draw: a draw from the joint candidate, ordered in such a way that first
 % colums are for the conditional subset, after which the marginal draws are

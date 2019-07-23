@@ -1,0 +1,253 @@
+\documentclass[a4paper,10pt]{article} %default 11pt
+
+\input{style}
+	
+\title{Description of the new result files}
+ 
+\author{Agnieszka Borowska}
+
+
+\date{3 March 2019}
+
+\begin{document}
+
+\maketitle
+
+
+\section{GENERAL COMMENTS}
+
+\begin{itemize}
+\item For all the studies -- except different threshold exercises in 
+iid\_MSE\_dif\_thresholds.xlsx -- DM test statistics are reported. 
+\item For cell (i,j) the loss differentials for DM statistics 
+are calculated as value\_of\_method\_i - value\_of\_method\_j [row method - column method].
+\item For simulation studies RMSE are considered, for empirical studies
+CSR of \citet{CL}.
+\item  For convenience colours are used to distinguish significance levels.
+For ``good'' results shades of green are used, for ``bad'' results shared of red. The darker the shade the higher the significance (the darkest for 1\%, medium for 5\%, the lightest for 10\%). Gray coloured values are neither good nor bad (differences between methods of the same type), they simply indicate that some results are significant.
+\end{itemize}
+
+\section{SIMULATION STUDIES}
+\begin{itemize}
+\item  All the results are for 99.5\%, 99\% and 95\% VaR.
+\item  For iid studies 100 MC replications were considered.\\
+For AR(1) exercises with $T=100$ and $T=1000$ -- 50 MC replications, for T=10000 -- 20 MC replications.
+\item  For iid studies only the regular posterior and fully censored posterior (CP) we used.
+For AR(1) studies also partially censored posterior (PCP) was considered.
+\item There are the following files:
+
+\begin{itemize}
+\item \texttt{mix\_iid\_DM\_lowerLambdas.xlsx}
+\begin{itemize}
+\item  iid data for the DGP, generated from a mixture distribution
+\item  mixture as the one used for GARCH errors by \citet{mix_garch}
+\item  inverse of $\lambda$ amplifies volatility of the ``bad state''
+\item  probability of the ``good state'' $\rho = 0.75$
+\item  $\lambda$s  used from 0.05 by 0.05 to 4.5, then from 0.5 by 0.1 to 0.9
+\item  three sheets, for T=100, T=1000, T=10000
+\end{itemize}
+
+\item \texttt{skt\_iid\_DM\_moreLambda.xlsx}
+\begin{itemize}
+\item iid data for the DGP, generated from a skewed $t$ distribution
+\item  Hansen's skewed $t$ distribution \citep{hansen_skt}
+\item  domain of $\lambda$ (the skewness parameter) is $(-1,1)$
+\item  $\lambda$s  considered from -0.6 by 0.1 to 0.6
+\item  three sheets, for $T=100$, $T=1000$, $T=10000$
+\end{itemize}
+
+\item \texttt{iid\_MSE\_dif\_thresholds.xlsx}
+\begin{itemize}
+\item  iid data for the DGP 
+\item  two spreadsheets:
+one for split normal distribution with different $\sigma^2$, from 1.5 by 0.5 to 3.5;\\
+one for skewed $t$ distribution, with $\lambda$s  from -0.5 by 0.1 to 0.5
+\item  thresholds for CP: fixed at 0, at the 5th, 10th, 15th, 20th percentile of the in-sample data.
+\item only MSEs reported! (DM tables would be not too convenient to read, large and many of them)
+\end{itemize}
+
+\item \texttt{skt\_ar1\_DM.xlsx}
+\begin{itemize}
+\item AR(1) data for the GDP, specification as in the paper
+except that Hansen's skewed $t$ distribution used for the error terms
+\item $\lambda$s used from -0.5 by 0.1 to 0.5
+\item  three sheets, for $T=100$, $T=1000$, $T=10000$
+\item  estimation methods as in the paper: regular posterior, fully CP, PCP;\\
+thresholds for the latter two at 0 and at the 10th data percentile
+\end{itemize}
+
+\end{itemize}
+
+\end{itemize}
+
+\subsection{Skewed-$t$ i.i.d.}
+Figure \ref{fig:skt_iid_pdf} shows the pdfs of the standard skewed-$t$ distribution  (zero mean, unit standard deviation) for different values of $\lambda$, negative in the left column and positive in the rights column, with the absolute value of $\lambda$ diminishing in rows ($\lambda=0.5,0.3,0.1$, respectively).  Theoretical quantiles (0.5th, 1st, 5th) are annotated for each  distribution.
+
+
+Figure \ref{fig:skt_iid_vars}  shows the results of 50 MC experiments carried out for different values of $\lambda$, the asymmetry parameter of the skewed-$t$ distribution, which varies from -0.6 by 0.1 to 0.6 (13 distinct values) along the horizontal axis in each subplot. The DGP is an i.i.d. skewed-$t$  process, with zero mean and unit standard deviation. The estimated model is normal i.i.d. with unknown mean and unknown standard deviation.
+In each experiment we predicted one-step-ahead 99.5\%, 99\% and 95\% VaR (left, middle and right column, respectively).
+The true quantile values are plotted on the diagonal. 
+In each subplot the DGPs (corresponding to horizontally varying dots) differ  only with regard to $\lambda$ but have the same mean and standard deviations (zero and one, respectively). This is the reason why the regular posterior predicts basically the same quantiles for each $\lambda$ (blue dots lie on horizontal lines). In contrast, censoring is able to predict the varying value of the given quantile by focusing on the tail (red and yellow dots follow the black dots). 
+Rows correspond to different sizes of the in-sample data, $T=100$, $T=1000$ and $T=10000$, respectively. 
+We can see that, as expected, the more the data, the narrower  error bars around the MC means. 
+
+Figure \ref{fig:skt_iid_means} illustrates why censored methods are able to predict quantiles more accurately than the regular posterior. Since posterior averages over the whole domain it basically predicts the same $\mu$ and $\sigma$ regardless the $\lambda$ value. In contrast, censored methods are able to adjust $\mu$ and $\sigma$ which are closer the the ``true values for the left tail''. Again, the more data, the more regular (less noisy) the estimated means (for clarity, we depict the results for one MC experiment only, so MC noise is not explicitly illustrated). 
+
+
+
+
+\begin{figure}
+\centering
+\begin{subfigure}{\linewidth}
+\centering
+\includegraphics[width=0.4\linewidth]{../figures_skt_iid/skewed_t_quant_lambda_0-5.eps}
+\includegraphics[width=0.4\linewidth]{../figures_skt_iid/skewed_t_quant_lambda_05.eps}
+\caption{$\lambda=-0.5$ (left) and $\lambda=0.5$ (right).} 
+\end{subfigure}
+
+\begin{subfigure}{\linewidth}
+\centering
+\includegraphics[width=0.4\linewidth]{../figures_skt_iid/skewed_t_quant_lambda_0-3.eps}
+\includegraphics[width=0.4\linewidth]{../figures_skt_iid/skewed_t_quant_lambda_03.eps}
+\caption{$\lambda=-0.3$ (left) and $\lambda=0.3$ (right).} 
+\end{subfigure}
+
+\begin{subfigure}{\linewidth}
+\centering
+\includegraphics[width=0.4\linewidth]{../figures_skt_iid/skewed_t_quant_lambda_0-1.eps}
+\includegraphics[width=0.4\linewidth]{../figures_skt_iid/skewed_t_quant_lambda_01.eps}
+\caption{$\lambda=-0.1$ (left) and $\lambda=0.1$ (right).} 
+\end{subfigure}
+
+\caption{Skewed-$t$ pdf for different $\lambda$ values. Theoretical quantiles (0.5th, 1st, 5th) annotated.}
+\label{fig:skt_iid_pdf}
+\end{figure}
+ 
+
+\begin{figure}
+\begin{subfigure}{\linewidth}
+\includegraphics[width=0.33\linewidth]{../figures_skt_iid/skt_iid_T100_VaRs_05_true_predicted.eps}
+\includegraphics[width=0.33\linewidth]{../figures_skt_iid/skt_iid_T100_VaRs_1_true_predicted.eps}
+\includegraphics[width=0.33\linewidth]{../figures_skt_iid/skt_iid_T100_VaRs_5_true_predicted.eps}
+\caption{$T=100$.}
+\end{subfigure}
+\begin{subfigure}{\linewidth}
+\includegraphics[width=0.33\linewidth]{../figures_skt_iid/skt_iid_T1000_VaRs_05_true_predicted.eps}
+\includegraphics[width=0.33\linewidth]{../figures_skt_iid/skt_iid_T1000_VaRs_1_true_predicted.eps}
+\includegraphics[width=0.33\linewidth]{../figures_skt_iid/skt_iid_T1000_VaRs_5_true_predicted.eps}
+\caption{$T=1000$.}
+\end{subfigure}
+\begin{subfigure}{\linewidth}
+\includegraphics[width=0.33\linewidth]{../figures_skt_iid/skt_iid_T10000_VaRs_05_true_predicted.eps}
+\includegraphics[width=0.33\linewidth]{../figures_skt_iid/skt_iid_T10000_VaRs_1_true_predicted.eps}
+\includegraphics[width=0.33\linewidth]{../figures_skt_iid/skt_iid_T10000_VaRs_5_true_predicted.eps}
+\caption{$T=10000$.}
+\end{subfigure}
+\caption{Skewed-$t$ i.i.d. data: predicted quantiles from different methods against the true quantiles, for different values of the DGP parameter $\lambda$.
+True quantiles on the diagonal (black), MC means (dots) $\pm$ estimated standard deviation (lines) from the regular posterior (blue), censored posterior with threshold at 0 (red) and censored posterior with threshold at 10\% (yellow).  
+MC results based on 50 replications. 
+The values of $\lambda$ vary from -0.6 by 0.1 to 0.6 along the horizontal axis.
+Columns: 99.5\% VaR (left), 99\% VaR (middle), 95\% (right).}
+\label{fig:skt_iid_vars}
+\end{figure}
+
+
+
+\begin{figure}
+\begin{subfigure}{\linewidth}
+\includegraphics[width=\linewidth]{../figures_skt_iid/skt_iid_T100means_bar.eps}
+\caption{$T=100$.}
+\end{subfigure}
+\begin{subfigure}{\linewidth}
+\includegraphics[width=\linewidth]{../figures_skt_iid/skt_iid_T1000means_bar.eps}
+\caption{$T=1000$.}
+\end{subfigure}
+\begin{subfigure}{\linewidth}
+\includegraphics[width=\linewidth]{../figures_skt_iid/skt_iid_T10000means_bar.eps}
+\caption{$T=10000$.}
+\end{subfigure}
+\caption{Skewed-$t$ i.i.d. data: estimated means from a single MC replication of the mean (left panels) and standard deviation (right panels) of the normal i.i.d. model, for different values of the DGP parameter $\lambda$. }
+\label{fig:skt_iid_means}
+\end{figure}
+
+
+
+
+
+
+\clearpage
+
+\section{EMPIRICAL STUDIES}
+\begin{itemize}
+\item All the results are for CSR with threshold at 99.5\%, 99\% and 95\% 
+(which is called ``threshold for evaluation''). 
+\item Thresholds for evaluation are either time constant (based on the given 
+percentile of the in-sample data) or time varying (based on the given percentile of the MLE-implied predictive distribution).
+\item Two  types of threshold for estimation were used: time-constant (based on the 10th, 20th, 30th, 40th and 50th percentile of the in-sample data) and time-varying (based on the $x$th percentile of the MLE-implied predictive distribution, with $x=\{20,30,40,50\}$ for AGARCH-sk$t$ and $x\in \{40,50\}$ for GAS-$t$, for which $x=30$ MitISEM approximation did not succeed).
+\item IBM data from the paper plus 507 new observations from 2017--2018 $\Rightarrow$ $T = 1000$ as before, $H=1500$ (previous) $+ 507$ (new) $= 2007$ [hope was that a longer out of sample would give us more significance]. 
+
+ We consider  daily  logreturns of the IBM stock, from the 4th January 2007 to the 28th December 2018 (3019 observations,  Figure \ref{fig:data_up}).
+\begin{figure}[H]
+\centering
+\centering
+\includegraphics[width=0.6\linewidth]{IBM_crisis_up.eps} 
+\caption{The daily logreturns of the IBM stock  from the 4th January 2007 to the 28th December 2018.}
+\label{fig:data_up}       
+\end{figure}
+
+\item three types of spreadsheets: for time-constant evaluation, for time-varying evaluation and estimation results (means and standard deviations).
+
+\item Additional notation:\\
+underlined are the result comparing the CP and PCP with the same $x$ threshold;\\
+gray fields show cased for which time-varying threshold for estimation performs better than the time-constant threshold with the same $x$
+\item There are the following files:
+
+\begin{itemize}
+\item \texttt{DM\_skt\_agarch\_H2007out\_of\_sample}: AGARCH-sk$t$\\
+To account for  the leverage effect usually observed for stock market returns, we analyse the AGARCH(1,1) with innovations following \citet{hansen_skt} skewed $t$ distribution.
+We adopt the following specification 
+\begin{align*}
+y_{t}&=\mu+\sqrt{h_{t}}\varepsilon_{t},\\
+\varepsilon_{t} & \sim \mathcal{SKT}(0,1,\nu,\lambda),\\
+h_{t}&=\omega(1-\alpha-\beta) + \alpha (y_{t-1}-\mu_2)^{2} + \beta h_{t-1},
+\end{align*}
+where $\mathcal{SKT}(0,1,\nu,\lambda)$ denotes \citet{hansen_skt} skewed $t$ distribution with zero mean, unit variance, $\nu$ degrees of freedom and skewness parameter $\lambda$.
+We put flat priors on variance dynamics parameters to impose its positivity and stationarity: $\omega>0$, $\alpha\in(0,1)$, $\beta\in(0,1)$ with $\alpha+\beta<1$. For  $\nu-2$ we use an uninformative yet proper exponential prior (with prior mean 100) and for $\lambda\sim\mathcal{U}(-1,1)$.
+
+\begin{figure}[h]
+\centering
+\centering
+\includegraphics[width=0.5\linewidth]{skt_agarch11_IBM_T2000_crisis_up_mle_thresholds.eps} 
+\caption{AGARCH-sk$t$: MLE-implied thresholds.}
+\label{fig:agarch_thres}       
+\end{figure}
+
+\item \texttt{DM\_t\_gas\_H2007out\_of\_sample}: GAS-$t$\\
+(There are two additional sheets, for some ``new'' results, as I wanted to double-check the first reported outputs, buy these are very similar. I kept these sheets to illustrate this.)
+
+\citet{gas_paper} propose an alternative approach to modelling volatility based on the updating of the time-varying parameter with the scaled score of the likelihood function. We employ their  Generalised Autoregressive Score (GAS) model with Student's $t$ innovations, which we refer to as GAS(1,1)-$t$ and which is given by the following specification
+\begin{align*}
+y_{t} &= \mu + \sqrt{\rho h_{t}}\varepsilon_{t},\\
+\varepsilon_{t}&\sim t(\nu),\\
+\rho &:= \frac{\nu-2}{\nu},\\
+h_{t} &=\omega + A \frac{\nu+3}{\nu}\Big(C_{t-1}(y_{t}-\mu)^{2}-h_{t-1}\Big) + B h_{t-1},\\
+C_{t} &= \frac{\nu+1}{\nu-2}\left(1+\frac{(y_{t-1}-\mu)^2}{(\nu-2)h_{t-1}}\right)^{-1},
+\end{align*}
+where we stack the model parameters into vector $\theta=(\mu,\omega,A,B,\nu)^{T}$. Finally, we put flat priors on $\mu$, $\omega$, $A$ and $B$, with $\omega>0$ and $B\in(0,1)$ to guarantee that the conditional variance is positive, and uninformative exponential prior on $\nu$, $\nu-2\sim \mbox{Exp}(0.01)$.
+
+\begin{figure}[h]
+\centering
+\centering
+\includegraphics[width=0.56\linewidth]{tgas_IBM_T2000_crisis_up_mle_thresholds.eps} 
+\caption{GAS-$t$: MLE-implied thresholds.}
+\label{fig:tgas_thres}       
+\end{figure}
+
+\end{itemize} 
+
+\end{itemize} 
+
+\input{References}
+
+\end{document}
+

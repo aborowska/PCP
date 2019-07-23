@@ -1,0 +1,112 @@
+\usepackage{amssymb}
+
+\usepackage[english]{babel}
+\usepackage[utf8x]{inputenc}
+ 
+\usepackage{hyperref}
+\usepackage{url}
+
+\usepackage{natbib}
+\usepackage{amssymb}
+\usepackage{geometry}
+\usepackage{graphicx}
+\geometry{verbose,tmargin=2.5cm,bmargin=2.5cm,lmargin=2.5cm,rmargin=2.5cm}
+
+\usepackage[colorinlistoftodos]{todonotes}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{mathtools}
+\usepackage{xcolor}
+\usepackage{setspace}
+\usepackage{amssymb}
+\setcounter{secnumdepth}{3}
+\setcounter{tocdepth}{3}
+\setlength{\parskip}{\medskipamount}
+\setlength{\parindent}{1.5pt}
+
+\usepackage{bbm}
+
+\usepackage[normalem]{ulem}
+ 
+\usepackage[titletoc]{appendix}
+\usepackage[nottoc]{tocbibind} 
+
+\numberwithin{equation}{section}
+\numberwithin{figure}{section}
+
+% graphs
+\usepackage{tikz}
+\usetikzlibrary{shapes, arrows}
+\usetikzlibrary{positioning}
+\usetikzlibrary{fit}
+
+ 
+
+
+\usepackage{enumitem}	
+\setlist[enumerate]{label*=\arabic*.}
+
+\usepackage{multirow}
+\linespread{1.2}
+
+
+\usepackage{algorithm,algorithmic}
+
+
+\usepackage{afterpage}
+
+\usepackage{longtable}
+\usepackage{rotating} % Rotating table
+
+\usepackage[scriptsize,bf]{caption}
+\captionsetup[subfigure]{font=scriptsize,labelfont={scriptsize,bf}}
+\usepackage{subcaption}
+\captionsetup[subtable]{font=scriptsize,labelfont={scriptsize,bf}}
+
+%\usepackage{float}
+%\restylefloat{figure}
+
+
+
+
+
+\newlength\myindent % define a new length \myindent
+\setlength\myindent{2em}% assign the length 2em to \myindet
+\newcommand\bindent{%
+  \begingroup% starts a group (to keep changes local)
+  \setlength{\itemindent}{\myindent} % set itemindent (algorithmic internally uses a list) to the value of \mylength
+  \addtolength{\algorithmicindent}{\myindent} % adds \mylength to the default indentation used by algorithmic
+}
+\newcommand\eindent{\endgroup}% closes a group
+
+
+\usepackage{listings}
+
+
+\usepackage{mdframed}
+
+\newmdenv[backgroundcolor=gray!20,
+%frametitle=Reminder,
+skipabove=\topsep, skipbelow=\topsep]{graybox}
+
+\newcommand*{\PathResults}{../PCP/results}% 
+\newcommand*{\PathFigures}{../PCP/figures/}% 
+%\graphicspath{{FIGURES/}{FIGURES/old}{FIGURES/recent}{FIGURES/crisis}{\PathFigures}}
+\graphicspath{{Figures/}{\PathFigures}}
+
+%\graphicspath{C:/\Users/aba228/Dropbox/MPHIL/MitISEM/MyMit/figures/PMitISEM/}
+%\input{../../MitISEM/MyMit/results/PMitISEM/results_WN_pmit}%
+%\graphicspath{../../MyMit/figures/PMitISEM/}
+
+\usepackage{epstopdf}
+
+\newcommand{\TR}[1]{{\color{red}{#1}}}
+
+
+ 
+ 
+\usepackage{color, colortbl} 
+%\definecolor{Gray}{gray}{0.9} 	
+%\definecolor{LightCyan}{rgb}{0.88,1,1}
+%\definecolor{LightCyan}{rgb}{0.9,0.95,1}
+\definecolor{LightCyan}{rgb}{1,1,1} 
